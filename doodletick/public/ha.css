@@ -1,5 +1,9 @@
 .ha-connection{margin:18px 28px;padding:18px;border:1px solid #a9b39c;border-radius:14px;background:#eff3e8;color:#263024}
-.ha-connection h2{font-size:18px;margin:0 0 8px}.ha-connection p{font-size:14px;line-height:1.5;margin:8px 0}
-.ha-connection a{color:inherit;text-decoration:underline}.ha-connection button{margin-right:14px}
-html[data-theme="night"] .ha-connection{background:#211313;color:#deb8ad;border-color:#674139}
-@media(max-width:600px){.ha-connection{margin:12px;padding:14px}}
+.ha-connection h2{font-size:18px;margin:0 0 12px}.ha-connection h3{font-size:14px;margin:0 0 8px}
+.ha-connection p{font-size:14px;line-height:1.55;margin:8px 0}.ha-connection a{color:inherit;text-decoration:underline;text-underline-offset:3px}
+.ha-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.ha-check{padding:14px;border:1px solid #a9b39c;border-radius:10px;overflow-wrap:anywhere}
+.ha-check[data-state="ready"],.ha-check[data-state="connected"]{border-left:4px solid #38643d}.ha-check[data-state="https-needed"],.ha-check[data-state="crypto-unavailable"],.ha-check[data-state="unavailable"]{border-left:4px solid #965a2c}
+.ha-state{font-weight:700}.ha-check .button{margin:8px 10px 8px 0}.ha-help{margin-top:14px;padding:12px;border:1px solid #a9b39c;border-radius:10px}.ha-help summary{cursor:pointer;font-size:14px;font-weight:700;line-height:1.6}.ha-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px}.ha-actions span{font-size:12px}
+.ha-connection :is(a,button,summary):focus-visible{outline:3px solid currentColor;outline-offset:4px}.ha-connection [hidden]{display:none!important}
+html[data-theme="night"] .ha-connection{background:#211313;color:#deb8ad;border-color:#674139}html[data-theme="night"] :is(.ha-check,.ha-help){border-color:#674139}html[data-theme="night"] .ha-check[data-state="ready"],html[data-theme="night"] .ha-check[data-state="connected"]{border-left-color:#ca8c78}html[data-theme="night"] .ha-check[data-state="https-needed"],html[data-theme="night"] .ha-check[data-state="crypto-unavailable"],html[data-theme="night"] .ha-check[data-state="unavailable"]{border-left-color:#eb6f62}
+@media(max-width:700px){.ha-checks{grid-template-columns:1fr}.ha-connection{margin:12px;padding:14px}}

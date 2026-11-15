@@ -1,3 +1,14 @@
+# 0.2b
+
+- Clear HTTPS browser readiness and private VPN status, with setup and expired-session guidance.
+- Private mushroom minting and opt-in bounded mining, plus a separate external-wallet public garden mode.
+- Wallet-confirmed public deployment, registration, token minting, proof submission and transfer. No funds move without a player approving a transaction in their wallet.
+- Verified offline migration into an empty repository app using its own read-only configuration folder. Existing state is never overwritten, and a restart never imports an old ledger again.
+- Cold backups preserve consistent Keeper and VPN state. No public browser port or administrative Supervisor access is added.
+- Updated release metadata, corresponding contract source and automated contract/browser-controller checks.
+
+Use the same Home Assistant HTTPS address for continuing browser storage. Moving from HTTP to HTTPS still requires restoring the user's separate encrypted browser exports. See `MIGRATION.md` before replacing a local installation.
+
 # 0.1b
 
 Initial public baseline under the maintainer-designated version number.

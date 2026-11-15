@@ -4,7 +4,7 @@ Doodle Tick is an experimental creator vault, private arcade and shared mushroom
 
 ## Run and check a change
 
-Use Node.js 24 for development. There are no application dependencies to install.
+Use Node.js 24 and Python 3.11 or newer for development checks. There are no application dependencies to install. Contract verification has separate pinned development dependencies.
 
 ```sh
 node keeper/server.mjs
@@ -19,11 +19,17 @@ node scripts/sync-ha.mjs
 node scripts/sync-ha.mjs --check
 node scripts/check-repository.mjs
 node --test keeper/tests/*.test.mjs doodletick/tests/*.test.mjs
+cd contracts
+npm ci --ignore-scripts
+npm run check
+npm test
 ```
 
 Home Assistant-specific code lives in `doodletick/main.mjs`, `gateway.mjs`, `tailscale.mjs` and `public/`. See [the architecture guide](ARCHITECTURE.md) for the storage and network boundaries.
 
 Run checks appropriate to your change. A documentation correction does not need a new unit test. A change to signing, payments, recovery or retry behavior needs a regression test that exercises the failure it prevents. A UI change needs a browser check; a container or VPN change needs the corresponding environment check. State what was not tested.
+
+Build numbered downloads from the repository root with `python scripts/package-release.py --version 0.2b`. Artifacts are created exclusively in `dist/0.2b/`; a repeated build refuses to overwrite them. Public-chain bytecode ships with its complete corresponding Solidity/compiler input source. Never use real keys or a paid network to run verification tests.
 
 ## Preserve users' work
 

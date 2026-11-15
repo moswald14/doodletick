@@ -1,5 +1,5 @@
 name: Doodle Tick Keeper
-version: "0.1b"
+version: "0.2b"
 slug: doodletick
 description: Private Doodleverse room directory, creator vault and peer arcade
 url: https://github.com/moswald14/doodletick
@@ -10,6 +10,7 @@ startup: application
 boot: auto
 init: true
 stage: experimental
+backup: cold
 timeout: 30
 ingress: true
 ingress_port: 8099
@@ -20,6 +21,9 @@ panel_admin: true
 watchdog: "http://[HOST]:8099/health"
 host_network: false
 apparmor: true
+map:
+  - type: app_config
+    read_only: true
 privileged:
   - NET_ADMIN
   - NET_RAW

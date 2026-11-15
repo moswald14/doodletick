@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process';
 import { createKeeperServer } from './keeper/server.mjs';
 import { createIngressServer } from './gateway.mjs';
 import { createTailscaleControl } from './tailscale.mjs';
+import { importMigration } from './migration.mjs';
 process.umask(0o077);
 let keeper, gateway, daemon, stopping = false;
 async function shutdown(code = 0) {
@@ -19,6 +20,8 @@ async function shutdown(code = 0) {
 for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => void shutdown());
 try {
   const options = JSON.parse(await readFile('/data/options.json', 'utf8'));
+  const migration = await importMigration({ dataDir: '/data', migrationDir: '/config/doodletick-migration' });
+  if (migration.status === 'imported') console.log('Verified Keeper migration completed before startup.');
   const control = createTailscaleControl(options.hostname || 'doodletick-ha');
   for (const dir of ['/data/keeper', '/data/tailscale', '/run/tailscale']) await mkdir(dir, { recursive: true, mode: 0o700 });
   daemon = spawn('tailscaled', ['--state=/data/tailscale/tailscaled.state', '--socket=/var/run/tailscale/tailscaled.sock', '--tun=tailscale0', '--port=41641'], { stdio: ['ignore', 'inherit', 'inherit'] });

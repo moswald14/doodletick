@@ -110,7 +110,7 @@ export async function createVpnNetwork({ readStatus = readTailscaleStatus, inter
       const now = Date.now(); for (const [key, rate] of rates) if (now - rate.at > 60000) rates.delete(key);
       if (!rates.has(ip)) rates.set(ip, { at: now, count: 0 }); if (++rates.get(ip).count > 4000) throw failure('Peer request limit reached.', 429);
       const url = new URL(req.url, 'http://vpn');
-      if (url.pathname === '/vpn-peer/status' && req.method === 'GET') return send(res, 200, { version: '0.1b', network: state.network });
+      if (url.pathname === '/vpn-peer/status' && req.method === 'GET') return send(res, 200, { version: '0.2b', network: state.network });
       const gardenPeer = /^\/garden-api\/(info|account|action)$/.exec(url.pathname);
       if (gardenPeer && garden) return gardenRoute(req, res, gardenPeer[1]);
       if (await rendezvous(req, res, url)) return;

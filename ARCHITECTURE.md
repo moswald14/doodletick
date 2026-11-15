@@ -1,6 +1,6 @@
 # Architecture
 
-Doodle Tick combines an encrypted browser workspace with a trusted local Keeper. Members can connect Keepers through a private Tailscale network. A shared garden uses one Keeper as its scorekeeper; this is not a distributed cryptocurrency or a consensus blockchain.
+Doodle Tick combines an encrypted browser workspace with a trusted local Keeper. Members can connect Keepers through a private Tailscale network. A private garden uses one Keeper as its scorekeeper. The separate public mode uses a player's wallet and an independently deployed EVM ERC20 garden; Keeper balances are never imported into it.
 
 ## Source layout
 
@@ -33,7 +33,7 @@ flowchart LR
 
 The standalone browser service binds to loopback. Its peer service binds to the private VPN interface. The browser channel adapter uses Keeper transport; there is no automatic public WebRTC fallback in this private edition. A room's host handles the simulation and forwards room messages. The directory introduces peers and expires stale listings; it is not a dedicated game server.
 
-The Home Assistant container runs its own Tailscale device. The gateway accepts Supervisor ingress traffic, requires a same-origin header for mutations and forwards only to the container's loopback Keeper. The ingress build uses relative URLs and disables the offline service worker. It does not publish a browser port, enable a router DMZ, request host networking or grant the app Supervisor administrative access.
+The Home Assistant container runs its own Tailscale device. The gateway accepts Supervisor ingress traffic, requires a same-origin header for mutations and forwards only to the container's loopback Keeper. The ingress build uses relative URLs and disables the offline service worker. It does not publish a browser port, enable a router DMZ, request host networking or grant the app Supervisor administrative access. A read-only mount of this app's own configuration folder supports a verified, one-time offline import before either daemon starts. It cannot read other apps' configuration folders.
 
 ## Data and authority
 
@@ -50,6 +50,8 @@ Standalone Keeper data is kept in its `.doodletick` directory. Home Assistant us
 Garden requests are signed by creator identities. One serialized ledger accepts valid sequences, settles completed UTC earning hours, checks funds and writes signed snapshots atomically. Retries use the same signed request. A market purchase transfers coins and generator ownership in one action. Completed seller earnings stay with the seller; the buyer receives future completed earning hours. Independent Keepers have independent balances.
 
 The garden operator is trusted to run the code, keep time and protect backups. Signatures do not prevent an operator from changing software or restoring old state. Recipes and balances are visible to that operator. A generator purchase does not transfer copyright or prove exclusive ownership of a sound.
+
+Private mining uses signed expiring challenges and the existing serialized garden action endpoint. Challenges bind ownership and time; caps persist across retries, transfers and restarts. A visible worker stops on hide, navigation, lock and mode changes. Public mining has separate contract rules and a separate wallet-confirmed proof submission; its low-difficulty proof is an earning mechanic, not the EVM network's consensus. See [the contract guide](contracts/README.md) for supply limits, source, tests and trust boundaries.
 
 ## Important boundaries
 

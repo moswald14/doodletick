@@ -82,7 +82,7 @@ def make_tar(payloads):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--node', default='node', help='Node.js executable used for repository checks')
-    parser.add_argument('--version', default='0.1b', help='Expected public version; prevents packaging an unintended release')
+    parser.add_argument('--version', required=True, help='Expected public version; prevents packaging an unintended release')
     args = parser.parse_args()
     subprocess.run([args.node, 'scripts/check-repository.mjs'], cwd=ROOT, check=True)
     package = json.loads((ROOT / 'keeper/package.json').read_text(encoding='utf-8'))
@@ -92,14 +92,19 @@ def main():
     require(re.fullmatch(re.escape(release) + r'-pi\.[0-9]+', bundle), 'Invalid Pi bundle version.')
     require(not DIST.is_symlink(), 'dist must not be a symbolic link.')
     require(DIST.resolve().parent == ROOT, 'Release destination escapes the repository.')
+    dist = DIST / release
+    require(not dist.is_symlink() and dist.resolve().parent == DIST.resolve(), 'Versioned release destination escapes dist.')
     names = [f'doodletick-keeper-v{release}.zip', f'doodletick-pi-{bundle}.tar.gz', f'doodletick-home-assistant-{release}.zip']
     for name in names + ['SHA256SUMS']:
-        require(not (DIST / name).exists(), 'Release asset already exists; preserve it and use a new output directory/version: ' + name)
+        require(not (dist / name).exists(), 'Release asset already exists; preserve it and use a new output directory/version: ' + name)
     source = public_source()
     require('LICENSE' in source, 'Missing GPL license.')
     notice_names = [name for name in ['THIRD_PARTY_NOTICES', 'THIRD_PARTY_NOTICES.md'] if name in source]
     require(len(notice_names) == 1, 'Exactly one THIRD_PARTY_NOTICES file is required.')
     keeper = {name[len('keeper/'):]: data for name, data in source.items() if name.startswith('keeper/')}
+    # Ship corresponding Solidity source and its exact compiler inputs alongside
+    # the browser's compiled deployment bytecode in every distribution.
+    keeper.update({'contract-source/' + name[len('contracts/'):]: data for name, data in source.items() if name.startswith('contracts/')})
     for name in ['LICENSE', notice_names[0]]:
         require(name not in keeper or keeper[name] == source[name], 'Keeper and root license notices differ: ' + name)
         keeper[name] = source[name]
@@ -114,13 +119,13 @@ def main():
     require('repository.yaml' in source and 'doodletick/config.yaml' in source, 'Missing Home Assistant repository layout.')
     assets = {names[0]: make_zip(desktop), names[1]: make_tar(pi), names[2]: make_zip(source)}
     checksums = ''.join(hashlib.sha256(data).hexdigest() + '  ' + name + '\n' for name, data in sorted(assets.items()))
-    DIST.mkdir(exist_ok=True)
+    dist.mkdir(parents=True, exist_ok=True)
     # Exclusive creation prevents overwriting an already delivered release.
     for name, data in {**assets, 'SHA256SUMS': checksums.encode('utf-8')}.items():
-        with (DIST / name).open('xb') as output:
+        with (dist / name).open('xb') as output:
             output.write(data)
-        require((DIST / name).read_bytes() == data, 'Written release file differs from the verified archive: ' + name)
-    print(json.dumps({'release': release, 'sourceFiles': len(source), 'output': 'dist', 'assets': [
+        require((dist / name).read_bytes() == data, 'Written release file differs from the verified archive: ' + name)
+    print(json.dumps({'release': release, 'sourceFiles': len(source), 'output': 'dist/' + release, 'assets': [
         {'name': name, 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()} for name, data in sorted(assets.items())
     ]}, indent=2))
 

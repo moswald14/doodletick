@@ -30,3 +30,12 @@ jobs:
         run: node scripts/check-repository.mjs
       - name: Run Keeper and Home Assistant tests
         run: node scripts/test.mjs
+      - name: Install pinned contract verification tools
+        working-directory: contracts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Reproduce public garden bytecode
+        working-directory: contracts
+        run: npm run check
+      - name: Test the public garden in a local EVM
+        working-directory: contracts
+        run: npm test

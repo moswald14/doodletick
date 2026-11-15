@@ -19,13 +19,13 @@ Copy the bundle to your Pi using your normal SSH/file-transfer method. Confirm t
 On the Pi, first calculate the archive's SHA-256 and compare it with the checksum published alongside that exact release. Then extract it and verify the internal inventory:
 
 ```bash
-sha256sum doodletick-pi-0.1b-pi.1.tar.gz
-tar -xzf doodletick-pi-0.1b-pi.1.tar.gz
+sha256sum doodletick-pi-0.2b-pi.1.tar.gz
+tar -xzf doodletick-pi-0.2b-pi.1.tar.gz
 cd doodletick-keeper
 sha256sum --check --strict SHA256SUMS
 ```
 
-The filename above is the 0.1b example; substitute the selected bundle's filename when using another release. Stop on a mismatch or missing checksum file. Review `pi/install.sh` before granting it administrative access.
+The filename above is the 0.2b example; substitute the selected bundle's filename when using another release. Stop on a mismatch or missing checksum file. Review `pi/install.sh` before granting it administrative access.
 
 ## Install and connect
 

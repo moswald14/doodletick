@@ -32,9 +32,15 @@ public/logo.svg
 public/manifest.webmanifest
 public/mushroom-art.mjs
 public/mushroom-core.mjs
+public/mushroom-mining.mjs
+public/mushroom-miner.mjs
 public/mushroom-ui.mjs
 public/mushroom.css
 public/peers.mjs
+public/public-chain.mjs
+public/public-chain-wallet.mjs
+public/public-chain-artifact.mjs
+public/public-chain.css
 public/spirograph-auth.mjs
 public/spirograph.mjs
 public/style.css
