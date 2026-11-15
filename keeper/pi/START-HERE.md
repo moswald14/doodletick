@@ -2,7 +2,7 @@
 
 This guide is for a Raspberry Pi 4 running **Raspberry Pi OS Lite 64-bit** or a supported ARM64 Debian installation with systemd. For **Home Assistant OS**, use the Home Assistant app instead; do not run this installer on its host.
 
-The Pi keeps a private room directory, witness and optional shared garden online. Players still host game simulation in their browsers, and file libraries remain in participating browsers. This is not unattended P2P disk storage or a dedicated game server.
+The Pi keeps its local room directory, witness and shared garden online. Players host game simulation and encrypted WebRTC connections in their browsers; file libraries remain in those browsers. This is not unattended P2P disk storage or a dedicated game server.
 
 ## Prepare the Pi
 
@@ -19,13 +19,13 @@ Copy the bundle to your Pi using your normal SSH/file-transfer method. Confirm t
 On the Pi, first calculate the archive's SHA-256 and compare it with the checksum published alongside that exact release. Then extract it and verify the internal inventory:
 
 ```bash
-sha256sum doodletick-pi-0.2b-pi.1.tar.gz
-tar -xzf doodletick-pi-0.2b-pi.1.tar.gz
+sha256sum doodletick-pi-0.3b-pi.1.tar.gz
+tar -xzf doodletick-pi-0.3b-pi.1.tar.gz
 cd doodletick-keeper
 sha256sum --check --strict SHA256SUMS
 ```
 
-The filename above is the 0.2b example; substitute the selected bundle's filename when using another release. Stop on a mismatch or missing checksum file. Review `pi/install.sh` before granting it administrative access.
+The filename above is the 0.3b example; substitute the selected bundle's filename when using another release. Stop on a mismatch or missing checksum file. Review `pi/install.sh` before granting it administrative access.
 
 ## Install and connect
 
@@ -33,18 +33,27 @@ From the verified bundle folder:
 
 ```bash
 sudo bash pi/install.sh
-sudo tailscale up --accept-dns=false --accept-routes=false
 ```
 
-The installer checks the supported ARM64 OS and bundle hashes, installs a private pinned Node.js runtime, adds Tailscale from its signed Debian repository when absent, and creates a dedicated system account and startup service. It does not format drives or open router ports. Follow Tailscale's sign-in link to join the same private network as the other Keepers. Keep that link private.
+The installer checks the supported ARM64 OS and bundle hashes, installs a private pinned Node.js runtime, and creates a dedicated system account and startup service. It does not install or start a VPN, format drives or open router ports. Existing VPN software on the Pi is not uninstalled or reconfigured.
 
 Run the packaged check with the Node version installed by this bundle:
 
 ```bash
-/opt/doodletick-keeper/node-v24.22.3/bin/node /opt/doodletick-keeper/current/pi/check.mjs --require-vpn
+/opt/doodletick-keeper/node-v24.22.3/bin/node /opt/doodletick-keeper/current/pi/check.mjs
 ```
 
-A failed check is not a successful installation. In the desktop app, refresh the private network and select the Pi as the room directory or shared garden Keeper. Room invitations still require spirograph comparison. The Pi's administrative UI stays on its own loopback; its private VPN address is not a public browser UI.
+A failed check is not a successful installation. The obsolete `--require-vpn` flag reports an error; it does not enroll a device. The Pi's UI stays on its own loopback and cannot be opened directly at its LAN address.
+
+Use an authenticated SSH tunnel from your computer, replacing the account and hostname with your actual Pi settings:
+
+```sh
+ssh -N -L 127.0.0.1:4317:127.0.0.1:4317 YOUR_PI_USER@YOUR_PI_HOST
+```
+
+Keep that SSH connection open and visit **http://127.0.0.1:4317**. Port 4317 on your computer must be free; stop another local Keeper first. Use a separate browser profile for this Pi Keeper so the same localhost address does not silently mix with a desktop Keeper's storage or issuer pins. Export existing browser backups before changing endpoints and restore the same creator vault deliberately when needed. Do not expose the Pi's local service through a router port.
+
+Room directory codes and garden trading work for players opening this same Keeper through their own authorized access. Between separate Keepers, use full signed invitation and answer codes for games/files, then compare both spirographs. WebRTC has no STUN/TURN service or Internet relay configured, so browser peers need direct reachability; an SSH connection to the Pi does not itself provide a route between players.
 
 ## Operation and backups
 
@@ -56,8 +65,8 @@ sudo systemctl restart doodletick-keeper
 
 Keep power and network connected, and shut down cleanly before removing storage. To stop automatic startup, use `sudo systemctl disable --now doodletick-keeper`; this preserves persistent data.
 
-Private Keeper data lives in `/var/lib/doodletick-keeper`. Back it up privately while the service is stopped, retaining the garden ledger and original witness key together. Browser vault/files/arcade backups are separate. Temporary locks live under `/run/doodletick-keeper`; do not delete persistent state as a startup repair. Never run two restored clones of one witness or VPN identity.
+Private Keeper data lives in `/var/lib/doodletick-keeper`. Back it up privately while the service is stopped, retaining the garden ledger and original witness key together. Browser vault/files/arcade backups are separate. Temporary locks live under `/run/doodletick-keeper`; do not delete persistent state as a startup repair. Never run two restored clones of one witness identity. Retain older private VPN backups separately if you need to roll back to an earlier release.
 
 ## Validation limit
 
-The separate Raspberry Pi OS installation, reboot recovery, storage/power recovery and PC-to-Pi connections have not been verified. A successful ARM64 Home Assistant container deployment is different evidence. Acceptance requires the service to survive a Pi reboot with the same witness identity, then a real two-player room and shared garden check. Use disposable data for initial testing.
+The installer passed shell syntax checking, but Raspberry Pi OS service installation, reboot recovery, storage/power recovery and PC-to-Pi access remain unverified. Earlier ARM64 Home Assistant container evidence is a different deployment. Acceptance requires a Pi reboot with the same witness identity, authorized browser access, a real two-player direct connection and a same-Keeper garden check. Use disposable data initially.

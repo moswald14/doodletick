@@ -10,13 +10,13 @@ die() { printf '%s\n' "$*" >&2; exit 1; }
 [[ -d /run/systemd/system ]] || die 'This installer needs a normal Raspberry Pi OS boot with systemd.'
 source /etc/os-release
 [[ ${ID:-} == debian || ${ID:-} == raspbian ]] || die 'Supported systems: Raspberry Pi OS / Debian.'
-case ${VERSION_CODENAME:-} in bookworm|trixie) ;; *) die 'This OS release needs review before adding the Tailscale repository.' ;; esac
+case ${VERSION_CODENAME:-} in bookworm|trixie) ;; *) die 'This OS release needs review before installation.' ;; esac
 source_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
 [[ -f $source_dir/SHA256SUMS && -f $source_dir/pi/runtime-files.txt ]] || die 'Extract the complete Pi release bundle first.'
 (cd -- "$source_dir" && sha256sum --check --strict SHA256SUMS >/dev/null) || die 'The package checksum check failed. Nothing was installed.'
 
 install_root=/opt/doodletick-keeper
-release_id=0.2b-pi.1
+release_id=0.3b-pi.1
 release_dir=$install_root/releases/$release_id
 node_version=v24.22.3
 node_archive=node-$node_version-linux-arm64.tar.xz
@@ -39,20 +39,6 @@ exec 9>/run/lock/doodletick-keeper-install.lock
 flock -n 9 || die 'Another Keeper installer is running.'
 apt-get update
 apt-get install -y --no-install-recommends ca-certificates curl xz-utils
-if ! command -v tailscale >/dev/null 2>&1; then
-  repo=/etc/apt/sources.list.d/tailscale.list
-  expected_repo="deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/debian $VERSION_CODENAME main"
-  if [[ -e $repo ]]; then
-    [[ ! -L $repo && $(cat "$repo") == "$expected_repo" && -s /usr/share/keyrings/tailscale-archive-keyring.gpg ]] || die 'An existing Tailscale repository differs from this setup; review it first.'
-  else
-    curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' "https://pkgs.tailscale.com/stable/debian/$VERSION_CODENAME.noarmor.gpg" -o /usr/share/keyrings/tailscale-archive-keyring.gpg
-    chmod 0644 /usr/share/keyrings/tailscale-archive-keyring.gpg
-    printf '%s\n' "$expected_repo" > "$repo"
-    chmod 0644 "$repo"
-  fi
-  apt-get update
-  apt-get install -y --no-install-recommends tailscale
-fi
 
 install -d -m 0755 "$install_root" "$install_root/releases"
 printf 'v1\n' > "$install_root/.managed-by-doodletick-pi"
@@ -97,7 +83,6 @@ if systemctl cat doodletick-keeper.service >/dev/null 2>&1; then systemctl stop 
 ln -sfn -- "$release_dir" "$install_root/current"
 install -m 0644 "$source_dir/pi/doodletick-keeper.service" "$unit"
 systemctl daemon-reload
-systemctl enable --now tailscaled.service
 systemctl enable --now doodletick-keeper.service
 healthy=false
 for attempt in {1..12}; do
@@ -114,6 +99,6 @@ if [[ $healthy != true ]]; then
 fi
 cat "$stage/check.txt"
 printf '\nInstalled. Keeper will start automatically when the Pi boots.\n'
-printf 'Next: sudo tailscale up --accept-dns=false --accept-routes=false\n'
-printf 'Sign in using the SAME Tailscale network as your Windows computer.\n'
-printf 'Then: %s/bin/node %s/current/pi/check.mjs --require-vpn\n' "$node_dir" "$install_root"
+printf 'Keeper listens on localhost. Use an authenticated SSH tunnel or trusted HTTPS access for its browser UI.\n'
+printf 'Pair browsers with signed invitation and answer codes. No Internet relay is configured.\n'
+printf 'Check: %s/bin/node %s/current/pi/check.mjs\n' "$node_dir" "$install_root"

@@ -6,17 +6,13 @@ try {
     if (!response.ok) throw new Error(`Keeper returned ${response.status}.`);
     return response.json();
   };
-  const [app, vpn] = await Promise.all([read('/api/status'), read('/vpn-api/status')]);
+  const [app, network] = await Promise.all([read('/api/status'), read('/vpn-api/status')]);
   console.log(`Keeper ${app.version} is running.`);
-  if (vpn.ready) {
-    console.log(`Private directory: ${vpn.ip}:4318`);
-    console.log(`Other online computers: ${vpn.peers.length}`);
-    console.log('On your PC, select this Pi under Invite friends before opening a room.');
-  } else {
-    console.log(`Private network is not ready: ${vpn.message || 'Connect Tailscale.'}`);
-    console.log('Sign the Pi into the same Tailscale network as your PC.');
-    if (process.argv.includes('--require-vpn')) process.exitCode = 2;
-  }
+  if (!network.ready || network.mode !== 'local-direct') throw new Error('The local connection service is not ready.');
+  console.log('The garden and directory are local to this Keeper. No public peer port is open.');
+  console.log('Use localhost through an authenticated SSH tunnel or your own trusted HTTPS access to open the browser UI.');
+  console.log('Games and files pair directly between browsers. No Internet relay is configured.');
+  if (process.argv.includes('--require-vpn')) { console.error('--require-vpn is obsolete: this release does not use a VPN.'); process.exitCode = 2; }
 } catch (error) {
   console.error(`Keeper check failed: ${error.message}`);
   console.error('On the Pi, run: sudo journalctl -u doodletick-keeper -n 40 --no-pager');
