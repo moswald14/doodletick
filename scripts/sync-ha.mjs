@@ -24,12 +24,8 @@ export function adaptForHomeAssistant(name, source) {
   content = content.replaceAll("fetch('/api/", "fetch('./api/").replaceAll("fetch('/vpn-api/", "fetch('./vpn-api/");
   if (name === 'public/vpn-ui.mjs') {
     for (const [before, after] of [
-      ['Install Tailscale on each computer and sign in.', 'This Home Assistant add-on already includes Tailscale. Use Connect private network in the Your always-on Keeper panel below, then follow its sign-in link.'],
-      ['Run this Keeper on each computer. Share a room code to play.', 'Friends using Windows still need Tailscale and Keeper on their own computers. Share a room code to play.'],
-      ['Solo practice and your vault work without a connection.', 'Solo practice and your vault work without a private connection. Open Home Assistant over HTTPS for the encrypted vault and games.'],
-      ['<a href="https://tailscale.com/download/windows" target="_blank" rel="noopener noreferrer">Get Tailscale ↗</a> · ', ''],
-      ["new Option('This computer', 'self')", "new Option('This Home Assistant Keeper', 'self')"],
-      ['Start the Keeper on this computer to connect. Solo practice and your saved work are available.', 'Reopen the add-on Web UI and check the Your always-on Keeper panel below. Solo practice and your saved work remain available over HTTPS.']
+      ["new Option('This Keeper only', 'self')", "new Option('This Home Assistant Keeper only', 'self')"],
+      ['Start the Keeper or reopen its Home Assistant Web UI. Your saved work has not been changed.', 'Reopen the app Web UI and check the Your always-on Keeper panel. Your saved work has not been changed.']
     ]) content = replaceRequired(content, before, after, name);
   }
   if (name === 'public/app.mjs') {
@@ -45,11 +41,8 @@ export function adaptForHomeAssistant(name, source) {
     content = content.replaceAll('href="/', 'href="./').replaceAll('src="/', 'src="./');
     content = replaceRequired(content, '</head>', '<link rel="stylesheet" href="./ha.css"><script type="module" src="./ha.mjs"></script></head>', name);
     const panel = `<section class="ha-connection" id="ha-connection" aria-label="Home Assistant Keeper">
-<h2>Your always-on Keeper</h2><p id="ha-status" role="status">Checking your private connection…</p>
-<button class="button quiet" id="ha-connect" type="button">Connect private network</button>
-<a id="ha-login" target="_blank" rel="noopener noreferrer" hidden>Sign in to Tailscale ↗</a>
-<p id="ha-secure" hidden>Open Home Assistant over HTTPS to unlock the encrypted vault and play. The background room directory still works on this connection.</p>
-<p>Your writing and shared files stay in this browser. Home Assistant keeps the directory and witness online.</p></section>`;
+<h2>Your always-on Keeper</h2><p id="ha-status" role="status">Checking this Keeper…</p>
+<p>Open Home Assistant over HTTPS to unlock the encrypted vault and pair browsers. Your writing and shared files stay in this browser; Home Assistant keeps this Keeper’s garden and witness online.</p></section>`;
     content = replaceRequired(content, '    <section id="view-arcade"', panel + '\n    <section id="view-arcade"', name);
   }
   if (name === 'public/manifest.webmanifest') {
