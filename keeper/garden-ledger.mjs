@@ -1,7 +1,8 @@
 import { readFile, open, rename, unlink } from 'node:fs/promises';
 import path from 'node:path';
-import { hash, sign, checkSignature, EPOCH } from './public/core.mjs';
+import { hash, sign, checkSignature, EPOCH, random, b64 } from './public/core.mjs';
 import { recipe, mushroomId, gardenHour, pendingCoins, verifyGardenRequest, DECORATIONS, GARDEN_FORMAT, HOUR } from './public/mushroom-core.mjs';
+import { MINING_FORMAT, MINING_RULES, verifyMiningWork } from './public/mushroom-mining.mjs';
 
 const fail = (message, status = 400) => Object.assign(new Error(message), { status });
 const amount = n => Number.isSafeInteger(n) && n > 0 && n <= 1000000000;
@@ -51,7 +52,8 @@ export async function createGardenLedger({ dataDir, identity, now = Date.now, wr
   }
   async function info() {
     return signed({ format: GARDEN_FORMAT, issuer: identity.fingerprint, kind: 'info', time: now(), rate: 1, hourMs: HOUR,
-      currency: 'Doodle Coins', maxMushrooms: 100, decorations: DECORATIONS });
+      currency: 'Doodle Coins', maxMushrooms: 100, decorations: DECORATIONS,
+      mining: { algorithm: MINING_FORMAT, reward: MINING_RULES.reward, difficulty: MINING_RULES.difficulty, lifetimeMs: MINING_RULES.lifetimeMs } });
   }
   function view(owner, requestId) {
     const time = clock(state), account = state.accounts[owner] || fresh();
@@ -59,6 +61,9 @@ export async function createGardenLedger({ dataDir, identity, now = Date.now, wr
     return signed({ format: GARDEN_FORMAT, issuer: identity.fingerprint, requestId, kind: 'account', owner, time,
       revision: state.revision, joined: Boolean(state.accounts[owner]), balance: account.balance, sequence: account.sequence,
       pending: mushrooms.reduce((n, m) => n + pendingCoins(m, time), 0), mushrooms,
+      mining: { lastClaimedHour: account.lastMiningHour ?? null,
+        challenge: account.miningChallenge?.record.expiresAt > time ? account.miningChallenge : null,
+        reward: MINING_RULES.reward, difficulty: MINING_RULES.difficulty },
       market: Object.values(state.mushrooms).filter(m => m.price !== null).slice(0, 200),
       history: state.history.filter(e => e.record.owner === owner || e.record.result.to === owner).slice(-30).reverse() });
   }
@@ -96,6 +101,31 @@ export async function createGardenLedger({ dataDir, identity, now = Date.now, wr
       result.mushroom = mid;
     } else if (r.action === 'harvest') {
       if (!earned) throw fail('No completed mushroom hours to collect yet.');
+    } else if (r.action === 'mining-challenge') {
+      const m = owns(next, a.id, owner), hour = gardenHour(time);
+      if (wallet.lastMiningHour >= hour || m.lastMiningHour >= hour) throw fail('This player or mushroom already mined its bonus this UTC hour.', 409);
+      const active = wallet.miningChallenge?.record;
+      if (!active || active.mushroom !== m.id || active.ownershipRevision !== (m.ownershipRevision || 0) || active.expiresAt <= time) {
+        wallet.miningChallenge = await signed({ format: GARDEN_FORMAT, issuer: identity.fingerprint, kind: 'mining-challenge',
+          algorithm: MINING_FORMAT, owner, mushroom: m.id, ownershipRevision: m.ownershipRevision || 0,
+          challengeId: b64(random(16)), hour, issuedAt: time,
+          expiresAt: Math.min(time + MINING_RULES.lifetimeMs, EPOCH + (hour + 1) * HOUR),
+          difficulty: MINING_RULES.difficulty, reward: MINING_RULES.reward });
+      }
+      result = { ...result, challenge: wallet.miningChallenge };
+    } else if (r.action === 'mining-claim') {
+      const challenge = wallet.miningChallenge?.record;
+      if (!challenge || a.challengeId !== challenge.challengeId) throw fail('This mining challenge was used, replaced or belongs to another player.', 409);
+      const m = owns(next, challenge.mushroom, owner), hour = gardenHour(time);
+      if (challenge.owner !== owner || challenge.issuer !== identity.fingerprint || challenge.ownershipRevision !== (m.ownershipRevision || 0)) throw fail('Mushroom ownership changed. Start a new mining attempt.', 409);
+      if (time >= challenge.expiresAt || hour !== challenge.hour) throw fail('This mining challenge expired. Start a new attempt.', 409);
+      if (wallet.lastMiningHour >= hour || m.lastMiningHour >= hour) throw fail('This player or mushroom already mined its bonus this UTC hour.', 409);
+      if (!await verifyMiningWork(challenge, a.nonce)) throw fail('The mining proof did not meet its signed target.');
+      const reward = MINING_RULES.reward;
+      if (!Number.isSafeInteger(wallet.balance + reward) || !Number.isSafeInteger(next.minted + reward) || !Number.isSafeInteger((next.mined || 0) + reward)) throw fail('The garden reached its coin limit.');
+      wallet.balance += reward; next.minted += reward; next.mined = (next.mined || 0) + reward;
+      wallet.lastMiningHour = hour; m.lastMiningHour = hour; wallet.miningChallenge = null;
+      result = { ...result, mined: reward, mushroom: m.id };
     } else if (r.action === 'send') {
       if (!amount(a.amount) || !/^[\w-]{43}$/.test(a.to || '') || a.to === owner || !next.accounts[a.to]) throw fail('Choose another player who has joined this garden and a whole positive coin amount.');
       if (wallet.balance < a.amount) throw fail('Not enough coins.');
@@ -123,6 +153,7 @@ export async function createGardenLedger({ dataDir, identity, now = Date.now, wr
       wallet.balance -= m.price; next.accounts[seller].balance += m.price;
       result = { ...result, mushroom: a.id, amount: m.price, to: seller };
       m.owner = owner; m.price = null;
+      m.ownershipRevision = (m.ownershipRevision || 0) + 1;
       m.paidThrough = Math.ceil((time - EPOCH) / HOUR);
     } else throw fail('Unknown garden action.');
     wallet.sequence = r.sequence; next.revision++; next.lastTime = time;
