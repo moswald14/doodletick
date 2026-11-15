@@ -8,10 +8,9 @@ The project owner authorized the copies included here for distribution under GPL
 
 ## Runtime components
 
-The desktop distribution contains project source, not a bundled Node.js or Tailscale installer. The Home Assistant Dockerfile refers to pinned official Node.js and Tailscale images and installs Debian networking utilities. Those components retain their own licenses and notices:
+The desktop distribution contains project source, not a bundled Node.js installer. The Home Assistant Dockerfile refers to a pinned official Node.js image and installs Debian certificate authorities. Version 0.3b does not bundle or run Tailscale. Runtime components retain their own licenses and notices:
 
 - [Node.js license and bundled notices](https://github.com/nodejs/node/blob/main/LICENSE)
-- [Tailscale license](https://github.com/tailscale/tailscale/blob/main/LICENSE)
 - Debian package copyright files in `/usr/share/doc` inside a built image
 
 GitHub Actions used for validation run outside the distributed app and retain their upstream licenses. No third-party service endorsement is implied.
