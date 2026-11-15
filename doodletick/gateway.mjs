@@ -26,7 +26,7 @@ export function createIngressServer({ keeperPort, control, ingressIP = '172.30.3
     if (!req.url.startsWith('/') || req.url.startsWith('//') || /[\\\r\n]/.test(req.url)) return reply(400, { error: 'Invalid path.' });
     try {
       if (req.url === '/addon-api/status' && req.method === 'GET') return reply(200, await control.status());
-      if (req.url === '/addon-api/connect' && req.method === 'POST') { req.resume(); void control.connect(); return reply(202, { ok: true }); }
+      if (req.url === '/addon-api/connect' && req.method === 'POST') { req.resume(); return reply(410, { error: 'VPN enrollment has been removed. Use direct signed pairing in the app.' }); }
       if (req.url.startsWith('/addon-api/')) return reply(404, { error: 'Not found.' });
       if (req.method === 'GET' && ['/ha.mjs', '/ha.css'].includes(req.url)) {
         return reply(200, await readFile(publicRoot + req.url.slice(1), 'utf8'), req.url.endsWith('.mjs') ? 'text/javascript' : 'text/css');
