@@ -1,7 +1,7 @@
 [Unit]
-Description=Doodle Tick private room directory
-Wants=network-online.target tailscaled.service
-After=network-online.target tailscaled.service
+Description=Doodle Tick local Keeper
+Wants=network-online.target
+After=network-online.target
 StartLimitIntervalSec=120
 StartLimitBurst=10
 
@@ -34,7 +34,7 @@ ProtectControlGroups=yes
 RestrictSUIDSGID=yes
 LockPersonality=yes
 CapabilityBoundingSet=
-RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 
 [Install]
 WantedBy=multi-user.target

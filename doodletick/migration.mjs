@@ -52,7 +52,12 @@ async function inventory(root) {
     } else if (info.isFile() && info.nlink === 1) files.push({ name: relative, bytes: info.size, sha256: await digest(absolute) });
     else fail('Private data contains a linked or non-regular file; stop the apps before transfer.');
   }
-  for (const name of directories) await scan(name);
+  for (const name of directories) {
+    // New Keepers have no VPN state. Older state is copied byte-for-byte and
+    // remains inert; an empty compatibility directory supports old rollbacks.
+    if (name === 'tailscale' && !await exists(path.join(root, name))) continue;
+    await scan(name);
+  }
   if (!files.some(file => file.name === 'keeper/witness-key.json')) fail('The source has no Keeper witness identity.');
   return files.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
 }

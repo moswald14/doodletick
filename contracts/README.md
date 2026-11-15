@@ -33,6 +33,8 @@ Start mining runs a single visible session, stopping after 60 seconds or 250,000
 
 Use Node 22.13 or newer. From `contracts/`:
 
+These JavaScript build and integration-test commands use the full repository layout. Desktop and Pi downloads include the complete source under `contract-source/`; use the repository or Home Assistant source archive to run the commands below. The bundled `artifacts/compiler-input.json` also contains every Solidity dependency for independent compilation with the pinned compiler.
+
 ```sh
 npm ci --ignore-scripts
 npm run build

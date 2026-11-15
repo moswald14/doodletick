@@ -1,9 +1,0 @@
-// Example for a NEW, dedicated network. Replace the account placeholders.
-// Review existing grants/ACLs before applying; rules are additive.
-// Do not paste this over a network's existing policy without reviewing it.
-{
-  "groups": { "group:doodle-creators": ["owner@example.com", "friend@example.com"] },
-  "grants": [
-    { "src": ["group:doodle-creators"], "dst": ["group:doodle-creators"], "ip": ["tcp:4318"] }
-  ],
-}

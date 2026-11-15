@@ -1,6 +1,6 @@
-# Doodle Tick Keeper 0.1b
+# Doodle Tick Keeper 0.3b
 
-Doodle Tick is an experimental creator vault, private social arcade, file library and shared mushroom garden. Spirographs help people compare signed creator keys when pairing. Your writing and files remain in your browser; Keepers provide private connections, signed receipts and a shared garden scorekeeper.
+Doodle Tick is an experimental creator vault, social arcade, file library and shared mushroom garden. Spirographs help people compare signed creator keys when pairing. Your writing and files remain in your browser; Keepers provide signed receipts, a local directory and a shared garden scorekeeper.
 
 ## Start
 
@@ -22,11 +22,13 @@ Use the same browser and address for the same saved vault: `localhost` and `127.
 - **Files & peers:** add a file and choose its content license, then explicitly enable sharing. Pair with another member and compare every group of the spirograph verification code. Received files can be re-shared with their original credits. Keep a holder online and unlocked when others need a copy.
 - **Check a receipt:** verify signed writing or garden receipts. Arcade replays are checked in Doodleverse. A historical receipt is not proof of a current balance, independent time, original authorship or legal ownership.
 
-## Private network
+## Direct connections
 
-Games and file transfers use Keepers on the same private Tailscale network. Each standalone participant runs a local helper. The Home Assistant app contains its own Tailscale device. Read [PRIVATE-NETWORK.md](PRIVATE-NETWORK.md) before inviting people.
+Games and files use native encrypted WebRTC between browsers. Exchange a signed invitation and answer, then compare both spirographs and every code group before confirming. Use HTTPS or localhost. This release has no bundled VPN, STUN/TURN server or Internet relay; the browsers need direct reachability, often on the same local network. Read [the connection guide](PRIVATE-NETWORK.md) before inviting people.
 
-The browser service stays on loopback; the separate peer service uses the private VPN interface. Public lobbies and public pairing are disabled. Do not expose the local service through a router port or DMZ. Brief network failures have bounded retries and duplicate protection; long outages or restarts require fresh invitations. There is no automatic host migration.
+The standalone browser service stays on loopback; Home Assistant uses authenticated ingress. No remote HTTP peer listener is started. Short directory codes and private garden trading work only for users of this same Keeper. Full signed invitations pair browsers across separate Keepers when directly reachable. Existing remote garden balances do not migrate with the connection change.
+
+Keep the game host or unlocked file holder's page open. Outages and restarts require fresh invitations; there is no automatic host migration or resumable peer transfer. Older VPN invitation codes must be recreated in 0.3b. Saved keys, signed records and garden ledgers retain their formats, and earlier Home Assistant VPN state remains inert for rollback.
 
 ## Color clock and appearance
 
@@ -54,6 +56,6 @@ Keeper state lives in `.doodletick`: the witness key, receipt journal and garden
 
 The vault uses authenticated encryption and creator signatures through Web Crypto. Passwords and writing bodies are not sent to the witness, but receipt metadata is linkable. The local witness and garden operator control their clocks and storage. Signatures cannot prevent a malicious operator, an old-backup rollback or a person with a key from creating another valid history. Unlocked browsers, extensions and local helpers are trusted endpoints.
 
-The current file library allows 20 MiB per file, 100 MiB and 100 files per identity, with up to four connected file peers. Its storage is encrypted in the browser; it is not an unattended shared-disk service. The game economy is not cryptocurrency, real-money payments or independent anti-cheat. There is no global identity registry, screenplay generator or consensus recovery system in this release.
+The current file library allows 20 MiB per file, 100 MiB and 100 files per identity, with up to four connected file peers. Its storage is encrypted in the browser; it is not an unattended shared-disk service. Private Keeper coins are a game economy. Optional public wallet gardens and the separate Doodleverse Coin contract have their own balances and network fees; see [the contract guide](../contracts/README.md). There is no global identity registry, screenplay generator or consensus recovery system in this release.
 
 See [VALIDATION.md](VALIDATION.md) for evidence and remaining checks, [RELEASES.md](RELEASES.md) for versioning, and [CONTRIBUTING.md](../CONTRIBUTING.md) for development. This edition has not had an independent security audit.

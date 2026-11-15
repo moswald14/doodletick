@@ -1,4 +1,4 @@
-# Dot Wave mushrooms in Doodle Tick 0.2b
+# Dot Wave mushrooms in Doodle Tick 0.3b
 
 Open **Mushroom garden** and choose **Private Keeper** or **Public wallet**. Private mode uses your creator vault and **Join this garden**. Public mode uses an existing external wallet and a separate contract; it does not require unlocking the private vault. On Home Assistant, use HTTPS for signed operations. HTTP supports recipe previews and explains the remaining setup.
 
@@ -19,7 +19,7 @@ Optional private proof mining adds at most **one coin per player and mushroom pe
 - List a generator for a whole-number price. A sale atomically transfers the payment, generator and decorations. Completed seller earnings stay with the seller; the buyer receives future completed hours. The partial transfer hour is not paid twice.
 - Save Keeper-signed receipts from Coin activity. A receipt verifies a historical action, not the current account balance.
 
-All traders must select **the same shared garden Keeper**. The Home Assistant app can provide that always-on Keeper. Different Keepers have separate balances, and an address from another garden is rejected. Cross-computer access uses the private Tailscale network; this release does not automatically enroll devices or configure HTTPS.
+All traders must open **the same shared garden Keeper** through its authorized UI. Home Assistant can provide that always-on Keeper through authenticated HTTPS ingress. Different Keepers have separate balances, and an address from another garden is rejected. Version 0.3b removes remote VPN garden bridges: direct browser pairing currently carries games and files, not another Keeper's garden requests. A saved remote garden remains marked unavailable until the player chooses a different local garden; earlier balances and issuer pins are not moved or deleted.
 
 Browsers sign actions with their existing creator keys. The Keeper checks signatures, sequences, recipients, prices and funds. A retry sends the same signed request and cannot charge twice; concurrent buyers cannot purchase one listing twice. Offline transfers are not finalized. After a network error, retry the pending action or inspect activity. Reloading discards an uncertain browser request, so inspect recent activity before repeating it manually.
 
@@ -49,4 +49,4 @@ The included `dot-effects-dsp.mjs`, `dot-amp-tone.mjs`, `dot-studio-dsp.mjs`, `d
 
 These included modules are published under this repository's GPLv3 license. That code license does not automatically apply to separately created recipe content, sound recordings or other Dot Wave Studio distributions. Preserve original creator credits when importing or sharing recipes.
 
-Automated checks cover audio reproduction, normalized identity, hourly boundaries, persistence, duplicate protection, concurrent trades, coin conservation, failed writes and tampered storage. Physical multi-device VPN trading and HTTPS transactions on Home Assistant remain additional acceptance work. See the repository's validation and release notes for precise evidence.
+Automated checks cover audio reproduction, normalized identity, hourly boundaries, persistence, duplicate protection, concurrent trades, coin conservation, failed writes, tampered storage and rejection of removed remote garden routes. Live Home Assistant HTTPS access worked, but actual 0.3b cutover, multi-device garden transactions and real public-wallet transactions remain acceptance work. See the repository's validation and release notes for precise evidence.

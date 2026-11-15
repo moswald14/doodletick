@@ -52,3 +52,7 @@ public/vpn-transport.mjs
 public/vpn-ui.mjs
 public/workshop.mjs
 pi/check.mjs
+public/doodleverse-coin.mjs
+public/doodleverse-coin-ui.mjs
+public/doodleverse-coin.css
+public/doodleverse-gpu.mjs

@@ -38,6 +38,17 @@ test('offline copy covers all private files, preserves options and requires dist
   await assert.rejects(copyOfflineData({ source: f.source, destination: f.target, offline: true }), /already contains/);
 }));
 
+test('Keeper-only snapshots import without a VPN and preserve empty compatibility state for rollback', () => fixture(async f => {
+  const legacy = path.join(f.source, 'tailscale');
+  // This is the disposable fixture tree, never a live device state directory.
+  await rm(legacy, { recursive: true });
+  const copied = await copyOfflineData({ source: f.source, destination: f.staged, offline: true });
+  assert.equal(copied.files, 2);
+  assert.equal((await importMigration({ dataDir: f.target, migrationDir: f.staged })).status, 'imported');
+  assert.equal((await importMigration({ dataDir: f.target, migrationDir: f.staged })).status, 'already-imported');
+  assert.deepEqual(await verifyOfflineData({ source: f.source, destination: f.target, offline: true }), copied);
+}));
+
 test('startup import runs once and cannot roll back later ledger or VPN changes', () => fixture(async f => {
   await copyOfflineData({ source: f.source, destination: f.staged, offline: true });
   assert.equal((await importMigration({ dataDir: f.target, migrationDir: f.staged })).status, 'imported');

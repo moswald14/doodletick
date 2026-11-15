@@ -29,6 +29,8 @@ if kind == 'duplicate':
     entries.append(entries[0])
 if kind == 'missing-vpn':
     entries = [entry for entry in entries if 'tailscale' not in entry[0]]
+if kind == 'missing-witness':
+    entries = [entry for entry in entries if 'witness-key' not in entry[0]]
 
 inner = io.BytesIO()
 with tarfile.open(fileobj=inner, mode='w:gz') as archive:

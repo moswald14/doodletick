@@ -1,5 +1,6 @@
 import { verifyGardenResponse, GARDEN_FORMAT } from './mushroom-core.mjs';
 import { createMushroomUI } from './mushroom-ui.mjs';
+import { createDoodleverseCoinUI } from './doodleverse-coin-ui.mjs';
 import { createClockWheel } from './clock-wheel.mjs';
 import { createVpnUI } from './vpn-ui.mjs';
 import { newIdentity, random, b64, deriveKey, encryptVault, decryptVault, sealEntry, verifyWitness, verifyEntry, receiptFor, verifyReceipt, tickAt, tetrachromaColor, EPOCH, MAX_TEXT, MAX_BACKUP, validateEnvelope } from './core.mjs';
@@ -48,17 +49,19 @@ function setupThemeControls() {
 }
 setupThemeControls();
 function showView(view) {
-  if (!['arcade', 'garden', 'vault', 'files', 'verify', 'about'].includes(view)) view = 'arcade';
-  for (const section of ['arcade', 'garden', 'vault', 'files', 'verify', 'about']) $('view-' + section).hidden = view !== section;
+  if (!['arcade', 'garden', 'coin', 'vault', 'files', 'verify', 'about'].includes(view)) view = 'arcade';
+  for (const section of ['arcade', 'garden', 'coin', 'vault', 'files', 'verify', 'about']) $('view-' + section).hidden = view !== section;
   for (const button of document.querySelectorAll('[data-view]')) { button.classList.toggle('active', button.dataset.view === view); button.setAttribute('aria-current', button.dataset.view === view ? 'page' : 'false'); }
-  $('page-name').textContent = { garden: 'MUSHROOM GARDEN', arcade: 'THE DOODLEVERSE', vault: 'MY VAULT', files: 'FILES & PEERS', verify: 'CHECK A RECEIPT', about: 'THE IDEA' }[view];
+  $('page-name').textContent = { garden: 'MUSHROOM GARDEN', coin: 'DOODLEVERSE COIN', arcade: 'THE DOODLEVERSE', vault: 'MY VAULT', files: 'FILES & PEERS', verify: 'CHECK A RECEIPT', about: 'THE IDEA' }[view];
   arcadeUI?.setVisible(view === 'arcade');
   mushroomUI.setVisible(view === 'garden');
+  coinUI.setVisible(view === 'coin');
   history.replaceState(null, '', '#' + view);
 }
 const fileUI = createFilesUI({ toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); } });
 arcadeUI = createArcadeUI({ toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); }, onPackStored: () => fileUI.refresh() });
 const mushroomUI = createMushroomUI({ toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); } });
+const coinUI = createDoodleverseCoinUI($('view-coin'), { toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); } });
 createVpnUI();
 for (const button of document.querySelectorAll('[data-view]')) button.addEventListener('click', () => showView(button.dataset.view));
 function showLocked() {
@@ -140,11 +143,13 @@ function showUnlocked() {
   $('password').value = ''; $('confirm-password').value = ''; $('username').value = ''; $('password').type = 'password'; $('show-password').textContent = 'Show';
   $('identity-error').textContent = ''; pendingBackup = null; renderDraft(); renderEntries(); lastActive = Date.now();
   mushroomUI.unlock(vault.identity);
+  coinUI.unlock(vault.identity);
   fileUI.unlock(vault.identity, key).catch(error => toast(error.message));
   arcadeUI.unlock(vault.identity, key).catch(error => toast(error.message));
 }
 function clearSession() {
   mushroomUI.lock();
+  coinUI.lock();
   fileUI.lock();
   arcadeUI.lock();
   generation++; clearTimeout(saveTimer); vault = null; key = null; salt = null; selected = null;

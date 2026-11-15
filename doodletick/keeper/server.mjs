@@ -33,6 +33,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
   for (const file of ['spirograph.mjs', 'spirograph-auth.mjs', 'vpn-description.mjs', 'vpn-transport.mjs', 'vpn-ui.mjs', 'arcade.css', 'arcade-ui.mjs', 'arcade-canvas.mjs', 'arcade-room.mjs', 'arcade-store.mjs', 'arcade-link.mjs', 'game-engine.mjs', 'workshop.mjs']) allowedFiles.add(file);
   for (const file of ['mushroom-core.mjs', 'mushroom-ui.mjs', 'mushroom-art.mjs', 'mushroom.css', 'mushroom-mining.mjs', 'mushroom-miner.mjs', 'dot-effects-dsp.mjs', 'dot-amp-tone.mjs', 'dot-studio-dsp.mjs', 'dot-collision-audio.mjs', 'dot-wave-export.mjs', 'dot-mushroom-dsp.mjs', 'dot-mushroom-motion.mjs']) allowedFiles.add(file);
   for (const file of ['public-chain.mjs', 'public-chain-wallet.mjs', 'public-chain-artifact.mjs', 'public-chain.css']) allowedFiles.add(file);
+  for (const file of ["doodleverse-coin.mjs", "doodleverse-coin-ui.mjs", "doodleverse-coin.css", "doodleverse-gpu.mjs"]) allowedFiles.add(file);
   const server = http.createServer(async (req, res) => {
     const address = server.address();
     const hostnames = [`127.0.0.1:${address.port}`, `localhost:${address.port}`];
@@ -46,7 +47,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
     try {
       const url = new URL(req.url, 'http://' + req.headers.host);
       if (await vpn.handleLocal(req, res, url)) return;
-      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.2b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt() });
+      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.3b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt() });
       if (req.method === 'POST' && url.pathname === '/api/witness') {
         if (!req.headers['content-type']?.startsWith('application/json')) return send(415, { error: 'JSON required.' });
         let raw = '', size = 0;

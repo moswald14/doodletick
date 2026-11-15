@@ -6,12 +6,11 @@ import path from 'node:path';
 import { createKeeperServer } from '../keeper/server.mjs';
 import { newIdentity, sealEntry, verifyWitness } from '../keeper/public/core.mjs';
 import { createIngressServer } from '../gateway.mjs';
-import { createTailscaleControl, safeLoginURL } from '../tailscale.mjs';
 import { gardenRequest, verifyGardenResponse } from '../keeper/public/mushroom-core.mjs';
 const listen = s => new Promise(r => s.listen(0, '127.0.0.1', () => r(`http://127.0.0.1:${s.address().port}`)));
 const close = s => new Promise(r => { s.closeAllConnections(); s.close(r); });
 const vpnOptions = { readStatus: async () => { throw new Error('Isolated test: VPN not connected'); } };
-const control = { status: async () => ({ state: 'NeedsLogin', connected: false, hostname: 'doodletick-test', loginURL: 'https://login.tailscale.com/a/test' }), connect: async () => {} };
+const control = { status: async () => ({ mode: 'local-direct', ready: true, directory: 'this-keeper', peers: [] }) };
 
 test('garden signatures and CSRF protection work through Home Assistant ingress', async () => {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'doodle-ha-garden-'));
@@ -59,16 +58,14 @@ test('authenticated ingress serves relative UI, protects mutations, signs proofs
     assert.equal((await fetch(base + '/sw.mjs')).status, 404);
     assert.equal((await fetch(base + '/clock-wheel.mjs')).status, 200);
     const vpnUI = await (await fetch(base + '/vpn-ui.mjs')).text();
-    assert.match(vpnUI, /This Home Assistant add-on already includes Tailscale/);
-    assert.match(vpnUI, /Use Connect private network in the Your always-on Keeper panel/);
-    assert.match(vpnUI, /Friends using Windows still need Tailscale and Keeper/);
-    assert(!vpnUI.includes('tailscale.com/download/windows'));
-    assert(!vpnUI.includes('Start the Keeper on this computer'));
+    assert.match(vpnUI, /This Home Assistant Keeper only/);
+    assert.match(vpnUI, /no Internet relay/);
+    assert(!vpnUI.includes('tailscale'));
     assert.equal((await fetch(base + '/.doodletick/witness-key.json')).status, 404);
     assert.equal((await fetch(base + '/addon-api/connect', { method: 'POST' })).status, 403);
     assert.equal((await fetch(base + '/addon-api/connect', { method: 'OPTIONS' })).status, 405);
-    assert.equal((await fetch(base + '/addon-api/connect', { method: 'POST', headers: { 'X-Keeper-Request': '1' } })).status, 202);
-    assert.equal((await (await fetch(base + '/addon-api/status')).json()).state, 'NeedsLogin');
+    assert.equal((await fetch(base + '/addon-api/connect', { method: 'POST', headers: { 'X-Keeper-Request': '1' } })).status, 410);
+    assert.equal((await (await fetch(base + '/addon-api/status')).json()).mode, 'local-direct');
     const first = await (await fetch(base + '/api/status')).json();
     const identity = await newIdentity('ha_test');
     const entry = await sealEntry(identity, [], { title: 'HA test', body: 'Still encrypted in the browser', kind: 'Idea', revisionOf: null });
@@ -79,24 +76,6 @@ test('authenticated ingress serves relative UI, protects mutations, signs proofs
     const restarted = await (await fetch(`http://127.0.0.1:${keeper.port}/api/status`)).json();
     assert.equal(restarted.fingerprint, first.fingerprint); assert.equal(restarted.receipts, 1);
   } finally { await close(gateway); await keeper.close(); await rm(dir, { recursive: true, force: true }); }
-});
-
-test('Tailscale control validates hostname, does not return secrets, and deduplicates sign-in attempts', async () => {
-  assert.throws(() => createTailscaleControl('bad name; command'), /Invalid/);
-  assert.equal(safeLoginURL('https://login.tailscale.com.evil.invalid/a/x'), null);
-  assert.equal(safeLoginURL('javascript:alert(1)'), null);
-  assert.equal(safeLoginURL('https://user:pass@login.tailscale.com/a/x'), null);
-  let calls = 0, finish;
-  const c = createTailscaleControl('doodletick-ha', async (command, args) => {
-    assert.equal(command, 'tailscale');
-    if (args[0] === 'status') return { stdout: JSON.stringify({ BackendState: 'NeedsLogin', AuthURL: 'https://login.tailscale.com/a/test', Secret: 'do-not-return' }) };
-    calls++; assert(args.includes('--accept-routes=false')); assert(args.includes('--accept-dns=false')); assert(args.includes('--ssh=false'));
-    return new Promise(r => { finish = r; });
-  });
-  const pending = c.connect(); c.connect(); assert.equal(calls, 1);
-  const state = await c.status(); assert.equal(state.connecting, true); assert.equal(state.loginURL, 'https://login.tailscale.com/a/test');
-  assert(!JSON.stringify(state).includes('do-not-return')); finish({ stdout: '' }); await pending;
-  assert.equal((await c.status()).connecting, false);
 });
 
 test('all adapted API calls stay beneath the ingress path and send mutation protection', async () => {

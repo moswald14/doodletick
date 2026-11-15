@@ -1,46 +1,49 @@
-# Doodle Tick private network 0.1b
+# Doodle Tick direct connections · 0.3b
 
-Games, file sharing and cross-computer garden access use Keepers on the **same private Tailscale network**. The local vault, recipe maker, workshop, replays and bot practice work without a peer connection.
+Games and files now use native browser WebRTC with encrypted DTLS channels. Doodle Tick does not install or run Tailscale. The local Keeper still stores its witness, receipts and garden; its browser service stays on loopback, or behind authenticated Home Assistant ingress.
 
-## Connect your community
+## Pair with a friend
 
-1. Install [Tailscale](https://tailscale.com/download) on each standalone computer and sign in. The Home Assistant app includes its own Tailscale device and offers a sign-in link through its Web UI.
-2. Invite members through your Tailscale network administration page. Each member uses their own account. Unrelated networks using the same VPN product do not form one community; externally shared devices with another network's DNS suffix are deliberately excluded.
-3. Run Keeper locally and open `http://127.0.0.1:4317`. Keep the same origin and browser for existing saved data.
-4. Use **Check connection**. Ready status requires a running VPN, assigned interface and bound private listener. An online computer in the peer list is not proof that its Keeper is running.
-5. For a room, choose **Invite friends → Open room for friends** and share the complete private room code. A directory may be hosted on another online Keeper. For the garden, everyone selects the same shared Keeper; separate Keepers hold separate currencies.
-6. Compare each pairing's spirograph **and every group of the verification code** over a trusted call or in person. Both sides must confirm. Reject differences or unexpected invitations. File pairing uses its own signed invitation and answer.
+1. Open this release in a current browser over HTTPS or localhost. Preserve your existing browser origin and identity, or restore your own backups deliberately.
+2. In **Doodleverse → Invite friends**, the host creates an invitation. Send the complete code privately to the intended friend; it contains connection addresses.
+3. The guest pastes it and chooses **Answer invitation**, then returns the answer. The host pastes that answer and chooses **Finish pairing**.
+4. Compare both spirographs **and every group of the verification code** over a trusted call or in person. Both players must confirm. Reject any mismatch or unexpected pairing.
+5. Keep both pages open. **Files & peers** uses the same invitation/answer/comparison flow with its own connection and licensed library.
 
-Your network policy must allow TCP **4318** between intended participants. `tailscale-policy.example.hujson` is an example with placeholder accounts, not a replacement for an existing policy. Rules can be additive; review broad existing access before assuming a group restriction takes effect.
+Use 0.3b on both sides. Old VPN invitation codes are unsupported; create fresh codes. Saved creator keys, signed entries, receipts and garden records retain their existing formats.
 
-The app does not disable firewalls, set up a router port or DMZ, advertise an exit node, or create a public tunnel. Use connection diagnostics before changing network rules. The private helper requires Tailscale IPv4, a normal VPN adapter and Node.js 22 or later; userspace-only and IPv6-only setups are not supported. A mobile browser alone does not replace the required local helper for private multiplayer.
+## Reachability and room codes
 
-## What spirographs verify
+No third-party STUN/TURN service or Internet relay is configured. Browsers gather direct host candidates completely before an invitation is signed. The browsers need a reachable route, commonly on the same local network. Router isolation, browser policy or separate home networks can prevent connection. HTTPS access to a Keeper does not itself provide a route between two players.
 
-A creator's identity seal is derived from their public key. Restoring the same key preserves its seal; changing a display name does not change it. New or temporary guest identities have different keys.
+A short room code and the room list work only for browsers using **this same Keeper**. They are not an Internet directory. Players on separate Keepers exchange full signed invitations. The game host simulates its room and forwards gameplay to its guests; closing that browser ends the session. There is no automatic host migration.
 
-Pairing uses a signed invitation and an invitation-bound signed answer, with fresh connection identifiers and expiry. Both browsers derive the same digest, spirograph and readable comparison code. Data is withheld until both sides confirm. Invalid signatures, changed comparisons and expired invitations fail closed.
+Garden operations also stay on this same Keeper. Each Keeper has a separate ledger and issuer. Direct browser pairing does not forward another Keeper's garden requests. A saved remote garden selection remains marked unavailable until the player explicitly chooses a different local garden; previous balances and issuer pins have not been moved or deleted.
 
-The drawing is a visual aid; compare the full code. Copying a picture does not prove possession of a signing key. Pairing verifies keys and a particular connection, not legal names, unique people, authorship or ownership. Recognize an existing creator by comparing the full fingerprint through a trusted channel. Vault unlocking still requires its password.
+## What pairing protects
 
-## Traffic and trust
+The signed invitation includes complete connection information and the native DTLS certificate fingerprint. Its signed answer is bound to that invitation. Native WebRTC validates the certificate and encrypts the data channel; Doodle Tick waits for both spirograph confirmations before processing game or file data. Ordered reliable channels retain the app's bounded chunks, buffers and license checks. Invalid signatures, altered descriptions, incomplete address gathering and expired codes fail closed.
 
-The standalone browser UI and witness listen on loopback with Host and Origin checks. The peer listener binds to the device's Tailscale address; outbound peer sockets use that interface. Destinations are restricted to current same-network peers, with fixed supported ports. Arbitrary URLs, redirects and LAN targets are refused.
+The drawing helps compare keys and a particular connection. It does not establish a legal name, unique person, authorship or ownership. Copying a drawing does not give someone its signing key. Compare the full creator fingerprint through a trusted channel to recognize an existing creator. Vault unlocking still requires its password.
 
-Private peer routes provide message channels, the room directory and signed garden operations. Browser Origin requests and unknown peer sources are refused. Random channel capabilities are directional and bound to the paired computer and channel. Ordered batches, expiry, bounded buffers and request limits constrain resource use.
+The local UI checks Host and Origin. Home Assistant additionally authenticates ingress; forwarded headers do not grant access. The old remote HTTP peer listener and proxy routes are removed. No public router port, DMZ, tunnel device or network-administration capability is required.
 
-Each browser talks through its own Keeper. Room hosts forward gameplay, and the selected garden Keeper records balances and trades. Directory traffic carries invitations and room metadata, not file bytes or game contents. Local helpers and the garden operator are trusted endpoints. Tailscale encrypts transport and may use encrypted relays when a direct connection is unavailable; this is not anonymous or infrastructure-free networking.
+## Storage and recovery
 
-The Keeper rechecks membership and closes invalid channels. Short request failures and lost confirmations have bounded retry and duplicate protection. Long outages, closed hosts and restarts need fresh invitations; they do not resume an interrupted game or file transfer. Public pairing and public WebRTC fallback are disabled. Use 0.1b on all participating Keepers.
+Writing, licensed files and arcade saves stay in the browser. Sharing requires a holder's library to be open and unlocked; this is not unattended disk hosting. A recipient can copy content outside the app. Creative Commons checks preserve credits and validate declared uses but cannot enforce outside behavior.
 
-## Troubleshooting
+Keep separate browser backups and the Keeper's stopped-data backup. Upgrading the same Keeper preserves its identity and garden. Any earlier Home Assistant VPN state stays untouched and inert for rollback; the new app never starts a VPN from it. Other VPN software already installed on a computer is not uninstalled or reconfigured.
 
-- **Network unavailable:** check Tailscale sign-in and its own diagnostics, then refresh Keeper. The app must be able to query the local Tailscale service.
-- **Keeper unreachable:** confirm both Keepers are open, in the same network, and allowed to reach TCP 4318. Only one native peer listener per computer is supported.
-- **Different pairing patterns:** reject, verify the other party through a trusted channel, and make a fresh invitation.
-- **Another VPN is active:** consult both VPN providers' current compatibility guidance. No machine-specific routing override is shipped or applied by Keeper.
-- **Home Assistant wallet unavailable on HTTP:** use a trusted HTTPS Home Assistant address. Do not disable certificate validation or cryptographic checks.
+Brief local API reads have bounded retries. Signed garden actions use the existing explicit retry protection. Interrupted peer sessions need fresh invitations; incomplete incoming file bytes are discarded. Peer transfers do not resume after a restart.
 
-A permitted recipient can copy content outside this app. Creative Commons records preserve credits and validate declared uses; they cannot control external use or prove ownership. Real multi-device VPN gameplay and trading remain separate acceptance checks; see [VALIDATION.md](VALIDATION.md).
+## Checks and troubleshooting
 
-Official references: [Tailscale installation](https://tailscale.com/download), [access grants](https://tailscale.com/docs/features/access-control/grants), [connection types](https://tailscale.com/docs/reference/connection-types), [other VPNs](https://tailscale.com/docs/reference/faq/other-vpns).
+- **No secure context:** use the actual configured HTTPS address, or localhost on a standalone computer. Do not bypass certificate or signature checks.
+- **No complete invitation:** address gathering failed or timed out. Close the attempt and try again on a reachable network.
+- **Direct connection failed:** confirm both pages remain open and can communicate directly. This release has no relay fallback; do not expose the Keeper's local service publicly to repair it.
+- **Different patterns:** reject, verify your friend through a trusted channel, and make a fresh invitation.
+- **Remote garden unavailable:** its ledger was not migrated by connecting browsers. Open the intended Keeper through its authorized UI; a different Keeper has different balances.
+
+Native signed game pairing, two manual spirograph confirmations and bidirectional messages passed in Chrome using two connections on one machine. Physical two-device connections, separate-home NAT traversal and sustained load remain unverified. See [VALIDATION.md](VALIDATION.md) for the full evidence.
+
+Protocol references: [WebRTC browser API](https://www.w3.org/TR/webrtc/) and [WebRTC security architecture](https://www.rfc-editor.org/rfc/rfc8827.html).

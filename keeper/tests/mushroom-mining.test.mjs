@@ -142,7 +142,7 @@ test('failed claim persistence spends no challenge and mints nothing; the same s
   assert.equal((await f.query(f.alice)).balance, 1);
 }, { customWriter: true }));
 
-test('private bridges carry signed mining claims with safe retries and serve only the public worker assets', async () => {
+test('local endpoints carry signed mining claims with safe retries and serve only the public worker assets', async () => {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'doodle-mining-wire-')), net = await simulatedKeepers(dir, 2);
   const [a, b] = net.nodes, player = await newIdentity('wire_miner');
   const call = async (node, host, route, proof) => {
@@ -151,19 +151,19 @@ test('private bridges carry signed mining claims with safe retries and serve onl
     return { status: response.status, data: await response.json() };
   };
   try {
-    const info = (await call(a, b.ip, 'info')).data, issuer = info.record.issuer;
+    const info = (await call(b, 'self', 'info')).data, issuer = info.record.issuer;
     assert.equal(info.record.mining.reward, 1);
-    const action = async (name, args, sequence) => (await call(a, b.ip, 'action', await gardenRequest(player, issuer, name, args, sequence))).data;
+    const action = async (name, args, sequence) => (await call(b, 'self', 'action', await gardenRequest(player, issuer, name, args, sequence))).data;
     await action('join', {}, 1);
     const planted = await action('plant', { recipe: recipe({ kind: 'dot-mushroom', version: 1, name: 'Wire spore', settings: { seed: 523 }, patch: null }), rightsConfirmed: true, credit: 'wire_miner' }, 2);
     const challenge = (await action('mining-challenge', { id: planted.record.result.mushroom }, 3)).record.result.challenge;
     assert(await verifyGardenResponse(challenge, issuer));
     const claim = await gardenRequest(player, issuer, 'mining-claim', { challengeId: challenge.record.challengeId, nonce: solve(challenge) }, 4);
-    const responses = await Promise.all([call(a, b.ip, 'action', claim), call(b, 'self', 'action', claim)]);
+    const responses = await Promise.all([call(b, 'self', 'action', claim), call(b, 'self', 'action', claim)]);
     assert.deepEqual(responses[0], responses[1]); assert.equal(responses[0].status, 200);
     assert.equal(responses[0].data.record.result.mined, 1);
     assert.equal((await call(a, 'self', 'action', claim)).status, 403);
-    assert.equal((await net.requestPeer({ ip: b.ip, source: '8.8.8.8', route: '/garden-api/action', method: 'POST', data: claim })).status, 403);
+    assert.equal((await call(a, '100.64.0.1', 'action', claim)).status, 410);
     for (const name of ['mushroom-mining.mjs', 'mushroom-miner.mjs']) {
       const response = await fetch(a.base + '/' + name);
       assert.equal(response.status, 200); assert.match(response.headers.get('content-type'), /javascript/);

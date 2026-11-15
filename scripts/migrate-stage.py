@@ -104,7 +104,7 @@ def stage_backup(backup, member, data_prefix, destination, offline=False):
                         os.fsync(output.fileno())
                     require(written == entry.size, 'An archive entry was incomplete.')
                     files.append({'name': name, 'bytes': written, 'sha256': digest.hexdigest()})
-            require(roots == {'keeper', 'tailscale'} and 'keeper/witness-key.json' in seen, 'The selected app archive has no complete Doodle Tick data tree.')
+            require('keeper' in roots and 'keeper/witness-key.json' in seen, 'The selected app archive has no complete Doodle Tick data tree.')
             after = backup.stat()
             require((original.st_size, original.st_mtime_ns) == (after.st_size, after.st_mtime_ns), 'The backup changed during staging.')
             files.sort(key=lambda item: item['name'])

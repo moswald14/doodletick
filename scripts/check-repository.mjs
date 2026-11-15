@@ -46,14 +46,13 @@ try {
   const config = await read('doodletick/config.yaml');
   if (scalar(config, 'version') !== release || scalar(config, 'slug') !== 'doodletick') fail('Home Assistant release metadata differs from Keeper.');
   if (scalar(config, 'ingress') !== 'true' || scalar(config, 'host_network') !== 'false' || scalar(config, 'apparmor') !== 'true') fail('Review the Home Assistant access configuration.');
-  if (/^(?:ports|full_access|docker_api|hassio_api|homeassistant_api):/m.test(config)) fail('The release must not add host ports or administrative API access without a reviewed policy change.');
+  if (/^(?:ports|full_access|docker_api|hassio_api|homeassistant_api|privileged|devices):/m.test(config)) fail('The release must not add host ports, network capabilities, devices or administrative API access without a reviewed policy change.');
   const mount = config.match(/^map:\s*\n((?:[ \t]+[^\n]*\n?)*)/m)?.[1];
   if (mount?.trim() !== '- type: app_config\n    read_only: true') fail('Only this app\'s read-only configuration folder may be mounted for offline migration.');
-  if (scalar(config, 'backup') !== 'cold') fail('Keeper and VPN state require a stopped-app backup.');
+  if (scalar(config, 'backup') !== 'cold') fail('Keeper state requires a stopped-app backup.');
   const requiredMarkers = [
     ['doodletick/Dockerfile', `io.hass.version="${release}"`],
     ['keeper/server.mjs', `version: '${release}'`],
-    ['keeper/vpn-network.mjs', `version: '${release}'`],
     ['keeper/public/index.html', `DOODLE TICK ${release}`],
     ['keeper/public/sw.mjs', `doodletick-shell-v${release}`],
     ['keeper/RELEASES.md', `## ${release}`],

@@ -1,4 +1,4 @@
-# Doodleverse private arcade 0.1b
+# Doodleverse direct arcade 0.3b
 
 ## Play and invite friends
 
@@ -14,7 +14,9 @@ The clearing holds up to four people. Move with WASD, arrow keys or touch contro
 
 Four to Orbit has two players and optional spectators. The host can pause, remove a player or return to the clearing. A participating player's departure cancels an active round; the host closing or locking their Keeper ends the room. There is no automatic host migration.
 
-Everyone uses the same private Tailscale network and runs a Keeper. The host opens **Invite friends → Open room for friends** and shares the full private room code. Friends choose **Join a friend**. Both people compare the fresh spirographs and every group of the code over a trusted channel, then confirm. Game contents are withheld until both confirmations succeed. File pairing has its own invitation and comparison. See [PRIVATE-NETWORK.md](PRIVATE-NETWORK.md).
+The host opens **Invite friends → Create invitation** and sends the complete code to the intended friend. The guest chooses **Answer invitation** and returns the answer; the host chooses **Finish pairing**. Both people compare the fresh spirographs and every group of the code over a trusted channel, then confirm. Game contents are withheld until both confirmations succeed. File pairing uses its own invitation and comparison. Send codes privately because they contain connection addresses.
+
+Connections use native encrypted WebRTC, with no bundled VPN, STUN/TURN server or Internet relay. The browsers need a reachable direct route, often the same local network. A short room code is an alternative only when both browsers use the same Keeper; it does not locate other Keepers. See [the connection guide](PRIVATE-NETWORK.md).
 
 ## Worlds and credits
 
@@ -36,10 +38,10 @@ Locking disconnects peers. Hiding the host's play view pauses simulation; return
 
 ## Directory and transport
 
-The host forwards room state and chat. The directory carries introductions and temporary room metadata; it does not store gameplay, writing or file contents. Local helpers handle transient traffic and are trusted endpoints.
+The host browser forwards room state and chat over ordered, reliable native data channels. The local directory carries signed introductions and temporary room metadata; it does not carry game or file bytes. Signed descriptions bind the native DTLS certificate to the spirograph comparison. Browser endpoints and their extensions remain trusted.
 
-Each connected Keeper can act as a directory. Listings expire when a host stops refreshing, pending joins expire, and requests and buffers are bounded. Restarting a directory removes invitations; established links may continue while their host and VPN remain connected. Reopen invitations for new joins after restart. Brief request failures and lost confirmations have retries and duplicate protection, but long outages need a fresh invitation.
+Each Keeper has its own local directory for its authorized users. Listings expire when a host stops refreshing, pending joins expire, and requests and buffers are bounded. Restarting a directory removes introductions; established direct links may continue while their browser endpoints and route remain available. Reopen invitations for new joins after restart. Interrupted peer sessions need fresh invitations. The app does not expose a remote HTTP directory or a public peer service.
 
-Mushroom Garden adds in-app Doodle Coins, transfers and generator trades through one selected garden Keeper. It is separate from match results and does not provide cash redemption, cryptocurrency, wagers or a global ranked scoreboard. See [MUSHROOMS.md](MUSHROOMS.md).
+Mushroom Garden adds private Doodle Coins, transfers and generator trades through this same Keeper. Those balances are separate from match results and public wallet contracts; they provide no cash redemption, wagers or global ranked scoreboard. Direct game pairing does not forward remote garden requests. See [MUSHROOMS.md](MUSHROOMS.md).
 
-Public hosting, unattended P2P storage, dedicated game simulation, automatic host migration, independent anti-cheat and distributed recovery remain future work. Current evidence and limits are in [VALIDATION.md](VALIDATION.md).
+Internet relays/discovery, unattended P2P storage, dedicated game simulation, automatic host migration, independent anti-cheat and distributed recovery remain future work. Native same-machine Chrome pairing has passed; physical two-device play and separate-home reachability remain unverified. Current evidence and limits are in [VALIDATION.md](VALIDATION.md).

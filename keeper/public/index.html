@@ -6,7 +6,7 @@
   <script src="/theme.mjs"></script>
   <title>Doodle Tick — Your little corner of forever</title>
   <link rel="icon" href="/logo.svg" type="image/svg+xml"><link rel="stylesheet" href="/style.css">
-  <link rel="stylesheet" href="/mushroom.css"><link rel="stylesheet" href="/public-chain.css"><link rel="manifest" href="/manifest.webmanifest"><link rel="stylesheet" href="/files.css"><link rel="stylesheet" href="/arcade.css"><link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/mushroom.css"><link rel="stylesheet" href="/public-chain.css"><link rel="stylesheet" href="/doodleverse-coin.css"><link rel="manifest" href="/manifest.webmanifest"><link rel="stylesheet" href="/files.css"><link rel="stylesheet" href="/arcade.css"><link rel="stylesheet" href="/theme.css">
   <script type="module" src="/app.mjs"></script>
 </head>
 <body>
@@ -17,6 +17,7 @@
     <nav aria-label="Main navigation">
       <button class="nav-item active" data-view="arcade"><span class="nav-icon">✧</span> Doodleverse</button>
       <button class="nav-item" data-view="garden"><span class="nav-icon">♧</span> Mushroom garden</button>
+      <button class="nav-item" data-view="coin"><span class="nav-icon">◉</span> Doodleverse Coin</button>
       <button class="nav-item" data-view="vault"><span class="nav-icon">▧</span> My vault <span id="nav-count" class="nav-count">0</span></button>
       <button class="nav-item" data-view="files"><span class="nav-icon">⌘</span> Files & peers</button>
       <button class="nav-item" data-view="verify"><span class="nav-icon">◈</span> Check a receipt</button>
@@ -26,8 +27,9 @@
     <div class="sidebar-bottom"><div class="local-badge"><span class="status-dot"></span> STORED ON THIS DEVICE</div><p id="side-identity">Your story starts with you.</p><button id="lock" class="text-button" hidden>Lock my vault <span>↗</span></button></div>
   </aside>
   <main>
-    <header class="topbar"><span class="breadcrumb">KEEPER <span>/</span> <span id="page-name">MY VAULT</span></span><div class="top-meta"><span id="witness-status"><span class="status-dot"></span> Local witness</span><button id="theme-toggle" class="theme-toggle" type="button" aria-haspopup="dialog" aria-controls="theme-dialog"><span class="theme-icon" aria-hidden="true">☾</span><span id="theme-status">Appearance</span></button><span class="version">DOODLE TICK 0.2b</span><button id="lock-top" class="text-button" hidden>Lock vault ↗</button></div></header>
+    <header class="topbar"><span class="breadcrumb">KEEPER <span>/</span> <span id="page-name">MY VAULT</span></span><div class="top-meta"><span id="witness-status"><span class="status-dot"></span> Local witness</span><button id="theme-toggle" class="theme-toggle" type="button" aria-haspopup="dialog" aria-controls="theme-dialog"><span class="theme-icon" aria-hidden="true">☾</span><span id="theme-status">Appearance</span></button><span class="version">DOODLE TICK 0.3b</span><button id="lock-top" class="text-button" hidden>Lock vault ↗</button></div></header>
     <section id="view-garden" class="page" hidden></section>
+    <section id="view-coin" class="page" hidden></section>
     <section id="view-arcade" class="page"></section>
     <section id="view-files" class="page" hidden>
       <div class="eyebrow">A LIBRARY HELD BY ITS PEOPLE</div><h1>Keep a copy.<br><em>Carry the credit.</em></h1>
@@ -39,8 +41,8 @@
         <div id="file-list" class="file-list"></div>
         <div class="storage-note"><div><p id="browser-storage"></p><p>Files are encrypted on this device. Vault backups cover your writing and identity; <strong>file backups are separate</strong>. Peers need to stay open and unlocked to serve copies.</p><p id="persistence-state" role="status"></p></div><button id="persist-files" class="button quiet">Ask browser to keep storage</button></div>
         <section class="peer-section"><div class="workspace-toolbar"><div><div class="section-kicker">DIRECT LINKS. SHARED RESPONSIBILITY.</div><h2>Connect your little universes.</h2></div><button id="disconnect-all" class="text-button">Disconnect all</button></div>
-          <p class="peer-intro">Exchange an invitation and answer through your own messenger. Connection codes expire after one hour. File bytes travel between your two Keepers over the encrypted VPN. The room directory does not store them.</p>
-          <div class="pair-grid"><div class="pair-panel"><h3>1. Invite or answer</h3><div class="pair-buttons"><button id="create-invite" class="button primary">Create invitation</button><button id="answer-invite" class="button quiet">Answer invitation</button></div><label for="pair-input">PASTE YOUR PEER’S INVITATION OR ANSWER</label><textarea id="pair-input" spellcheck="false" maxlength="60000" placeholder="Paste the complete connection code here…"></textarea><button id="finish-pair" class="button quiet">Finish pairing with their answer ↗</button><p class="fine-print">Both Keepers must be connected to the same private Tailscale network. File transfers use that VPN connection.</p></div><div class="pair-panel"><div class="pair-output-heading"><h3>2. Pass the code along</h3><button id="copy-pair" class="text-button">Copy code ↗</button></div><textarea id="pair-output" aria-label="Your outgoing connection code" readonly placeholder="Your signed connection code will appear here."></textarea><p id="pair-instructions">One person creates an invitation. The other answers it. The inviter pastes that answer and finishes pairing.</p><details><summary>Your creator fingerprint</summary><p id="my-peer-fingerprint" class="fingerprint"></p></details></div></div>
+          <p class="peer-intro">Exchange an invitation and answer through your own messenger. Connection codes expire after one hour. File bytes travel through an encrypted browser connection after you both compare and confirm the spirographs. The room directory does not store them.</p>
+          <div class="pair-grid"><div class="pair-panel"><h3>1. Invite or answer</h3><div class="pair-buttons"><button id="create-invite" class="button primary">Create invitation</button><button id="answer-invite" class="button quiet">Answer invitation</button></div><label for="pair-input">PASTE YOUR PEER’S INVITATION OR ANSWER</label><textarea id="pair-input" spellcheck="false" maxlength="60000" placeholder="Paste the complete connection code here…"></textarea><button id="finish-pair" class="button quiet">Finish pairing with their answer ↗</button><p class="fine-print">Use a trusted channel to exchange the complete codes and compare both patterns. Direct connections depend on your networks; this release does not configure an outside relay.</p></div><div class="pair-panel"><div class="pair-output-heading"><h3>2. Pass the code along</h3><button id="copy-pair" class="text-button">Copy code ↗</button></div><textarea id="pair-output" aria-label="Your outgoing connection code" readonly placeholder="Your signed connection code will appear here."></textarea><p id="pair-instructions">One person creates an invitation. The other answers it. The inviter pastes that answer and finishes pairing.</p><details><summary>Your creator fingerprint</summary><p id="my-peer-fingerprint" class="fingerprint"></p></details></div></div>
           <div class="peer-preferences"><label>YOUR PLANNED USE<select id="planned-use"><option value="noncommercial">Personal / noncommercial</option><option value="commercial">Commercial</option></select></label><label class="check-line"><input id="help-share" type="checkbox"> Help re-share files I choose to receive</label><p>Use checks rely on your declaration. They do not determine whether a real-world use is legally commercial.</p></div>
           <div id="peer-list"></div>
         </section>

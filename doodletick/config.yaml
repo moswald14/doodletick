@@ -1,7 +1,7 @@
 name: Doodle Tick Keeper
-version: "0.2b"
+version: "0.3b"
 slug: doodletick
-description: Private Doodleverse room directory, creator vault and peer arcade
+description: Local creator vault, shared garden and encrypted direct peer arcade
 url: https://github.com/moswald14/doodletick
 arch:
   - aarch64
@@ -24,11 +24,6 @@ apparmor: true
 map:
   - type: app_config
     read_only: true
-privileged:
-  - NET_ADMIN
-  - NET_RAW
-devices:
-  - /dev/net/tun
 options:
   hostname: doodletick-ha
 schema:
