@@ -1,7 +1,7 @@
 import { recipe, newRecipe, mushroomId, renderMushroom, gardenRequest, verifyGardenResponse, playerAddress, parseAddress, DECORATIONS, pendingCoins, HOUR } from './mushroom-core.mjs';
 import { mushroomArt } from './mushroom-art.mjs';
 import { hash, tickAt, EPOCH } from './core.mjs';
-import { request, vpnStatus } from './vpn-transport.mjs';
+import { request } from './vpn-transport.mjs';
 import { MINING_RULES, validMiningChallenge } from './mushroom-mining.mjs';
 import { createPublicChainUI } from './public-chain.mjs';
 
@@ -12,7 +12,7 @@ export function createMushroomUI({ toast, onUnlockRequest, onActivity }) {
     <div class="garden-mode"><label>YOUR COIN MODE<select id="garden-mode"><option value="private">Private garden · Doodle Coins</option><option value="public">Public chain · my wallet</option></select></label><p>Choose for yourself. Private Keeper coins and public wallet tokens are separate balances; switching does not move or convert them.</p></div>
     <section id="garden-public-wallet" aria-label="Public wallet" hidden></section>
     <div id="garden-private-account">
-    <div class="garden-keeper"><label>SHARED GARDEN KEEPER<select id="garden-host"><option value="self">This Keeper</option></select></label><button class="button quiet" id="garden-refresh">Refresh garden</button><button class="button quiet" id="garden-discover">Find private Keepers</button><small id="garden-host-info">Connecting to this Keeper…</small></div>
+    <div class="garden-keeper"><label>SHARED GARDEN KEEPER<select id="garden-host"><option value="self">This Keeper</option></select></label><button class="button quiet" id="garden-refresh">Refresh garden</button><button class="button quiet" id="garden-discover">About garden connections</button><small id="garden-host-info">Connecting to this Keeper…</small></div>
     <p id="garden-status" class="garden-status" role="status" aria-live="polite"></p>
     <div id="garden-locked" class="utility-card"><h2>A garden for your creator identity.</h2><p>Unlock your vault to plant, earn and trade. You can try the recipe maker below while your vault is locked.</p><button class="button primary" id="garden-unlock">Unlock my vault ↗</button></div>
     <div id="garden-wallet" class="garden-wallet" hidden><div><small>PRIVATE DOODLE COINS</small><strong class="garden-number" id="garden-balance">0</strong></div><div><small>HOURS READY TO MINT</small><strong class="garden-number" id="garden-pending">0</strong></div><div><small>GENERATOR RATE</small><strong class="garden-number" id="garden-rate">0 / hr</strong></div><div class="wallet-actions"><button class="button" id="garden-join">Join this garden</button><button class="button" id="garden-harvest">Mint completed hours</button><button class="button" id="garden-send">Send coins</button><button class="button" id="garden-address">Copy my address</button></div></div>
@@ -36,7 +36,9 @@ export function createMushroomUI({ toast, onUnlockRequest, onActivity }) {
   $('mode').value = mode;
   try { host = localStorage.getItem('doodletick-garden-host') || 'self'; } catch {}
   if (!/^(self|100\.[\d.]+)$/.test(host)) host = 'self';
-  if (host !== 'self') $('host').add(new Option(host, host)); $('host').value = host;
+  // Keep the old selection and issuer pin until the player explicitly switches;
+  // showing a different garden silently would make existing balances look lost.
+  if (host !== 'self') $('host').add(new Option('Previous remote garden · unavailable', host)); $('host').value = host;
   const status = (text, error = false) => { $('status').textContent = text; $('status').dataset.error = String(error); };
   const pinKey = () => 'doodletick-garden-issuer:' + host;
   function stop() { audioSerial++; try { source?.stop(); } catch {} source?.disconnect(); source = null; context?.close().catch(() => {}); context = null; $('listen').textContent = '▶ Listen'; }
@@ -239,7 +241,7 @@ export function createMushroomUI({ toast, onUnlockRequest, onActivity }) {
   $('form').onsubmit = async e => { e.preventDefault(); try { const action = dialogAction; $('dialog').close(); await action?.(); } catch (error) { status(error.message, true); } };
   $('cancel').onclick = () => $('dialog').close();
   $('refresh').onclick = () => { if (!busy) refresh(); };
-  $('discover').onclick = async () => { try { const vpn = await vpnStatus(); if (!vpn.ready) throw Error(vpn.message); for (const p of vpn.peers) if (![...$('host').options].some(o => o.value === p.ip)) $('host').add(new Option(p.name + ' · ' + p.ip, p.ip)); status('Choose the same garden Keeper as your friends.'); } catch (e) { status(e.message, true); } };
+  $('discover').onclick = () => status('Garden trading works for players using this same Keeper. Direct browser pairing currently shares games and files, not remote garden ledgers. Previous remote balances and identity pins have not been moved or deleted.');
   $('host').onchange = () => { if (busy || pending) return; stopMining(); generation++; stop(); host = $('host').value; issuer = null; state = null; try { localStorage.setItem('doodletick-garden-host', host); } catch {} refresh(); };
   $('mode').onchange = () => { stopMining(); stop(); $('dialog').close(); mode = $('mode').value; try { localStorage.setItem('doodletick-garden-mode', mode); } catch {} publicWallet.setVisible(visible && mode === 'public'); controls(); if (mode === 'private' && visible && !busy && !pending) refresh(); };
   $('mine-start').onclick = startMining;

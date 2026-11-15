@@ -1,6 +1,6 @@
 import { SpirographAuth } from './spirograph-auth.mjs';
-import { VpnConnection } from './vpn-transport.mjs';
-import { validVpnDescription } from './vpn-description.mjs';
+import { RtcConnection } from './vpn-transport.mjs';
+import { validRtcDescription } from './vpn-description.mjs';
 import { b64, random, sign, checkSignature, hash } from './core.mjs';
 import { verifyManifest, verifyFile, canUse, MAX_FILE, MAX_MANIFEST } from './licenses.mjs';
 const CHUNK = 16384;
@@ -9,26 +9,18 @@ export async function parsePeerCode(text, expectedType) {
   if (typeof text !== 'string' || text.length > 60000) throw new Error('That connection code is too large.');
   let packet; try { packet = JSON.parse(text); } catch { throw new Error('Paste the complete connection code.'); }
   const r = packet.record;
-  if (!r || r.format !== 'doodletick-peer-v2' || r.type !== expectedType || !/^[A-Za-z0-9_-]{22}$/.test(r.session) || !/^[a-zA-Z0-9_-]{3,24}$/.test(r.username) || !Number.isFinite(r.expires) || r.expires < Date.now() || r.expires > Date.now() + 90 * 60000 || !validVpnDescription(r.vpn) || r.vpn.label !== 'doodletick-files-v1' || !await checkSignature(r, packet.signature, r.publicKey)) throw new Error('The connection code is expired, changed, or unsupported. Ask for a new code.');
+  if (!r || r.format !== 'doodletick-peer-v3' || r.type !== expectedType || !/^[A-Za-z0-9_-]{22}$/.test(r.session) || !/^[a-zA-Z0-9_-]{3,24}$/.test(r.username) || !Number.isFinite(r.expires) || r.expires < Date.now() || r.expires > Date.now() + 90 * 60000 || !validRtcDescription(r.transport, expectedType, 'doodletick-files-v1') || !await checkSignature(r, packet.signature, r.publicKey)) throw new Error('The connection code is expired, changed, or unsupported. Ask for a new direct invitation.');
   return packet;
 }
-async function gather(pc) {
-  if (pc.iceGatheringState === 'complete') return;
-  await new Promise(resolve => {
-    const done = () => { clearTimeout(timer); pc.removeEventListener('icegatheringstatechange', changed); resolve(); };
-    const changed = () => { if (pc.iceGatheringState === 'complete') done(); };
-    const timer = setTimeout(done, 9000); pc.addEventListener('icegatheringstatechange', changed);
-  });
-}
 export class PeerLink {
-  constructor({ identity, store, useStun = true, onChange = () => {}, onError = () => {}, onBytes = () => {}, onStored = () => {}, onActivity = () => {} }) {
+  constructor({ identity, store, onChange = () => {}, onError = () => {}, onBytes = () => {}, onStored = () => {}, onActivity = () => {} }) {
     this.identity = identity; this.store = store; this.onChange = onChange; this.onError = onError; this.onBytes = onBytes; this.onStored = onStored; this.onActivity = onActivity;
     this.id = b64(random(16)); this.state = 'Preparing connection'; this.catalog = new Map(); this.copies = new Set(); this.closed = false; this.waiting = null; this.incoming = null; this.uploading = false; this.jobs = 0; this.queue = Promise.resolve();
-    this.pc = new VpnConnection();
+    this.pc = new RtcConnection();
     this.pc.onconnectionstatechange = () => {
       if (this.closed) return;
       const state = this.pc.connectionState;
-      if (state === 'failed') { this.onError('The private connection failed. Check that both Keepers are on the same VPN.'); this.close(); }
+      if (state === 'failed') { this.onError(this.pc.error || 'The direct connection failed. Try a reachable local network.'); this.close(); }
       else { this.state = state === 'connected' ? 'Compare your spirographs' : 'Connection: ' + state; this.onChange(this); }
     };
     this.pc.ondatachannel = event => this.attach(event.channel);
@@ -36,36 +28,37 @@ export class PeerLink {
   }
   async packet(type, replyTo = null) {
     if (this.closed) throw new Error('This connection was closed.');
-    const record = { format: 'doodletick-peer-v2', type, session: this.id, replyTo, expires: Date.now() + 60 * 60000, username: this.identity.username, publicKey: this.identity.publicKey, vpn: this.pc.localDescription };
+    const record = { format: 'doodletick-peer-v3', type, session: this.id, replyTo, expires: Date.now() + 60 * 60000, username: this.identity.username, publicKey: this.identity.publicKey, transport: this.pc.localDescription };
     return { record, signature: await sign(record, this.identity.privateKey) };
   }
   async offer() {
     this.attach(this.pc.createDataChannel('doodletick-files-v1', { ordered: true }));
-    await this.pc.setLocalDescription(await this.pc.createOffer()); await gather(this.pc);
+    await this.pc.setLocalDescription(await this.pc.createOffer());
     this.offerPacket = await this.packet('offer'); this.state = 'Waiting for answer code'; this.onChange(this);
     return JSON.stringify(this.offerPacket);
   }
   async answer(text) {
     const packet = await parsePeerCode(text, 'offer'); this.remote = { username: packet.record.username, fingerprint: await hash(packet.record.publicKey) };
-    await this.pc.setRemoteDescription(packet.record.vpn); await this.pc.setLocalDescription(await this.pc.createAnswer()); await gather(this.pc);
+    await this.pc.setRemoteDescription(packet.record.transport); await this.pc.setLocalDescription(await this.pc.createAnswer());
     const answer = await this.packet('answer', await hash(packet)); await this.authenticate(packet, answer); this.state = 'Send your answer code back'; this.onChange(this); return JSON.stringify(answer);
   }
   async finish(text) {
     const packet = await parsePeerCode(text, 'answer');
     if (!this.offerPacket || packet.record.replyTo !== await hash(this.offerPacket)) throw new Error('That answer belongs to another invitation.');
     this.remote = { username: packet.record.username, fingerprint: await hash(packet.record.publicKey) };
-    await this.authenticate(this.offerPacket, packet); await this.pc.setRemoteDescription(packet.record.vpn); this.state = 'Connecting through your private VPN…'; this.onChange(this);
+    await this.authenticate(this.offerPacket, packet); await this.pc.setRemoteDescription(packet.record.transport); this.state = 'Connecting directly to your friend…'; this.onChange(this);
   }
-  async authenticate(offer, answer) { this.auth = await SpirographAuth.create(offer, answer, { peer: this.remote, purpose: 'shared files', onVerified: () => { if (this.closed) return; this.state = 'Private VPN peer connected'; this.onChange(this); this.broadcast().catch(e => this.onError(e.message)); }, onReject: reason => { this.onError(reason); this.close(); } }); }
+  async authenticate(offer, answer) { this.auth = await SpirographAuth.create(offer, answer, { peer: this.remote, purpose: 'shared files', onVerified: () => { if (this.closed) return; this.state = 'Encrypted direct peer connected'; this.onChange(this); this.broadcast().catch(e => this.onError(e.message)); }, onReject: reason => { this.onError(reason); this.close(); } }); }
   attach(channel) {
     if (this.channel && this.channel !== channel) { channel.close(); return; }
     if (channel.label !== 'doodletick-files-v1') { channel.close(); return; }
     this.channel = channel; channel.binaryType = 'arraybuffer'; channel.bufferedAmountLowThreshold = 128 * 1024;
     channel.onopen = () => { clearTimeout(this.connectionTimer); if (!this.auth) { this.close(); return; } this.auth.begin(channel); };
-    channel.onclose = () => this.close(); channel.onerror = () => { this.onError(this.pc.error || 'The private connection was interrupted. Retry the file after reconnecting.'); this.close(); };
+    if (channel.readyState === 'open') queueMicrotask(() => channel.onopen());
+    channel.onclose = () => this.close(); channel.onerror = () => { this.onError(this.pc.error || 'The direct connection was interrupted. Retry the file after reconnecting.'); this.close(); };
     channel.onmessage = event => {
       if (++this.jobs > 128) { this.close(); this.onError('Peer sent too many pending messages.'); return; }
-      this.queue = this.queue.then(() => { if (!this.auth?.receive(event.data)) return this.message(event.data); }).catch(error => { this.onError(error.message); this.close(); }).finally(() => { this.jobs--; });
+      this.queue = this.queue.then(() => { if (!this.auth) throw new Error('Peer sent data before authentication.'); if (!this.auth.receive(event.data)) return this.message(event.data); }).catch(error => { this.onError(error.message); this.close(); }).finally(() => { this.jobs--; });
     };
   }
   send(value) {

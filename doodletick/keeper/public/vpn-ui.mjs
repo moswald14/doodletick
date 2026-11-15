@@ -1,23 +1,19 @@
-import { vpnStatus } from './vpn-transport.mjs';
+import { networkStatus } from './vpn-transport.mjs';
 export function createVpnUI() {
-  const panel = document.createElement('section'); panel.className = 'vpn-panel'; panel.setAttribute('aria-label', 'Private network');
-  panel.innerHTML = `<div><span class="eyebrow">YOUR PRIVATE NETWORK</span><h2 id="vpn-title">Checking the connection…</h2><p id="vpn-message" role="status">Games and shared files connect through Tailscale.</p></div><div class="vpn-actions"><button id="vpn-refresh" class="button quiet">Check connection ↻</button><details><summary>Set up the private network</summary><ol><li>This Home Assistant add-on already includes Tailscale. Use Connect private network in the Your always-on Keeper panel below, then follow its sign-in link.</li><li>Invite your friends into the same Tailscale network.</li><li>Friends using Windows still need Tailscale and Keeper on their own computers. Share a room code to play.</li></ol><p>Solo practice and your vault work without a private connection. Open Home Assistant over HTTPS for the encrypted vault and games.</p><a href="https://login.tailscale.com/admin/users" target="_blank" rel="noopener noreferrer">Manage members ↗</a></details></div>`;
+  const panel = document.createElement('section'); panel.className = 'vpn-panel'; panel.setAttribute('aria-label', 'Direct connections');
+  panel.innerHTML = `<div><span class="eyebrow">YOUR DOODLEVERSE CONNECTION</span><h2 id="vpn-title">Checking this Keeper…</h2><p id="vpn-message" role="status">Your saved garden stays with this Keeper.</p></div><div class="vpn-actions"><button id="vpn-refresh" class="button quiet">Check connection ↻</button><details><summary>Pair with a friend</summary><ol><li>Use HTTPS or localhost in a browser that supports WebRTC.</li><li>Create an invitation, have your friend answer it, then paste their answer.</li><li>Compare both spirographs and every code group over a trusted call or in person.</li></ol><p>Game and file channels are encrypted. Invitations contain connection addresses: send them only to the intended friend. Direct reachability is required, usually on the same local network; this release has no Internet relay. Room directory codes work only through the same Keeper.</p></details></div>`;
   document.querySelector('main').insertBefore(panel, document.querySelector('main .topbar').nextSibling);
   let busy = false;
   async function refresh() {
     if (busy) return; busy = true;
     try {
-      const s = await vpnStatus();
-      document.getElementById('vpn-title').textContent = s.ready ? 'Your private network is ready.' : 'Connect your private network.';
-      document.getElementById('vpn-message').textContent = s.ready ? `${s.name} · ${s.peers.length} other online ${s.peers.length === 1 ? 'computer' : 'computers'} · ${s.network}` : s.message;
-      panel.classList.toggle('connected', s.ready);
+      const state = await networkStatus(), supported = typeof globalThis.RTCPeerConnection === 'function' && globalThis.isSecureContext && Boolean(globalThis.crypto?.subtle);
+      document.getElementById('vpn-title').textContent = supported ? 'Ready to make a direct invitation.' : 'Open a secure, WebRTC-capable browser.';
+      document.getElementById('vpn-message').textContent = supported ? state.message : 'Use HTTPS or localhost for signed pairing. Local garden records remain saved.';
+      panel.classList.toggle('connected', state.ready && supported);
       const select = document.getElementById('arc-broker');
-      if (select) {
-        const previous = select.value; select.replaceChildren(new Option('This Home Assistant Keeper', 'self'));
-        for (const p of s.peers || []) select.add(new Option(p.name + ' · ' + p.ip, p.ip));
-        if ([...select.options].some(o => o.value === previous)) select.value = previous;
-      }
-    } catch { document.getElementById('vpn-title').textContent = 'Private network is offline.'; document.getElementById('vpn-message').textContent = 'Reopen the add-on Web UI and check the Your always-on Keeper panel below. Solo practice and your saved work remain available over HTTPS.'; panel.classList.remove('connected'); }
+      if (select) select.replaceChildren(new Option('This Home Assistant Keeper only', 'self'));
+    } catch { document.getElementById('vpn-title').textContent = 'This Keeper is unavailable.'; document.getElementById('vpn-message').textContent = 'Reopen the app Web UI and check the Your always-on Keeper panel. Your saved work has not been changed.'; panel.classList.remove('connected'); }
     finally { busy = false; }
   }
   document.getElementById('vpn-refresh').onclick = refresh;

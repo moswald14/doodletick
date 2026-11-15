@@ -1,4 +1,3 @@
-import { vpnIP } from './vpn-description.mjs';
 import { ArcadeLink, readSignal } from './arcade-link.mjs';
 import { b64, random, hash, sign, canonical, checkSignature } from './core.mjs';
 import { GAMES, COLORS, createMatch, tickMatch, playTurn, botChoice, moveAvatar, defaultPack, validatePack, summary, verifyReplay, spawnPoints } from './game-engine.mjs';
@@ -7,9 +6,8 @@ import { verifyFile } from './licenses.mjs';
 const worldBytes = pack => new TextEncoder().encode(JSON.stringify(pack, null, 2));
 function validChat(m) { return m && typeof m.id === 'string' && m.id.length <= 40 && typeof m.player === 'string' && m.player.length <= 43 && typeof m.name === 'string' && m.name.length <= 24 && typeof m.text === 'string' && m.text.length <= 240 && Number.isFinite(m.at); }
 export function brokerBase(value = '') {
-  const ip = value.replace(/^vpn:/, '') || 'self';
-  if (ip !== 'self' && !vpnIP(ip)) throw new Error('Choose a computer on your private VPN. Public lobby addresses are disabled.');
-  return ip;
+  if (value !== '' && value !== 'self') throw new Error('Room codes only work on this same Keeper. Between separate Keepers, exchange signed invitation and answer codes.');
+  return 'self';
 }
 export async function lobbyRequest(base, route, { method = 'GET', body, token } = {}) {
   const res = await fetch('./vpn-api/lobby/' + brokerBase(base) + '/' + route, { method, headers: { 'X-Keeper-Request': '1', ...(body ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: 'Bearer ' + token } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(12000) });
@@ -17,8 +15,8 @@ export async function lobbyRequest(base, route, { method = 'GET', body, token } 
 }
 const cleanProfile = (profile, fallback) => ({ name: typeof profile?.name === 'string' && profile.name.trim() ? profile.name.trim().slice(0, 24) : fallback, color: /^#[0-9A-Fa-f]{6}$/.test(profile?.color) ? profile.color : COLORS[0], icon: ['spark', 'moon', 'leaf', 'comet'].includes(profile?.icon) ? profile.icon : 'spark', bio: typeof profile?.bio === 'string' ? profile.bio.slice(0, 120) : '' });
 export class ArcadeRoom {
-  constructor({ identity, profile, pack = defaultPack(), worldCredit = null, stun = true, onChange = () => {}, onEvent = () => {}, onReceipt = async () => {}, onError = () => {}, onActivity = () => {} }) {
-    validatePack(pack); Object.assign(this, { identity, profile: cleanProfile(profile, identity.username), stun, onChange, onEvent, onReceipt, onError, onActivity });
+  constructor({ identity, profile, pack = defaultPack(), worldCredit = null, onChange = () => {}, onEvent = () => {}, onReceipt = async () => {}, onError = () => {}, onActivity = () => {} }) {
+    validatePack(pack); Object.assign(this, { identity, profile: cleanProfile(profile, identity.username), onChange, onEvent, onReceipt, onError, onActivity });
     this.id = b64(random(12)); this.role = 'host'; this.closed = false; this.links = new Map(); this.inputs = {}; this.lastInputs = {}; this.transcript = []; this.seq = 0; this.chat = []; this.processed = new Set(); this.paused = false;
     this.state = { id: this.id, title: pack.title, pack: structuredClone(pack), worldCredit, kind: 'world', selected: 'dash', members: [this.member(identity, this.profile, 0)], game: null, paused: false };
     this.sim = setInterval(() => this.step(), 50); this.network = setInterval(() => { this.broadcastState(); if (this.role === 'host') this.onChange(); }, 100);
@@ -31,10 +29,10 @@ export class ArcadeRoom {
     if (this.closed) { lobbyRequest(this.base, 'rooms/' + room.id, { method: 'DELETE', token: room.token }).catch(() => {}); return; }
     this.id = room.id; this.state.id = room.id; this.state.title = title || this.state.title; this.hostToken = room.token;
     this.poll = setInterval(() => this.pollHost().catch(e => this.onError(e.message)), 1500); this.heartbeat = setInterval(() => lobbyRequest(this.base, 'rooms/' + this.id, { method: 'PATCH', token: this.hostToken, body: { players: this.state.members.filter(p => !p.bot).length, game: this.state.selected } }).catch(() => {}), 10000);
-    this.event('Room is open. Share the room code with friends.'); this.onChange();
+    this.event('Room is open in this Keeper. Friends using another Keeper need a signed invitation.'); this.onChange();
   }
   link(role) {
-    const link = new ArcadeLink({ identity: this.identity, role, room: this.id, stun: this.stun,
+    const link = new ArcadeLink({ identity: this.identity, role, room: this.id,
       onOpen: peer => this.connected(peer), onPacket: (packet, peer) => this.message(packet, peer), onClose: (reason, peer) => this.disconnected(reason, peer), onError: error => this.onError(error) });
     this.links.set(link.id, link); return link;
   }

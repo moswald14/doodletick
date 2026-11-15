@@ -1,0 +1,15 @@
+.doodleverse-coin { display: grid; gap: .9rem; min-width: 0; }
+.doodleverse-coin p, .doodleverse-coin h2 { margin: 0; overflow-wrap: anywhere; }
+.doodleverse-coin label { display: grid; gap: .4rem; }
+.doodleverse-coin [hidden] { display: none !important; }
+.doodleverse-coin textarea { box-sizing: border-box; width: 100%; min-height: 12rem; resize: vertical; font-family: ui-monospace, monospace; font-size: .85em; }
+.doodleverse-coin .dvc-consent { display: flex; align-items: start; gap: .5rem; }
+.dvc-consent input { flex: 0 0 auto; margin-top: .25rem; }
+.dvc-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; }
+.dvc-facts p { display: grid; gap: .5rem; border: 1px solid currentColor; border-radius: .6rem; padding: .8rem; }
+.dvc-facts span { font-size: 1.2rem; }
+.dvc-notice, .dvc-status { border: 1px solid currentColor; border-radius: .6rem; padding: .8rem; }
+.dvc-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+.doodleverse-coin button { min-height: 2.7rem; }
+.doodleverse-coin [data-dvc-field="founder"], .doodleverse-coin [data-dvc-field="proposal"], .doodleverse-coin [data-dvc-field="proof"] { font-family: ui-monospace, monospace; font-size: .85em; }
+@media (max-width: 650px) { .dvc-facts { grid-template-columns: 1fr; } .dvc-actions > button { flex: 1 1 100%; } }
