@@ -1,0 +1,12 @@
+.public-chain { display: grid; gap: .8rem; min-width: 0; }
+.public-chain p { margin: 0; overflow-wrap: anywhere; }
+.public-chain h3 { margin: .5rem 0 0; }
+.public-chain-row { display: flex; align-items: end; gap: .65rem; flex-wrap: wrap; }
+.public-chain-row label { display: grid; gap: .35rem; flex: 1 1 16rem; min-width: 0; }
+.public-chain input:not([type="checkbox"]), .public-chain select { width: 100%; min-width: 0; box-sizing: border-box; }
+.public-chain-check { display: flex; align-items: start; gap: .5rem; }
+.public-chain-check input { flex: 0 0 auto; margin-top: .2rem; }
+.public-chain-notice, .public-chain-status { padding: .8rem; border: 1px solid currentColor; border-radius: .5rem; }
+.public-chain [data-field="account"], .public-chain [data-field="garden"], .public-chain [data-field="reserved"] { font-family: ui-monospace, monospace; font-size: .85em; }
+.public-chain button { min-height: 2.7rem; }
+@media (max-width: 550px) { .public-chain-row > button, .public-chain-row label { width: 100%; flex-basis: 100%; } }
