@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 const publicRoot = fileURLToPath(new URL('./public/', import.meta.url));
 const security = {
   'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer',
-  'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
+  'Content-Security-Policy': "default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
 };
 export function createIngressServer({ keeperPort, control, ingressIP = '172.30.32.2', healthy = () => true }) {
   return http.createServer(async (req, res) => {

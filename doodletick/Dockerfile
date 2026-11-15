@@ -7,9 +7,9 @@ COPY --from=vpn /usr/local/bin/tailscale /usr/local/bin/tailscale
 COPY --from=vpn /usr/local/bin/tailscaled /usr/local/bin/tailscaled
 WORKDIR /opt/doodletick
 COPY keeper/ ./keeper/
-COPY gateway.mjs main.mjs tailscale.mjs ./
+COPY gateway.mjs main.mjs tailscale.mjs migration.mjs ./
 COPY public/ ./public/
 LABEL io.hass.name="Doodle Tick Keeper" io.hass.description="Private Doodleverse Keeper" \
-      io.hass.type="addon" io.hass.version="0.1b" io.hass.arch="${BUILD_ARCH}"
+      io.hass.type="addon" io.hass.version="0.2b" io.hass.arch="${BUILD_ARCH}"
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s CMD node -e "fetch('http://127.0.0.1:8099/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 CMD ["node", "main.mjs"]
