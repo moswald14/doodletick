@@ -16,6 +16,9 @@ async function publicFiles(relative = '') {
   const blockedNames = new Set(['witness-key.json', 'garden-ledger.json', 'receipts.jsonl', 'server.lock', 'tailscaled.state', 'id_rsa', 'id_ed25519']);
   for (const entry of await readdir(path.join(repositoryRoot, relative), { withFileTypes: true })) {
     if (!relative && entry.name === '.git') continue;
+    // Build/test dependencies are reproducibly installed from the lockfile and
+    // excluded by the release packager; they are not application source.
+    if (entry.name === 'node_modules' && entry.isDirectory()) continue;
     const name = relative ? relative + '/' + entry.name : entry.name;
     if (entry.isSymbolicLink()) fail(`Symlinks are not allowed in the distribution: ${name}`);
     if (!relative && entry.name === 'dist' && entry.isDirectory()) continue;
@@ -43,7 +46,10 @@ try {
   const config = await read('doodletick/config.yaml');
   if (scalar(config, 'version') !== release || scalar(config, 'slug') !== 'doodletick') fail('Home Assistant release metadata differs from Keeper.');
   if (scalar(config, 'ingress') !== 'true' || scalar(config, 'host_network') !== 'false' || scalar(config, 'apparmor') !== 'true') fail('Review the Home Assistant access configuration.');
-  if (/^(?:ports|map|full_access|docker_api|hassio_api|homeassistant_api):/m.test(config)) fail('The release must not add host ports, host mounts or administrative API access without a reviewed policy change.');
+  if (/^(?:ports|full_access|docker_api|hassio_api|homeassistant_api):/m.test(config)) fail('The release must not add host ports or administrative API access without a reviewed policy change.');
+  const mount = config.match(/^map:\s*\n((?:[ \t]+[^\n]*\n?)*)/m)?.[1];
+  if (mount?.trim() !== '- type: app_config\n    read_only: true') fail('Only this app\'s read-only configuration folder may be mounted for offline migration.');
+  if (scalar(config, 'backup') !== 'cold') fail('Keeper and VPN state require a stopped-app backup.');
   const requiredMarkers = [
     ['doodletick/Dockerfile', `io.hass.version="${release}"`],
     ['keeper/server.mjs', `version: '${release}'`],
