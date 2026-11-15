@@ -1,0 +1,6 @@
+tests/
+*.md
+!keeper/THIRD_PARTY_NOTICES.md
+**/.doodletick
+**/node_modules
+**/*.log
