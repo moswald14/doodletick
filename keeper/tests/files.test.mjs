@@ -1,3 +1,4 @@
+import { rtcDescription } from './rtc-fixture.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { newIdentity, sign, hash, b64, random } from '../public/core.mjs';
@@ -52,11 +53,11 @@ test('licensed ZIP preserves exact bytes and credits, catches damage and unsafe 
   assert.throws(() => zip([['../secret.txt', 'bad']])); assert.throws(() => zip([['same', '1'], ['same', '2']]));
   assert.equal(crc32(new TextEncoder().encode('123456789')), 0xcbf43926); assert(!safeName('../../file.exe').includes('/'));
 });
-test('pairing codes require a valid signature, type, expiry, and a private VPN endpoint', async () => {
-  const record = { format: 'doodletick-peer-v2', type: 'offer', session: b64(random(16)), replyTo: null, expires: Date.now() + 3600000, username: a.username, publicKey: a.publicKey, vpn: { format: 'doodletick-vpn-v1', network: 'test.ts.net', ip: '100.64.0.1', port: 4318, channel: 'a'.repeat(32), token: 'b'.repeat(43), label: 'doodletick-files-v1' } };
+test('pairing codes require a valid signature, type, expiry, and a private DTLS fingerprint', async () => {
+  const record = { format: 'doodletick-peer-v3', type: 'offer', session: b64(random(16)), replyTo: null, expires: Date.now() + 3600000, username: a.username, publicKey: a.publicKey, transport: rtcDescription('doodletick-files-v1') };
   const packet = { record, signature: await sign(record, a.privateKey) };
   assert.deepEqual(await parsePeerCode(JSON.stringify(packet), 'offer'), packet);
   await assert.rejects(parsePeerCode(JSON.stringify(packet), 'answer'));
-  const changed = structuredClone(packet); changed.record.vpn.token = 'z'.repeat(43); await assert.rejects(parsePeerCode(JSON.stringify(changed), 'offer'));
-  for (const update of [{ expires: Date.now() - 1 }, { vpn: { ...record.vpn, ip: '8.8.8.8' } }]) { const r = { ...record, ...update }; await assert.rejects(parsePeerCode(JSON.stringify({ record: r, signature: await sign(r, a.privateKey) }), 'offer')); }
+  const changed = structuredClone(packet); changed.record.transport.sdp += 'a=changed:value\r\n'; await assert.rejects(parsePeerCode(JSON.stringify(changed), 'offer'));
+  for (const update of [{ expires: Date.now() - 1 }, { transport: { ...record.transport, iceComplete: false } }]) { const r = { ...record, ...update }; await assert.rejects(parsePeerCode(JSON.stringify({ record: r, signature: await sign(r, a.privateKey) }), 'offer')); }
 });

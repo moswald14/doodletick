@@ -127,24 +127,23 @@ test('failed writes cannot mint and tampered disk ledgers fail closed', async ()
     await assert.rejects(f.restart(), /signature failed/);
   });
 });
-test('one shared garden is reachable through two private bridges; other Keepers stay separate', async () => {
+test('one local garden verifies signatures; remote bridges reject and other Keepers stay separate', async () => {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'doodle-garden-wire-')), net = await simulatedKeepers(dir, 2);
   const [a,b] = net.nodes, who = await newIdentity('network_player');
   const call = async (node, host, route, data) => { const r = await fetch(node.base + `/vpn-api/garden/${host}/${route}`, { method: data ? 'POST' : 'GET', headers: data ? { 'Content-Type': 'application/json' } : {}, body: data ? JSON.stringify(data) : undefined }); return { status: r.status, data: await r.json() }; };
   try {
-    const info = (await call(a, b.ip, 'info')).data, issuer = info.record.issuer;
+    const info = (await call(b, 'self', 'info')).data, issuer = info.record.issuer;
     assert(await verifyGardenResponse(info, issuer));
     const join = await gardenRequest(who, issuer, 'join', {}, 1);
-    assert.equal((await call(a, b.ip, 'action', join)).status, 200);
+    assert.equal((await call(b, 'self', 'action', join)).status, 200);
     const balance = (await call(b, 'self', 'account', await gardenRequest(who, issuer, 'account'))).data;
     assert.equal(balance.record.joined, true);
     assert.equal((await call(a, 'self', 'action', join)).status, 403);
-    assert.equal((await call(a, '100.64.0.99', 'info')).status, 403);
-    assert.equal((await net.requestPeer({ ip:b.ip, source:'8.8.8.8', route:'/garden-api/info' })).status, 403);
-    b.raw.Peer[a.ip].Online = false; await b.keeper.vpn.refresh(); assert.equal((await call(a, b.ip, 'info')).status, 403);
+    assert.equal((await call(a, '100.64.0.99', 'info')).status, 410);
+    assert.equal(b.keeper.vpn.address(), null); assert.equal(a.keeper.vpn.address(), null);
   } finally { await net.close(); await rm(dir, { recursive:true, force:true }); }
 });
-test('garden remains local with VPN offline and does not expose the ledger or identity files', async () => {
+test('garden remains local without a VPN and does not expose the ledger or identity files', async () => {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'doodle-garden-local-'));
   const keeper = await createKeeperServer({ port:0, dataDir:dir, vpnOptions:{ readStatus:async () => { throw Error('offline'); } } });
   try {
