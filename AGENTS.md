@@ -11,7 +11,7 @@ For multi-component work, use the AI team roles in AI_TEAM.md with bounded tasks
 - Keep existing signatures and signed-format versions compatible. A product version change does not itself require a data migration.
 - Keep private peer and authenticated ingress boundaries intact. Do not replace cryptographic verification with a decorative image or an HTTP fallback.
 - Update visible version labels, package metadata, app metadata, cache label, Pi bundle metadata and release notes together when preparing a new release.
-- Build public assets with `python scripts/package-release.py` after repository checks pass. Existing assets are immutable; the script refuses overwriting them.
+- Build public assets with `python scripts/package-release.py --version <intended-release>` after repository checks pass. Versioned assets are immutable; the script refuses overwriting them. Public-chain changes also require `npm ci --ignore-scripts`, `npm run check` and `npm test` in `contracts/`.
 - Describe the actual verification and unresolved limits. A source review is not a security certification; a simulated peer test is not a physical VPN test.
 - Publish, contact people, change licensing or grant access only within the user's explicit authorization. Reversible local implementation and validation can proceed without repeated confirmation.
 
