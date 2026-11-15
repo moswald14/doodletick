@@ -1,0 +1,39 @@
+name: Bug report
+description: Report a reproducible Doodle Tick problem.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: "Use disposable examples. Do not attach vault backups, witness keys, VPN state, authentication links, tokens, private addresses or unreviewed logs. For security concerns, request a private reporting channel without posting exploit details."
+  - type: input
+    id: version
+    attributes:
+      label: Doodle Tick version
+      placeholder: "For example: 0.1b"
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: "Desktop or Home Assistant; OS, browser and version; HTTP or HTTPS; whether private-network setup is complete. Omit hostnames, account details and addresses."
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Include a minimal disposable example and how often it happens.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Redacted evidence
+      description: "Optional screenshots or a short reviewed error excerpt. Say which parts you could not verify."

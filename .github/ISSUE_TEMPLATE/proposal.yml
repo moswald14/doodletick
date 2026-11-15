@@ -1,0 +1,32 @@
+name: Feature proposal
+description: Propose one change with a clear finish condition.
+title: "[Proposal]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: Who needs this and what can they not do today?
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Proposed behavior
+      description: Describe the smallest useful change, with one concrete example.
+    validations:
+      required: true
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Data and access effects
+      description: Does this affect saved identity, coins, licensing, networking, permissions or migration?
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Finish condition
+      description: What test or user-visible result will show that this works?
+    validations:
+      required: true

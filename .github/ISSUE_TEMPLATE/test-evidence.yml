@@ -1,0 +1,38 @@
+name: Test evidence
+description: Record a device, browser or recovery check without exposing private data.
+title: "[Test]: "
+body:
+  - type: markdown
+    attributes:
+      value: "Test with disposable identities and data. Record public version information, not authentication links, vault contents, keys, private addresses or personal logs."
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit tested
+    validations:
+      required: true
+  - type: textarea
+    id: setup
+    attributes:
+      label: Setup
+      description: Device types, OS/browser versions, installation route, and connection type. Omit personal identifiers.
+    validations:
+      required: true
+  - type: textarea
+    id: procedure
+    attributes:
+      label: Procedure and expected result
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Observed result and evidence
+      description: Separate passes, failures and untested steps. Redact screenshots before uploading.
+    validations:
+      required: true
+  - type: textarea
+    id: recovery
+    attributes:
+      label: Cleanup or recovery
+      description: How were temporary services stopped and any changed state restored?
