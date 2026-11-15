@@ -4,7 +4,7 @@ import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { newIdentity, hash, EPOCH, sign } from '../public/core.mjs';
-import { recipe, newRecipe, mushroomId, renderMushroom, gardenRequest, verifyGardenResponse, HOUR, playerAddress, parseAddress } from '../public/mushroom-core.mjs';
+import { recipe, newRecipe, mushroomId, renderMushroom, gardenRequest, verifyGardenResponse, HOUR, playerAddress, parseAddress, pendingCoins } from '../public/mushroom-core.mjs';
 import { createGardenLedger } from '../garden-ledger.mjs';
 import { simulatedKeepers } from './vpn-fixture.mjs';
 import { createKeeperServer } from '../server.mjs';
@@ -65,6 +65,27 @@ test('payments conserve coins; repeated and concurrent signed requests cannot ch
   assert.equal((await f.query(f.alice)).balance + (await f.query(f.bob)).balance, 10);
   await assert.rejects(f.ledger.dispatch(req), /changed/);
   for (const n of [-1, 0, .5, 1e15]) await assert.rejects(f.command(f.alice, 'send', { to: f.bob.fingerprint, amount: n }));
+}));
+
+test('ownership start boundaries preserve the first complete hour for planting and transfers', () => fixture(async f => {
+  await f.command(f.alice, 'join'); await f.command(f.bob, 'join');
+  const id = (await f.plant(f.alice)).record.result.mushroom;
+  await f.plant(f.bob, 135); f.advance(1);
+  assert.equal((await f.query(f.alice)).pending, 1);
+  await f.command(f.alice, 'harvest'); await f.command(f.bob, 'harvest');
+  await f.command(f.alice, 'list', { id, price: 1 });
+  await f.command(f.bob, 'buy', { id, price: 1, seller: f.alice.fingerprint });
+  f.advance(1);
+  const owned = (account, mid) => account.mushrooms.find(m => m.id === mid);
+  assert.equal(pendingCoins(owned(await f.query(f.bob), id), f.time), 1);
+  f.advance(1 / 3);
+  const partial = (await f.plant(f.alice, 136)).record.result.mushroom;
+  await f.command(f.bob, 'list', { id, price: 1 });
+  await f.command(f.alice, 'buy', { id, price: 1, seller: f.bob.fingerprint });
+  f.setTime(EPOCH + 103 * HOUR);
+  for (const mid of [id, partial]) assert.equal(pendingCoins(owned(await f.query(f.alice), mid), f.time), 0);
+  f.advance(1);
+  for (const mid of [id, partial]) assert.equal(pendingCoins(owned(await f.query(f.alice), mid), f.time), 1);
 }));
 test('atomic mushroom sales settle the seller, transfer future earnings and preserve credit and decorations', () => fixture(async f => {
   for (const who of [f.alice, f.bob, f.cara]) await f.command(who, 'join');
