@@ -1,0 +1,60 @@
+.theme-toggle{display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:8px 11px;border:1px solid var(--line);border-radius:20px;background:transparent;color:var(--ink);font-size:11px;white-space:nowrap}
+.theme-toggle:hover{background:#eaf0dc}.theme-toggle .theme-icon{font-size:17px;line-height:1}
+#theme-dialog{max-width:470px}#theme-dialog h2{margin:12px 0 18px}#theme-dialog .dialog-top{align-items:center}#theme-dialog .dialog-top h2{margin:0}
+.theme-form{display:flex;flex-direction:column;gap:20px;margin-top:22px}.theme-form label{display:block;font-size:12px}.theme-form input,.theme-form select{display:block;width:100%;min-height:44px;margin-top:9px;padding:10px;border:1px solid var(--line);border-radius:6px;background:#f0f4e7;color:var(--ink);font-size:13px}.theme-form p{margin:0;font-size:12px;color:#707b62;line-height:1.8}.theme-form .form-error{color:#b34833}.theme-form .dialog-actions{margin-top:0;justify-content:space-between}.theme-form button{min-height:44px}.theme-zone{overflow-wrap:anywhere}
+html[data-theme="night"]{--paper:#120c0d;--ink:#ecd0c7;--muted:#c19a90;--line:#513438;--lime:#8f3e37;--sidebar:#0d0809;--night-panel:#201316;--night-raised:#2b1a1d;--night-input:#180e10;--night-accent:#d28270;color-scheme:dark}
+html[data-theme="night"] body{background:var(--paper);color:var(--ink)}
+html[data-theme="night"] :is(.sidebar,.topbar){background:var(--sidebar);color:var(--ink)}
+html[data-theme="night"] .brand img{filter:grayscale(1) sepia(1) saturate(3) hue-rotate(310deg) brightness(.8)}
+html[data-theme="night"] :is(.onboarding,.editor-card,.trail-card,.utility-card,.tetra-panel,.stored-file,.pair-panel,.peer-card,.room-panel,.game-card,.player-pill,.vpn-panel,.vpn-panel.connected,dialog,.spiro-dialog){background:var(--night-panel);color:var(--ink);border-color:var(--line)}
+html[data-theme="night"] :is(.tick-card,.file-stats){background:#1b1012;color:var(--ink);border:1px solid var(--line)}
+html[data-theme="night"] :is(.seal-bar,.trail-footer,.count-pill,.nav-count,.about-note,.optional,.detail-proof,.verify-result,.files-empty,.file-drop,.peer-preferences,.transfer-progress,.license-explanation,.file-credit,.stage-hud,.stage-bottom,.turn-controls,.touch-controls,.arc-event,.shelf-item,.publish-panel,.arc-stats>div,.room-credit,.spiro-code,.arc-result){background:var(--night-raised);color:var(--ink);border-color:var(--line)}
+html[data-theme="night"] :is(.primary,.nav-item.active,.paint-tools button.active){background:#8f3e37;color:#ffded1;border-color:#b9685a}
+html[data-theme="night"] .primary:hover{background:#a54a40}
+html[data-theme="night"] :is(.quiet,.emote-buttons button,.touch-controls button,.turn-button,.paint-tools button,.arc-chat-form button){background:var(--night-raised);color:var(--ink);border-color:var(--line)}
+html[data-theme="night"] :is(.quiet:hover,.nav-item:hover,.entry-row:hover,.stored-file:hover,.theme-toggle:hover){background:#392025}
+html[data-theme="night"] :is(.text-button,.icon-button,.password-wrap button,.theme-toggle,.sidebar-bottom .text-button){color:var(--ink);border-color:var(--line)}
+html[data-theme="night"] :is(input:not([type="range"]):not([type="checkbox"]):not([type="color"]),textarea,select){background:var(--night-input);color:var(--ink);border-color:var(--line)}
+html[data-theme="night"] :is(input,textarea)::placeholder{color:#aa857c}
+html[data-theme="night"] input::file-selector-button{background:var(--night-raised);color:var(--ink);border:1px solid var(--line);border-radius:5px;padding:8px}
+html[data-theme="night"] input[type="checkbox"]{accent-color:#c47565}
+html[data-theme="night"] .tetra-range-row input[type="range"]{accent-color:#cf8170}
+html[data-theme="night"] :is(button,a,input,textarea,select,summary):focus-visible{outline-color:#eea18e}
+html[data-theme="night"] :is(.brand-sub,.side-label,.side-note>span:last-child,.local-badge,.sidebar-bottom p,.breadcrumb>span:first-child,.top-meta,.eyebrow,.section-kicker,.intro,.tick-label,.tick-details,.cosmic-label,.palette-label,.onboarding-story>p,.promise-row p,.fine-print,.identity-form label,.page-footer,.save-status,.editor-footer,.seal-bar div>span,.empty-state,.entry-row p,.entry-row small,.bottom-note,.revision-note,.page-description,.file-drop>span,.file-drop input,.explain-card,.about-grid p,.detail-meta,.tetra-intro p,.tetra-label output,.tetra-byte-label,.tetra-scale,.tetra-footer p,.theme-form p){color:var(--muted)}
+html[data-theme="night"] :is(.side-note p,.tiny-orbit,.tick-details b,.cosmic-time,.promise-row strong,.empty-state strong,.explain-card h2,.entry-row){color:var(--ink)}
+html[data-theme="night"] :is(.orbit-core,.star,.upload-icon,.empty-state .empty-art,.promise-row>span){color:var(--night-accent)}
+html[data-theme="night"] .orbit{border-color:#75413b}
+html[data-theme="night"] :is(.live-dot,.orbit-planet,.status-dot,.arc-tag i){background:var(--night-accent);box-shadow:none}
+html[data-theme="night"] .color-swatch{box-shadow:none;border-color:#bd8b7a}
+html[data-theme="night"] .hex-row #tick-black{color:#eea18e;text-decoration-color:#ae6254}
+html[data-theme="night"] :is(.onboarding-story,.sidebar-bottom,.topbar,.version,.editor-footer,.trail-header,.trail-footer,.entry-row,.seal-bar,.page-footer,.detail-body,.tetra-footer,.peer-section,.peer-file,.arc-chat-form,.arc-empty,.room-grid,.room-side,.room-side-heading,.chat-heading,.arc-footer,.arc-tabs){border-color:var(--line)}
+html[data-theme="night"] :is(.form-error,.verify-result.bad,.theme-form .form-error){color:#ffad97}
+html[data-theme="night"] .verify-result.bad{background:#402022}
+html[data-theme="night"] :is(input[aria-invalid="true"],.tetra-byte-label input[aria-invalid="true"]){border-color:#ed8b76}
+html[data-theme="night"] .toast{background:#3d2023;color:#f4d3c6;border-color:#9c5b50;box-shadow:0 10px 30px #0005}
+html[data-theme="night"] dialog::backdrop{background:#080304cc;backdrop-filter:blur(5px)}
+html[data-theme="night"] :is(.stored-file div>span,.stored-file small,.file-symbol,.storage-note p,.peer-intro,.pair-panel label,.file-form>label,.form-pair>label,.peer-preferences>label:first-child,.pair-panel p,.peer-preferences p,.peer-card-top span,.fingerprint,details,.peer-file span,.peer-file a,.file-form>a,.about-note a,#files-locked p,.file-stats span){color:var(--muted)}
+html[data-theme="night"] .check-line{color:var(--muted)!important}
+html[data-theme="night"] :is(.arc-tag,.arc-hero p,.arc-hero-foot,.hero-planet small,.arc-tabs button,.arc-tabs b,.arc-tabs>span,.arc-section-heading p,.arc-handwriting,.game-number,.game-kind,.game-card-copy h3 span,.game-card-copy p,.game-card-copy small,.arc-network,.stage-hud,.room-side-heading>span,.roster-member small,.chat-heading,.arc-chat,.arc-result small,.arc-discover p,.world-shelf,.shelf-item small,.arc-footer,.arc-caption,.arc-form label:not(.check-line),.arc-source,.publish-panel p,.arc-stats span,.match-row small,.arc-empty,#arc-connect-dialog p,#arc-connect-dialog details,#arc-replay-info){color:var(--muted)}
+html[data-theme="night"] :is(.arc-hero h1 em,.arc-tabs button.active,.arc-tabs button.active b,.room-heading h2,.stage-hud strong,.arc-chat strong,.shelf-item>.text-button:first-child,.publish-panel h3,.arc-stats strong,.match-row strong,.room-code){color:var(--ink)}
+html[data-theme="night"] .planet-body{background:radial-gradient(circle at 37% 34%,#a45848 0 35%,#7b3d38 36% 57%,#5a2c2d 58% 70%,#402024 71%);box-shadow:inset -15px -12px 25px #12060755}
+html[data-theme="night"] :is(.planet-body>span,.planet-star){color:#e4a48b}
+html[data-theme="night"] .planet-ring{border-color:#905347}
+html[data-theme="night"] .planet-ring:after{background:#b9755b;border-color:#61372f}
+html[data-theme="night"] .little-doodle{background:#7e4036;color:#f4c9b9;border-color:#bd7863;box-shadow:none}
+html[data-theme="night"] .little-doodle.two{background:#9d5948}
+html[data-theme="night"] .little-doodle.three{background:#5b3037}
+html[data-theme="night"] :is(.game-art,.game-flood .game-art,.game-four .game-art){background:#342023}
+html[data-theme="night"] :is(.game-symbol,.game-flood .game-symbol,.game-four .game-symbol,.game-dash .game-art:before,.game-dash .game-art:after){color:#c47b68}
+html[data-theme="night"] .game-kind{background:#120c0d66;border-color:#805048}
+html[data-theme="night"] .stage-wrap{background:#160e10}
+html[data-theme="night"] :is(#arc-canvas,#arc-replay-canvas,#world-editor){filter:brightness(.7) saturate(.8)}
+html[data-theme="night"] :is(.spiro-art svg,#arc-identity-seal svg){filter:brightness(.7)}
+html[data-theme="night"] :is(.page,.hero-planet,.hero-planet *,.orbit-art,.orbit-art *,.game-card,.game-art *,.little-doodle){animation:none!important;transition:none!important}
+@media(max-width:1150px){.top-meta{gap:12px}.top-meta .version{display:none}}
+@media(max-width:650px){.theme-toggle{font-size:10px;padding:7px 9px;min-height:38px}.top-meta{gap:8px}.topbar{gap:10px}.theme-form .dialog-actions{gap:10px}.theme-form .dialog-actions .button{flex:1}}
+@media(max-width:360px){.topbar{padding:0 14px}.breadcrumb{font-size:7px}.breadcrumb>span:first-child{margin:0 7px}.theme-toggle{font-size:9px;padding:6px 8px}.theme-toggle .theme-icon{display:none}.top-meta #lock-top{font-size:9px}}
+
+html[data-theme="night"] .nav-item:not(.active){color:var(--muted)}
+html[data-theme="night"] #arc-connect-dialog textarea{background:var(--night-input);color:var(--ink);border-color:var(--line)}
+html[data-theme="night"] .arc-tabs button.active{border-bottom-color:var(--night-accent)}
