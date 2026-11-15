@@ -1,0 +1,5 @@
+.ha-connection{margin:18px 28px;padding:18px;border:1px solid #a9b39c;border-radius:14px;background:#eff3e8;color:#263024}
+.ha-connection h2{font-size:18px;margin:0 0 8px}.ha-connection p{font-size:14px;line-height:1.5;margin:8px 0}
+.ha-connection a{color:inherit;text-decoration:underline}.ha-connection button{margin-right:14px}
+html[data-theme="night"] .ha-connection{background:#211313;color:#deb8ad;border-color:#674139}
+@media(max-width:600px){.ha-connection{margin:12px;padding:14px}}
