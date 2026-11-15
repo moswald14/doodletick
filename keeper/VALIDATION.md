@@ -1,4 +1,24 @@
-# Validation — Doodle Tick 0.2b
+# Validation — Doodle Tick 0.3b
+
+The combined Keeper/Home Assistant suite passed **182/182**. This includes native signaling/transport fixtures, local route protections, preserved garden accounting, legacy and Keeper-only backup staging, ingress/HTTPS behavior, and 47 GPU/founder protocol/UI checks. An independent team review repeated the original 44 GPU/founder checks and reproduced/fixed a consent-withdrawal race; three additional checks cover public proof copying and clipboard fallback. This is bounded implementation review, not a security audit.
+
+Actual Chrome WebGPU execution passed two shader self-tests, found the expected fixture nonce 5559 for difficulty 16, and produced SHA-256 `00004062061d99e4df2fd4123b18167566925f222214f696d45463e496957485`. Independent WebCrypto verification matched. It processed 8,192 candidates in about 608 ms on the owner's Windows computer (hardware inventory reports GTX 1080; the proof itself cannot establish hardware provenance). A second difficulty-24 run stopped on request after one batch, about 182 ms, without a proof result. No user founder keys or coins were created by these tests.
+
+Actual native ArcadeLink connections in Chrome completed signed offer/answer exchange, produced matching spirographs, and delivered exact application messages in both directions after both confirmations. ICE-server lists were empty. A separate real PeerLink check transferred 65,537 exact bytes in five chunks, verified the signed Creative Commons record, received the storage acknowledgement and drained both channels. The fixture initially closed connections before its acknowledgement finished; correcting its teardown timing produced a clean pass without changing production code. These checks used two connections on one computer, not two physical devices or a cross-router test. One browser log contained an unassigned extension-style receiving-end error; application pairing and message checks completed successfully, and no matching extension API call exists in the inspected connection code.
+
+The actual founder interface signed a disposable proposal and generated a GPU proof. After reload, Copy public proof exposed a 1,259-byte public record containing no private key, username, vault or password fields. Importing that record through the browser file chooser verified its signature and proof again while locked. The test identity was disposable and is not an official founder reference. Browser download completion was not confirmed; the copy/import path was verified instead.
+
+Home Assistant Cloud HTTPS and the published 0.2b source installation were verified before the user changed the next release's network direction. The old Keeper is backed up offline and its identity staged for the Tailscale-free app. **The actual 0.3b repository update/start/migration is still pending at this source record.** Record live cutover and restart evidence separately before claiming completion.
+
+The integrated standalone 0.3b app rendered its Coin navigation, locked-vault controls and direct-connection status without browser console warnings or errors.
+
+The DVC page produces a prelaunch certificate only. No official founder reference, spendable DVC blockchain, production consensus, live public-wallet transaction or comprehensive security audit is established by these results. Physical multi-device reachability, relays, long-term uptime and complete backup restore remain additional work. The existing EVM contract implementation is unchanged from the 0.2b checks below.
+
+## Archived 0.2b source record
+
+The following is the evidence as recorded for 0.2b before its deployment transition. Historical pending statements are not current installation instructions.
+
+### Validation — Doodle Tick 0.2b
 
 This record separates current automated checks, observed deployment behavior and historical evidence. A passing local test does not verify every browser, Home Assistant installation, VPN or public blockchain.
 
