@@ -1,53 +1,49 @@
-# Doodle Tick · 0.2b
+# Doodle Tick · 0.3b
 
-A private creator arcade with a phone-cord-inspired identity drawing, an hourly color clock and a Dot Wave mushroom garden. Run a Keeper on your own computer or Home Assistant.
+A creator arcade inspired by the loops of a telephone cord: an hourly color clock, Dot Wave sound mushrooms, an encrypted vault and direct peer connections. Run a Keeper on your computer or Home Assistant.
 
 [![Add Doodle Tick to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fmoswald14%2Fdoodletick)
 
-**Experimental release.** Choose private Keeper coins or a separate public wallet garden. Public contracts have implementation tests, not a production security audit. Real multi-device VPN play, sustained load and public-network transactions still need field testing. See [validation](keeper/VALIDATION.md) and [public garden rules](contracts/README.md).
+## The Doodleverse Coin update
 
-## What it does
+**0.3b removes the required Tailscale runtime** and introduces signed, encrypted WebRTC pairing. Exchange an invitation and answer, compare the spirographs, and confirm on both sides. No outside relay is configured automatically. Direct reachability depends on the networks involved; worldwide discovery and relaying remain development work.
 
-- Visits every RGB hex color once per pass, one color per hour; each pass starts red and ends green.
-- Creates and imports Dot Wave mushroom recipes. Each unique recipe earns one in-app Doodle Coin per complete owned UTC hour in a shared garden.
-- Transfers coins, buys decorations and trades mushroom generators through one authoritative Keeper.
-- Mints completed mushroom hours and offers visible, optional proof mining with Start and Stop controls. Private mining rewards are limited to one per player and mushroom each UTC hour.
-- Lets each player connect an existing wallet, choose its network, deploy or attach a compatible public garden, register recipes, mint earned tokens, submit mined proofs and transfer tokens. The wallet confirms every public transaction and its fee.
-- Offers three small multiplayer games, a world workshop, signed spirograph pairing, an encrypted browser vault and licensed peer file sharing.
-- Switches automatically to a muted red night theme, with manual appearance controls.
+**Doodleverse Coin begins with a disclosed 1,000,000 DVC founder-allocation proposal.** The new Coin page signs a public certificate with an unlocked creator identity, runs a bounded GPU proof search only when requested, and verifies imported proofs independently. Stop, hiding the page, leaving the view and locking the vault cancel work. A successful certificate is a prelaunch record: it establishes a signature and hash target, with no spendable DVC balance or adopted blockchain genesis. Anyone can create a self-signed proposal; compare its full address and hash with the project's published reference before assigning it authority. Future network supply and issuance rules are unadopted.
 
-Private Doodle Coins and public DGT tokens have separate balances. There is no conversion, redemption or promised market value. Every public garden address and chain is a separate token system, even when its name and symbol match another. Spirographs help compare signed keys; they do not establish a person's legal identity or prove authorship. Creative Commons checks preserve supplied attribution and validate declared uses inside the app; they cannot prevent copying outside it.
+Read the [Doodleverse direction and developer invitation](DOODLEVERSE.md). Human networking, protocol, GPU, Home Assistant and usability contributors are wanted. The longer-term goals are community-owned free communication, the proposed Moz Republika Socialist Foundation, and eventually monthly Doodle Tick Free Food Days with local partners.
+
+## What stays in your Keeper
+
+- Every RGB hex color gets an hour: 16,777,216 colors per pass, starting red and ending green.
+- Unique Dot Wave mushroom recipes earn private Doodle Coins for completed owned UTC hours. One Keeper records its own balances, trades and optional mining bonuses.
+- Each player can choose the separate public-wallet DGT garden mode from 0.2b. Every public transaction requires wallet confirmation and network fees.
+- Three small games, a world workshop, licensed peer file sharing, an encrypted creator vault and automatic red night mode remain available.
+
+Private Doodle Coins, public DGT gardens and DVC certificates are separate. There is no conversion, redemption or promised market value. Spirograph comparison checks signed keys, not legal identity or authorship. Creative Commons handling preserves supplied attribution and validates declared uses inside the app; it cannot stop copying outside it.
+
+**Connection changes:** room codes and private garden access work through the same Keeper. Separate Keepers use signed manual peer invitations for games/files. The old remote VPN bridges are removed; data held by another Keeper has not moved. Open that Keeper through its own trusted interface to access its garden. Recreate old pairing codes. A room's player host and browsers serving files must stay open.
 
 ## Install in Home Assistant
 
-Use Home Assistant OS with a 64-bit ARM or AMD64 system. Select the badge above, or add `https://github.com/moswald14/doodletick` under **Settings → Apps → Install app → Repositories**. Install **Doodle Tick Keeper**, enable **Start on boot**, **Watchdog** and **Auto update** as desired, then open its Web UI. The first installation builds from source and can take several minutes. App backups stop it briefly to capture consistent Keeper and VPN state.
+Use Home Assistant OS on 64-bit ARM or AMD64. Add `https://github.com/moswald14/doodletick` under **Settings → Apps → Install app → Repositories**, install **Doodle Tick Keeper**, and open its Web UI. Enable **Start on boot**, **Watchdog** and **Auto update** after verifying setup. The first source build can take several minutes. Cold backups stop the app briefly for a consistent snapshot.
 
-This is a Home Assistant **app/add-on repository**. [HACS does not distribute add-ons](https://www.hacs.dev/docs/faq/addons/). A real HACS dashboard companion is a separate future task.
+Open Home Assistant over trusted **HTTPS** for vault signatures and GPU work. Home Assistant Cloud remote HTTPS is one supported option; keep Home Assistant sign-in enabled. The app needs no Tailscale login, router DMZ, published browser port or network-administration capability. See the [Home Assistant guide](doodletick/DOCS.md).
 
-Open Home Assistant over **HTTPS** to use the encrypted vault, planting and trading. The recipe maker also previews on ordinary HTTP. Connect the included Tailscale device to your private network; other players need compatible Keepers in that network. No public router ports or DMZ are required. Follow the [Home Assistant guide](doodletick/DOCS.md).
+This is an app/add-on repository. [HACS does not distribute add-ons](https://www.hacs.dev/docs/faq/addons/); a dashboard companion would be separate.
 
-### Already running a local Doodle Tick app?
+### Moving from a local app
 
-Keep that installation and its backup. A GitHub-repository installation receives a different app identifier and separate data storage. Adding this repository **does not migrate** the existing witness identity, garden balances, receipts or Tailscale state. The [offline migration guide](doodletick/MIGRATION.md) describes staging a verified copy for the new app's first start; import refuses existing target state, and restart never reapplies an old balance snapshot. Do not run two copies of one Keeper identity. Ordinary updates to the same installed app retain its persistent data.
+Keep the original installation and backup. Repository apps have a different identifier and data volume. Follow the [offline migration guide](doodletick/MIGRATION.md) to preserve the witness, receipts and garden ledger before the first start. Verified imports refuse existing target state and never reapply an old snapshot after restart. Old VPN files are retained inertly for rollback. Browser vault/file backups are separate. Never run two copies of one Keeper identity.
 
 ## Desktop and Raspberry Pi OS
 
-Download the appropriate asset from [Releases](https://github.com/moswald14/doodletick/releases/tag/0.2b). Desktop requires Node.js 22 or newer; Node 24 is used by the tests. Extract the desktop ZIP, run `node server.mjs` inside its `doodletick-keeper` folder, and open **http://127.0.0.1:4317**. No npm dependencies are required to run the app.
+Download an asset from [0.3b Releases](https://github.com/moswald14/doodletick/releases/tag/0.3b). Desktop requires Node.js 22 or newer; development checks use Node 24. Extract the desktop ZIP, run `node server.mjs` inside `doodletick-keeper`, and open **http://127.0.0.1:4317**. No npm dependencies are required to run the app. For a source checkout, run it from `keeper/`.
 
-For a source checkout:
+The separate Pi tarball includes checksums and the [Pi OS setup guide](keeper/pi/START-HERE.md). It does not install Tailscale. Pi OS service installation remains a separate hardware verification task from the Home Assistant app.
 
-```sh
-cd keeper
-node server.mjs
-```
+## Build with us
 
-For Raspberry Pi OS, use the separate tarball and its [setup guide](keeper/pi/START-HERE.md). It includes an installer and file checksums. Raspberry Pi OS service installation is separate from the Home Assistant app and still needs a physical service-install test.
-
-## Develop with us
-
-The [AI coding team](AI_TEAM.md) is organized into package review, build automation, contributor documentation and release integration. These are roles in the development chat, not hired maintainers or a continuously running service. The repository owner reviews releases and access changes.
-
-Start with [CONTRIBUTING.md](CONTRIBUTING.md), [architecture](ARCHITECTURE.md) and the [roadmap](ROADMAP.md). Follow-up work includes physical two-device VPN verification, wallet/provider field tests and broader independent contract review.
+Start with [CONTRIBUTING.md](CONTRIBUTING.md), [architecture](ARCHITECTURE.md), [roadmap](ROADMAP.md) and [validation](keeper/VALIDATION.md). The [AI team](AI_TEAM.md) describes bounded coding roles in the development chat; human maintainers and reviewers are still needed. No paid job or contributor coin allocation is promised.
 
 ```sh
 node scripts/sync-ha.mjs --check
@@ -55,10 +51,8 @@ node scripts/check-repository.mjs
 node scripts/test.mjs
 ```
 
-Canonical runtime source lives in `keeper/`. Run `node scripts/sync-ha.mjs` after changing it to refresh `doodletick/keeper/`. Never commit live `.doodletick` data or personal backup files. See [SECURITY.md](SECURITY.md) for private vulnerability reporting.
+Canonical runtime source is `keeper/`; regenerate `doodletick/keeper/` with `node scripts/sync-ha.mjs`. Never commit live keys, vaults, ledgers, logs or backups. See [SECURITY.md](SECURITY.md) for reporting. The software is experimental and has not had a comprehensive independent security audit. Real-wallet transactions, physical multi-device reachability and sustained adversarial operation still need testing.
 
-## License and credits
+## License
 
-Copyright © 2026 moswald14 and contributors. Included project code, including the shared Dot Wave sound modules, is released under **GNU GPL version 3 only**. See [LICENSE](LICENSE) and [third-party notices](THIRD_PARTY_NOTICES.md). This permission applies to the files in this repository; it does not relicense other Dot Wave Studio products.
-
-Your writing, audio, artwork, vault exports and shared files remain separate from the code license. Their creators choose applicable licenses; existing attribution stays attached.
+Copyright © 2026 moswald14 and contributors. Included project code and shared Dot Wave modules use **GNU GPL version 3 only**. See [LICENSE](LICENSE) and [third-party notices](THIRD_PARTY_NOTICES.md). This does not relicense other Dot Wave Studio products. Creators retain their separate content rights and choose licenses for their shared work.

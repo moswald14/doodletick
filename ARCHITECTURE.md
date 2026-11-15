@@ -1,62 +1,56 @@
 # Architecture
 
-Doodle Tick combines an encrypted browser workspace with a trusted local Keeper. Members can connect Keepers through a private Tailscale network. A private garden uses one Keeper as its scorekeeper. The separate public mode uses a player's wallet and an independently deployed EVM ERC20 garden; Keeper balances are never imported into it.
+Doodle Tick combines an encrypted browser workspace with a trusted local Keeper. Native WebRTC connects browsers after signed invitations and two-sided spirograph comparison. A private garden uses one Keeper as its scorekeeper. Public DGT gardens and the prelaunch DVC certificate are separate mechanisms with separate authority.
 
 ## Source layout
 
 | Location | Responsibility |
 | --- | --- |
-| `keeper/server.mjs` | Loopback browser service, signed witness receipts, asset allowlist |
-| `keeper/vpn-network.mjs` and `rendezvous.mjs` | Private peer connections, directory, bounded message delivery |
-| `keeper/garden-ledger.mjs` | Garden ownership, balances, earnings and atomic trades |
-| `keeper/public/core.mjs` | Creator identity, signatures, encryption and hourly color sequence |
-| `keeper/public/vpn-transport.mjs` | Browser-to-Keeper requests, ordered channels and retries |
-| `keeper/public/spirograph-auth.mjs` | Signed pairing and explicit comparison by both participants |
-| `keeper/public/file-store.mjs`, `licenses.mjs`, `peers.mjs` | Encrypted file library, content-license checks and peer transfers |
-| `keeper/public/game-engine.mjs` and `arcade-*.mjs` | Player-hosted games, local saves, invitations and replay verification |
-| `keeper/public/mushroom-*.mjs` and `dot-*.mjs` | Recipe normalization, interface, artwork and shared Dot Wave audio algorithms |
-| `doodletick/` | Home Assistant app container, ingress adapter and private-network startup |
-| `doodletick/keeper/` | Generated Home Assistant copy of the canonical runtime |
-| `scripts/` | Runtime synchronization and repository validation |
+| `keeper/server.mjs` | Loopback service, witness receipts and asset allowlist |
+| `keeper/vpn-network.mjs`, `rendezvous.mjs` | Local garden/directory compatibility routes; no VPN, peer listener or arbitrary remote proxy |
+| `keeper/public/vpn-transport.mjs`, `vpn-description.mjs` | Native WebRTC adapter and bounded complete signaling descriptions |
+| `keeper/public/spirograph-auth.mjs`, `peers.mjs`, `arcade-link.mjs` | Signed invitations, two-sided comparison and gated application channels |
+| `keeper/garden-ledger.mjs` | Private garden ownership, balances, earnings and atomic trades |
+| `keeper/public/core.mjs` | Existing creator identity, encryption, signatures and hourly color sequence |
+| `keeper/public/doodleverse-coin*.mjs`, `doodleverse-gpu.mjs` | Signed prelaunch certificate, independent verifier and bounded GPU candidate search |
+| `keeper/public/public-chain*.mjs`, `contracts/` | Separate wallet-approved EVM garden and reproducible contract source |
+| `keeper/public/file-store.mjs`, `licenses.mjs` | Encrypted library and signed license metadata |
+| `doodletick/` | Home Assistant ingress, startup and one-time offline migration |
+| `doodletick/keeper/` | Generated copy of the canonical runtime |
 
 ## Connections
 
 ```mermaid
 flowchart LR
-  B[Browser workspace] --> K[Local Keeper]
-  K <-->|Private VPN| P[Another member's Keeper]
-  K --> G[Selected garden Keeper]
+  B[Browser workspace] --> K[Its local Keeper]
+  B <-->|WebRTC DTLS and signed pairing| P[Peer browser]
   H[Home Assistant HTTPS session] --> I[Authenticated ingress]
   I --> A[Home Assistant Keeper]
-  A <-->|Private VPN| K
+  H <-->|WebRTC DTLS and signed pairing| P
 ```
 
-The standalone browser service binds to loopback. Its peer service binds to the private VPN interface. The browser channel adapter uses Keeper transport; there is no automatic public WebRTC fallback in this private edition. A room's host handles the simulation and forwards room messages. The directory introduces peers and expires stale listings; it is not a dedicated game server.
+Standalone HTTP binds only to loopback. The Home Assistant gateway listens inside its container for authenticated Supervisor ingress and exposes no host port. It requires the existing same-origin mutation header and forwards only to its loopback Keeper. The app requests no network capabilities, tunnel device, host networking, Docker access or Supervisor administration. Its own configuration folder is mounted read-only for verified import.
 
-The Home Assistant container runs its own Tailscale device. The gateway accepts Supervisor ingress traffic, requires a same-origin header for mutations and forwards only to the container's loopback Keeper. The ingress build uses relative URLs and disables the offline service worker. It does not publish a browser port, enable a router DMZ, request host networking or grant the app Supervisor administrative access. A read-only mount of this app's own configuration folder supports a verified, one-time offline import before either daemon starts. It cannot read other apps' configuration folders.
+Names containing `vpn` and the `/vpn-api` prefix remain for local compatibility; they do not start a VPN. Removed remote bridges return an explicit unavailable response. Room codes list rooms on the same Keeper only. Separate Keepers pair via signed manual offers/answers. Native DTLS encrypts transport; spirographs authenticate the signed transcript. Application data waits for both confirmations. ICE gathering must finish with candidates; no STUN/TURN service is configured automatically, so cross-router connectivity is not assured.
+
+Games remain player-hosted. Directory listings expire and do not migrate the host. Files require open, unlocked browsers; the Keeper does not provide unattended P2P storage. A future authenticated rendezvous/relay service requires a separate admission, revocation, abuse-control and operator design.
 
 ## Data and authority
 
-| Data | Where it lives | Backup requirement |
-| --- | --- | --- |
-| Creator private identity and writings | Encrypted browser storage | Export the encrypted vault |
-| File library and arcade saves | Encrypted browser storage | Export their separate backups |
-| Witness identity and receipts | Keeper data directory | Preserve the original identity and receipt files together |
-| Garden ledger and generator recipes | Selected garden Keeper | Back up the ledger with its matching witness key |
-| VPN device identity | Tailscale state | Keep private; do not run restored clones concurrently |
+| Data | Storage and backup |
+| --- | --- |
+| Creator private identity and writing | Encrypted browser vault; export its own backup |
+| File library and arcade saves | Separate encrypted browser stores and exports |
+| Witness identity, receipts and garden ledger | Keeper data directory; preserve original key and matching records together |
+| DVC certificate/proof | Public browser record and explicit export; includes no private identity material |
+| Legacy VPN files | Preserved inertly during compatible migration; unused by runtime |
 
-Standalone Keeper data is kept in its `.doodletick` directory. Home Assistant uses `/data/keeper` and `/data/tailscale`. A browser origin change does not migrate browser storage, and a Home Assistant app backup does not back up an encrypted browser vault.
+Home Assistant uses `/data/keeper`. Earlier `/data/tailscale` files may remain for rollback but are not loaded by a daemon. Browser origins still define storage boundaries. One-time import validates every staged hash, refuses existing target data, flushes copies and records completion to prevent stale re-import.
 
-Garden requests are signed by creator identities. One serialized ledger accepts valid sequences, settles completed UTC earning hours, checks funds and writes signed snapshots atomically. Retries use the same signed request. A market purchase transfers coins and generator ownership in one action. Completed seller earnings stay with the seller; the buyer receives future completed earning hours. Independent Keepers have independent balances.
+Garden requests retain the existing signed formats, issuer pinning, serialized accounting and idempotent retries. Each Keeper has independent balances. The operator remains trusted to keep time, run the code and protect backups; signatures do not prevent a dishonest operator or snapshot rollback. Public DGT contracts have separate capped rules and wallet-confirmed actions. See [their guide](contracts/README.md).
 
-The garden operator is trusted to run the code, keep time and protect backups. Signatures do not prevent an operator from changing software or restoring old state. Recipes and balances are visible to that operator. A generator purchase does not transfer copyright or prove exclusive ownership of a sound.
+The DVC certificate binds exactly one proposed 1,000,000-coin founder allocation. Existing creator signatures bind its public identity and canonical manifest; SHA-256 work binds the signed proposal. Export/import verifies strict formats, signatures, hash and difficulty. GPU candidates are checked with WebCrypto. Mining is opt-in and bounded, with cancellation on hiding, navigation, lock and changed consent. A proof establishes its stated target, not GPU provenance, canonical project authority, live genesis or a spendable balance. Total eventual network supply and future issuance remain unadopted.
 
-Private mining uses signed expiring challenges and the existing serialized garden action endpoint. Challenges bind ownership and time; caps persist across retries, transfers and restarts. A visible worker stops on hide, navigation, lock and mode changes. Public mining has separate contract rules and a separate wallet-confirmed proof submission; its low-difficulty proof is an earning mechanic, not the EVM network's consensus. See [the contract guide](contracts/README.md) for supply limits, source, tests and trust boundaries.
+## Limits
 
-## Important boundaries
-
-Spirographs help people compare signed keys; they do not prove a unique human or real-world identity. Creative Commons handling validates metadata and declared uses, and cannot stop copying outside the app. Game replay checks establish consistency of a supplied transcript, not independent anti-cheat.
-
-Peer file sharing needs participating browsers to remain open. A Home Assistant Keeper does not yet provide unattended shared file storage. Rooms end when their player host leaves; restarting a directory removes its temporary invitations. HTTP recipe previews remain decorative, while vault and signed garden functions need HTTPS or the browser's localhost exception.
-
-Changes to these boundaries need explicit design, tests and accurate user-facing explanations. See [the roadmap](ROADMAP.md).
+Key comparison does not establish a unique human or authorship. License checks validate declared metadata and uses, not worldwide enforcement. Game replay checks establish transcript consistency, not independent anti-cheat. Native connections tested on one computer do not prove reachability between households. See [validation](keeper/VALIDATION.md) for exact observations.

@@ -25,11 +25,11 @@ npm run check
 npm test
 ```
 
-Home Assistant-specific code lives in `doodletick/main.mjs`, `gateway.mjs`, `tailscale.mjs` and `public/`. See [the architecture guide](ARCHITECTURE.md) for the storage and network boundaries.
+Home Assistant-specific code lives in `doodletick/main.mjs`, `gateway.mjs`, `migration.mjs` and `public/`. See [the architecture guide](ARCHITECTURE.md) for the storage and network boundaries.
 
-Run checks appropriate to your change. A documentation correction does not need a new unit test. A change to signing, payments, recovery or retry behavior needs a regression test that exercises the failure it prevents. A UI change needs a browser check; a container or VPN change needs the corresponding environment check. State what was not tested.
+Run checks appropriate to your change. A documentation correction does not need a new unit test. A change to signing, payments, recovery or retry behavior needs a regression test that exercises the failure it prevents. A UI change needs a browser check; a container or networking change needs the corresponding environment check. State what was not tested.
 
-Build numbered downloads from the repository root with `python scripts/package-release.py --version 0.2b`. Artifacts are created exclusively in `dist/0.2b/`; a repeated build refuses to overwrite them. Public-chain bytecode ships with its complete corresponding Solidity/compiler input source. Never use real keys or a paid network to run verification tests.
+Build numbered downloads from the repository root with `python scripts/package-release.py --version 0.3b`. Artifacts are created exclusively in `dist/0.3b/`; a repeated build refuses to overwrite them. Public-chain bytecode ships with its complete corresponding Solidity/compiler input source. Never use real keys or a paid network to run verification tests.
 
 ## Preserve users' work
 
