@@ -1,6 +1,6 @@
 # 0.7b — Sleep garden and Keeper time
 
-This update is in preparation; publication and installation are pending.
+0.7b is published. See the validation report for checked behavior and deployment limits.
 
 - Add a Sleep garden with locally generated soft wind, combined Dot Wave mushroom voices, reduced static and adjustable arcade blips/pops. Listening-only starters work without a vault; saved garden recipes and local recipe files can be loaded explicitly.
 - Start only on **Start sleep sounds**. Default to eight hours at 15% volume and schedule a final-minute fade and stop against the audio clock. Stop, mix/source changes, page exit and browser audio interruptions require a new Start.
