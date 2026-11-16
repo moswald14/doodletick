@@ -1,3 +1,14 @@
+# 0.7b — Sleep garden and Keeper time
+
+This update is in preparation; publication and installation are pending.
+
+- Add a Sleep garden with locally generated soft wind, combined Dot Wave mushroom voices, reduced static and adjustable arcade blips/pops. Listening-only starters work without a vault; saved garden recipes and local recipe files can be loaded explicitly.
+- Start only on **Start sleep sounds**. Default to eight hours at 15% volume and schedule a final-minute fade and stop against the audio clock. Stop, mix/source changes, page exit and browser audio interruptions require a new Start.
+- Allow intentional background listening. Vault autolock clears owned recipes for next play while already-rendered sound can finish without keys; it cancels an owned mix still preparing. Keep the page open and the computer awake.
+- Add fresh nonce-bound Keeper time signatures, bounded round trips, uncertainty/stale status and elapsed-time clock projection. Small corrections adjust gradually; confirmed large corrections reanchor the display and may move it backward without replaying rewards. Automatic day/night appearance uses projected Keeper time with the existing time zone and chosen hours. Private garden requests require fresh time from their Keeper; no Internet UTC or distributed-consensus accuracy is claimed.
+- Preserve creator identities, signed formats, private garden rewards, native DVC supply/consensus and existing saved data. Listening does not plant, harvest or mine.
+- See [the guide](../keeper/TIME-AND-SLEEP.md) and [validation status](../keeper/VALIDATION.md).
+
 # 0.6.2b — Mine to a reward address
 
 - Add a validated Mining reward address so MINE NOW needs no wallet connection or signing prompt.

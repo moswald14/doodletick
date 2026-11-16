@@ -15,9 +15,9 @@
     try { const saved = localStorage.getItem(storageKey); return saved ? validate(JSON.parse(saved)) : { ...defaults }; }
     catch { return { ...defaults }; }
   }
-  let preferences = readPreferences(), resolved = '', timer;
+  let preferences = readPreferences(), resolved = '', timer, timeSource = () => Date.now();
   function apply() {
-    const now = new Date(), at = now.getHours() * 60 + now.getMinutes();
+    const now = new Date(timeSource()), at = now.getHours() * 60 + now.getMinutes();
     const start = minutes(preferences.start), end = minutes(preferences.end);
     const scheduled = start > end ? at >= start || at < end : at >= start && at < end;
     const theme = preferences.mode === 'auto' ? (scheduled ? 'night' : 'day') : preferences.mode;
@@ -47,6 +47,9 @@
       return { ...preferences, theme: resolved, persisted };
     },
     reset: () => window.KeeperTheme.setPreferences(defaults),
+    // The app supplies its projected Keeper clock after loading. Time zones and
+    // the user's day/night hours stay local; this never changes an OS clock.
+    setTimeSource(source) { if (typeof source !== 'function') throw new Error('Choose a clock function.'); timeSource = source; poll(); },
     refresh: poll,
   });
   window.addEventListener('storage', event => { if (event.key === storageKey || event.key === null) { preferences = readPreferences(); poll(); window.dispatchEvent(new CustomEvent('keeper-themechange')); } });

@@ -5,7 +5,7 @@ import { request } from './vpn-transport.mjs';
 import { MINING_RULES, validMiningChallenge } from './mushroom-mining.mjs';
 import { createPublicChainUI } from './public-chain.mjs';
 
-export function createMushroomUI({ toast, onUnlockRequest, onActivity }) {
+export function createMushroomUI({ toast, onUnlockRequest, onActivity, clock, onBeforeListen = () => {} }) {
   const root = document.getElementById('view-garden');
   root.innerHTML = `<div class="garden">
     <div class="garden-top"><div><div class="eyebrow">DOT WAVE STUDIO × DOODLE TICK</div><h1>A little garden.<br><em>A growing economy.</em></h1><p class="garden-lead">Your sound has a life of its own. Plant a unique mushroom, collect its hourly coins, and trade with your people.</p><p class="garden-clock" id="garden-clock"></p></div><div class="garden-mascot">${mushroomArt('doodle-dot-wave-garden', ['lantern', 'ring'])}</div></div>
@@ -41,6 +41,14 @@ export function createMushroomUI({ toast, onUnlockRequest, onActivity }) {
   if (host !== 'self') $('host').add(new Option('Previous remote garden · unavailable', host)); $('host').value = host;
   const status = (text, error = false) => { $('status').textContent = text; $('status').dataset.error = String(error); };
   const pinKey = () => 'doodletick-garden-issuer:' + host;
+  async function requestTime() {
+    if (!clock) return Date.now();
+    // A displayed estimate is not permission to use stale signed-action time.
+    // Re-sample the current Keeper, preserving the existing issuer pin checks.
+    try { clock.requestNow(); } catch { await clock.sync(); }
+    if (clock.snapshot().issuer !== issuer) throw Error('The time source and garden Keeper do not match. Refresh this garden.');
+    return clock.requestNow();
+  }
   function stop() { audioSerial++; try { source?.stop(); } catch {} source?.disconnect(); source = null; context?.close().catch(() => {}); context = null; $('listen').textContent = '▶ Listen'; }
   function stopMining(message = 'Stopped. Press Start mining when you want to try again.') {
     miningSerial++; miningWorker?.terminate(); miningWorker = null; miningPhase = 'idle'; miningMushroom = null;
@@ -138,7 +146,9 @@ export function createMushroomUI({ toast, onUnlockRequest, onActivity }) {
       issuer = fp;
       $('host-info').textContent = 'Garden Keeper: ' + fp + ' · Coins stay in this garden.';
       if (who) {
-        const proof = await gardenRequest(who, issuer, 'account');
+        const requestAt = await requestTime();
+        if (serial !== generation || ticket !== refreshSerial) return;
+        const proof = await gardenRequest(who, issuer, 'account', {}, 0, requestAt);
         const answer = await request('garden/' + selectedHost + '/account', { method: 'POST', body: proof, retry: true });
         if (!await verifyGardenResponse(answer, issuer, await hash(proof.record)) || answer.record.owner !== who.fingerprint || answer.record.kind !== 'account') throw Error('Garden balance signature did not verify.');
         if (serial !== generation || ticket !== refreshSerial) return;
@@ -158,7 +168,9 @@ export function createMushroomUI({ toast, onUnlockRequest, onActivity }) {
     busy = true; refreshSerial++; controls(); onActivity();
     const serial = generation, who = identity;
     try {
-      const proof = await gardenRequest(who, issuer, action, args, state.sequence + 1);
+      const requestAt = await requestTime();
+      if (serial !== generation || !guard()) return;
+      const proof = await gardenRequest(who, issuer, action, args, state.sequence + 1, requestAt);
       const id = await hash(proof.record);
       if (serial !== generation || !guard()) return;
       pending = { proof, id, host, issuer };
@@ -262,7 +274,7 @@ export function createMushroomUI({ toast, onUnlockRequest, onActivity }) {
   $('export').onclick = () => download(current, current.name.replace(/[^\w-]/g, '-').slice(0,50) + '.mushroom.json');
   $('plant').onclick = () => { if (!$('rights').checked || !$('credit').value.trim()) { status('Add the creator credit and confirm your right to use this recipe.', true); return; } act('plant', { recipe: current, credit: $('credit').value.trim(), rightsConfirmed: true }); };
   $('listen').onclick = async () => {
-    stop(); const serial = audioSerial; onActivity();
+    stop(); const serial = audioSerial; onActivity(); onBeforeListen();
     try {
       context = new AudioContext(); const ctx = context; await ctx.resume(); if (serial !== audioSerial) return;
       const sound = renderMushroom(current); if (serial !== audioSerial) return;
@@ -273,13 +285,20 @@ export function createMushroomUI({ toast, onUnlockRequest, onActivity }) {
   };
   $('stop').onclick = stop;
   for (const b of root.querySelectorAll('[data-garden-tab]')) b.onclick = () => { tab = b.dataset.gardenTab; for (const t of root.querySelectorAll('[data-garden-tab]')) t.setAttribute('aria-selected', String(t === b)); render(); };
-  const timer = setInterval(() => { if (!visible || document.hidden) return; const tick = tickAt(); $('clock').textContent = `${tick.color} · Tick ${tick.index.toLocaleString()} · One new color, every hour`; if (mode === 'private' && !busy && !pending) refresh(true); }, 30000);
+  const timer = setInterval(() => { if (!visible || document.hidden) return; const tick = tickAt(clock?.now() ?? Date.now()); $('clock').textContent = `${tick.color} · Tick ${tick.index.toLocaleString()} · One new color, every hour`; if (mode === 'private' && !busy && !pending) refresh(true); }, 30000);
   document.addEventListener('visibilitychange', () => { if (document.hidden) { stop(); stopMining('Stopped because the page was hidden. Mining will not resume automatically.'); publicWallet.stop(); } });
   window.addEventListener('pagehide', () => { clearInterval(timer); stop(); stopMining(); publicWallet.stop(); });
   edit(current); controls(); render();
   return {
+    stopListening: stop,
+    async listeningMushrooms() {
+      if (!identity) throw Error('Unlock your existing vault to load its saved mushrooms. The starting collection needs no vault.');
+      const serial = generation; await refresh(true);
+      if (serial !== generation || !identity || !state?.joined) throw Error('Could not load this garden. Try Refresh garden, or use the starting collection.');
+      return state.mushrooms.map(m => ({ recipe: recipe(m.recipe) }));
+    },
     unlock(who) { stopMining(); publicWallet.stop(); generation++; identity = who; issuer = null; state = null; pending = null; busy = false; $('credit').value ||= who.username; controls(); if (visible && mode === 'private') refresh(); },
     lock() { stopMining('Stopped because the vault locked. Mining will not resume automatically.'); publicWallet.stop(); generation++; identity = null; state = null; issuer = null; pending = null; busy = false; stop(); $('dialog').close(); edit(newRecipe()); $('credit').value = ''; controls(); render(); status('Vault locked. Your garden stays with its Keeper.'); },
-    setVisible(value) { const opened = value && !visible; visible = value; publicWallet.setVisible(value && mode === 'public'); if (!value) { stop(); stopMining('Stopped because you left the garden. Mining will not resume automatically.'); } if (opened) { const tick = tickAt(); $('clock').textContent = `${tick.color} · Tick ${tick.index.toLocaleString()} · One new color, every hour`; if (mode === 'private') refresh(); } }
+    setVisible(value) { const opened = value && !visible; visible = value; publicWallet.setVisible(value && mode === 'public'); if (!value) { stop(); stopMining('Stopped because you left the garden. Mining will not resume automatically.'); } if (opened) { const tick = tickAt(clock?.now() ?? Date.now()); $('clock').textContent = `${tick.color} · Tick ${tick.index.toLocaleString()} · One new color, every hour`; if (mode === 'private') refresh(); } }
   };
 }

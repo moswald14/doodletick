@@ -37,6 +37,15 @@ test('custom same-day schedules, explicit modes and restore automatic work', () 
   env.api.reset(); assert.deepEqual(env.state(), { mode: 'auto', start: '21:00', end: '07:00', theme: 'night' });
 });
 
+test('a corrected Keeper time drives automatic appearance without changing saved local hours', () => {
+  const env = boot({ at: '2026-11-13T12:00:00' });
+  let corrected = new Date('2026-11-13T22:00:00').getTime();
+  env.api.setTimeSource(() => corrected); assert.equal(env.state().theme, 'night');
+  assert.equal(env.stored.size, 0);
+  corrected = new Date('2026-11-14T07:00:00').getTime(); env.tick(); assert.equal(env.state().theme, 'day');
+  assert.deepEqual({start:env.state().start, end:env.state().end}, {start:'21:00',end:'07:00'});
+});
+
 test('bad saved preferences fall back to automatic; invalid edits leave the existing schedule intact', () => {
   for (const raw of ['{', 'null', '42', '{"mode":"auto","start":"24:00","end":"07:00"}', '{"mode":"auto","start":"21:00","end":"21:00"}']) {
     assert.equal(boot({ raw, at: '2026-11-13T22:00:00' }).state().theme, 'night');

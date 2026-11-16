@@ -1,6 +1,10 @@
-# Doodle Tick Keeper · 0.6.2b
+# Doodle Tick Keeper · 0.7b
 
 Creator arcade, hourly color clock, encrypted vault, mushroom garden and native Doodleverse Coin for Home Assistant OS (aarch64 and amd64).
+
+The **Sleep garden** combines locally generated wind and mushroom sounds. Press **Start sleep sounds** for the eight-hour, low-volume preset with a final-minute fade. Starter mushrooms work without a vault; owned recipes are read only for listening. Sound may continue in a hidden tab and through vault locking once rendered, but the page and computer must remain active. There is no autoplay, new coin reward or uninterrupted-playback promise.
+
+Signed Keeper samples now drive the clock display and fresh private-garden request timestamps, with visible stale/uncertainty status. They identify this Keeper as the source, not an independently verified UTC clock. See [time and Sleep garden](../keeper/TIME-AND-SLEEP.md) for controls and limits.
 
 Enter a full nonzero **Mining reward address** on the Coin page, choose SHA-256/SHA-256d and GPU intensity, then press **MINE NOW**. Mining needs no wallet connection or signature. The destination's available funds, immature rewards and pending outgoing payments appear under **Mining address balances**, separately from **Wallet for sending**. A connected account can fill an empty mining field or be copied with **Use connected wallet address**. Editing the destination cancels work and repeat mode; sending still requires the controlling wallet's signature.
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import { createBackgroundMusic, musicPreferences, MUSIC_MOODS, MUSIC_STORAGE } from './background-music.mjs';
 
-export function createBackgroundMusicUI(root, { engineFactory = createBackgroundMusic, document: doc = globalThis.document, window: win = globalThis.window, onChange = () => {} } = {}) {
+export function createBackgroundMusicUI(root, { engineFactory = createBackgroundMusic, document: doc = globalThis.document, window: win = globalThis.window, onChange = () => {}, onBeforePlay = () => {} } = {}) {
   let storage = null, saved = null, storageOK = true, destroyed = false;
   try { storage = win.localStorage; saved = JSON.parse(storage.getItem(MUSIC_STORAGE)); } catch { storageOK = false; }
   root.classList.add('background-music');
@@ -34,7 +34,7 @@ export function createBackgroundMusicUI(root, { engineFactory = createBackground
   }
   function togglePlay() {
     if (doc.hidden) { engine.pause('Tab is hidden. Press Play when you return.'); return; }
-    if (['playing', 'starting'].includes(engine.state().phase)) engine.pause(); else void engine.play();
+    if (['playing', 'starting'].includes(engine.state().phase)) engine.pause(); else { onBeforePlay(); void engine.play(); }
   }
   const mute = () => save({ muted: !engine.state().muted });
   const volume = () => save({ volume: Number(el('volume').value) });
