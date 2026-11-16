@@ -1,3 +1,35 @@
+# Validation — Doodle Tick 0.5.1b
+
+## Current 0.5.1b evidence
+
+The compatibility update is in preparation. It adds an explicitly selected Ethereum chain-1 read service while preserving wallet-controlled accounts/signing, exact-block checks and existing vault/v1/v2 formats. It requests no financial action.
+
+| Check | Evidence |
+| --- | --- |
+| Focused wallet and recipient UI checks | **44 passed** using controlled provider/UI fixtures. |
+| Read-transport checks | **17 passed** using mocked requests/responses. |
+| Full Keeper/Home Assistant suite | **287/287 passed** via `node scripts/test.mjs`, with no failures or skips. The focused checks above are included in this total. |
+| Live PublicNode read-service probe | Passed in Node: chain `0x1`, latest-block lookup and EIP-1898 exact-block `eth_getCode` for the public zero address. No owner address was queried. |
+| Repository/source checks | Passed: 241 public files checked and 68 generated runtime files matched. |
+| Actual Chrome browser verification | Passed with a disposable creator, mock wallet, live PublicNode reads and real WebGPU work; details below. |
+| Release archives and publication | Pending. |
+| Home Assistant 0.5.1b installation/restart | Pending. |
+| Complete live Coinbase Wallet recipient proof | Unresolved; the 0.5b extension connection succeeded on chain 1, but recipient review failed before wallet signing. The failing preparatory request remains unidentified until the new diagnostics are deployed. |
+
+The first Node probe failed certificate trust. Retrying with `--use-system-ca` used the Windows system trust store and succeeded; TLS certificate verification remained enabled. This verifies the sampled read path, not future availability, browser behavior or historical smart-account state.
+
+The Chrome fixture deliberately rejected wallet block reads with code 4100. The app showed the safe method/code and made no automatic fallback. After explicit PublicNode selection, the browser fetched real Ethereum blocks and EIP-1898 exact-block EOA code, created the disposable creator and mock-wallet signatures, and completed real difficulty-16 WebGPU work. Its exported public JSON passed independent Node verification. Reload retained the public record but restored wallet reads as the default, without requesting accounts, signing or resuming mining.
+
+The controlled 4100 failure is fixture evidence, not a diagnosis of the actual Coinbase failure. These checks used no owner wallet address, owner key or chosen founder certificate. Neither these tests nor the public-address probe establish an actual Coinbase signature or DVC issuance. The optional read source is not independent trustless verification. No 0.5.1b publication or deployment is claimed here.
+
+## 0.5b publication and deployment evidence
+
+The published 0.5b Home Assistant update was verified with the same Keeper witness and zero receipts preserved. Automatic updates remained enabled. This confirms the installation and retained state; it does not establish a complete backup restore, audible music output, actual Coinbase signing or a complete live recipient proof.
+
+## Archived 0.5b source record
+
+The pending packaging/deployment statements below describe the original source cut. The later published installation evidence above supersedes that pending installation status without rewriting the archived record.
+
 # Validation — Doodle Tick 0.5b
 
 ## 0.5b source and browser evidence
