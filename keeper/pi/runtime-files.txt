@@ -56,3 +56,8 @@ public/doodleverse-coin.mjs
 public/doodleverse-coin-ui.mjs
 public/doodleverse-coin.css
 public/doodleverse-gpu.mjs
+public/doodleverse-recipient.mjs
+public/doodleverse-recipient-ui.mjs
+public/doodleverse-wallet.mjs
+public/recipient-crypto.mjs
+public/recipient-crypto-notices.txt
