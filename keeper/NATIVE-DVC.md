@@ -1,4 +1,4 @@
-# Native Doodleverse Coin · 0.6b
+# Native Doodleverse Coin · 0.6.1b
 
 DVC is an independent experimental proof-of-work coin. It uses its own history,
 balances, signatures and peer validation. It is not Bitcoin-compatible and is
@@ -12,10 +12,12 @@ and signs native DVC payments; Doodle Tick displays the native balance.
    the account that should receive mining rewards. If Home Assistant's embedded
    view hides the extension, use **Open Doodle Tick in a wallet window**.
 2. Choose **SHA-256** or **SHA-256d**, then Eco, Balanced or Fast GPU intensity.
-   Press the red **MINE NOW** button. One click searches for one block, bounded
-   by 60 seconds and 4,194,304 candidates. Stop, hiding the page, changing the
-   account or leaving the view cancels unfinished work. No automatic restart or
-   background miner is enabled.
+   Press the red **MINE NOW** button. Each round searches for one block, bounded
+   by 60 seconds and 4,194,304 candidates. **Keep mining** repeats rounds while
+   this page remains visible. The toggle starts off; turning it on alone does
+   not start work. Stop, turning it off, hiding the page, changing the account
+   or leaving the view cancels unfinished work and resets the toggle. There is
+   no saved mining-on setting or automatic resume after reopening.
 3. A successful proof is submitted to this Keeper. The node verifies it and
    saves it before reporting acceptance. Initially a block earns **50 DVC** plus
    included transfer fees. A reward in block 1 first becomes spendable in block
@@ -37,6 +39,66 @@ known vectors, nonce carries and full 256-bit target boundaries on the GPU, then
 independently rehashes a found candidate using Web Crypto. Software fallback is
 disabled in this miner. Consensus verifies work, not which hardware did it:
 other implementations may use CPUs, GPUs or specialized devices.
+
+## Nightcap mushroom and auto catcher
+
+**Use Nightcap preset** selects SHA-256, Eco intensity and Keep mining. It uses
+the existing Dot Wave mushroom artwork with a deterministic variation for the
+connected public account. Press MINE NOW to start it. SHA-256 has been observed
+working on the maintainer's GTX 1080 in Chrome; this is a verified compatibility
+choice, not a claim that it is the fastest or most profitable algorithm.
+
+The auto catcher submits a candidate only after independent digest verification.
+It counts a block only after the node confirms that exact block on its current
+chain, then refreshes balances before another round. Rewards are recorded in the
+native account and mature after six further blocks. The session counter resets
+when the account changes or the page closes; saved chain balances do not. A
+later competing chain may replace accepted blocks. The mushroom adds no extra
+issuance and does not plant or change a private garden generator.
+
+For an overnight session, leave the Coin page visible and the computer awake.
+The loop stops on errors rather than retrying a failed GPU, wallet or node.
+Every new round validates fresh node/account/job data and has the same limits.
+No overnight stability, earnings or unattended availability is guaranteed.
+
+## GITTIT::GODDIT console
+
+The Coin page includes a command input and a labeled INPUT / OUTPUT / ERROR log.
+Press Enter or Run to submit one command. Commands are case-insensitive.
+
+| Command | Result |
+| --- | --- |
+| `help` | Show the command list. |
+| `status` | Show the latest loaded node and mining state. |
+| `balance` | Show the connected account's latest loaded available, immature and pending balances. |
+| `refresh` | Load the node and account state again. |
+| `wallets` | Discover browser wallets; select one in the Wallet extension menu. |
+| `connect` | Request connection to the selected wallet. |
+| `algorithm sha256` or `algorithm sha256d` | Choose the same algorithm offered by the mining menu. |
+| `intensity eco`, `intensity balanced` or `intensity fast` | Choose GPU intensity. |
+| `mine` | Start with the selected algorithm and intensity; repeat if Keep mining is on. |
+| `repeat on` or `repeat off` | Select repeat mode or stop it. Turning it on alone does not start mining. |
+| `stop` | Cancel the current local action. Already submitted records may still confirm. |
+| `clear` | Clear the console transcript. This does not stop mining. |
+
+Each mining round keeps the 60-second and candidate limits, explicit start, hardware GPU
+requirement and independent result validation. Stop remains available while a
+command is running; commands are never queued or replayed after cancellation.
+Hiding the page or changing accounts cancels unfinished mining. Sending coins
+still requires the separate transfer review and wallet signature controls.
+
+The console accepts only these app commands. It has no operating-system shell,
+JavaScript evaluator, arbitrary URL fetch or wallet signing command. Unknown
+input is discarded without echoing it. Output is kept in memory, capped at 100
+entries / 24 KiB, and removed when the page closes. Do not enter passwords,
+recovery phrases or private keys. Public account details can appear in `balance`.
+Known GPU errors include recovery guidance; arbitrary driver/provider exception
+details are not copied into the console. Progress is sampled to keep it readable.
+
+If no WebGPU adapter is available, keep the Keeper on HTTPS, check that browser
+graphics acceleration is enabled, and restart the browser after an update or
+GPU-process failure. [Chrome's troubleshooting guide](https://developer.chrome.com/docs/web-platform/webgpu/troubleshooting-tips)
+describes these checks. This message does not indicate that a CPU miner started.
 
 ## Fixed genesis and supply
 

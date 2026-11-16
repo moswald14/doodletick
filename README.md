@@ -1,12 +1,30 @@
-# Doodle Tick · 0.6b
+# Doodle Tick · 0.6.1b
 
 A creator arcade inspired by the loops of a telephone cord: an hourly color clock, Dot Wave sound mushrooms, an encrypted vault and direct peer connections. Run a Keeper on your computer or Home Assistant.
 
 [![Add Doodle Tick to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fmoswald14%2Fdoodletick)
 
+## Nightcap and GITTIT::GODDIT
+
+**0.6.1b adds command input, output and errors to the Coin page.** Type `help`
+for the command list, `status` for the loaded node state, `balance` for your
+connected account, or `mine` and `stop` to control GPU mining. Choose the
+algorithm with `algorithm sha256d` and intensity with `intensity eco`.
+The console follows the same account, visibility and cancellation checks as the
+buttons. Output stays in this page and is bounded; Clear removes the transcript.
+See the [command guide](keeper/NATIVE-DVC.md#gittitgoddit-console) for details.
+
+Choose **Use Nightcap preset** for a Dot Wave mushroom with SHA-256, Eco intensity
+and **Keep mining**. Press **MINE NOW** to begin repeated rounds. The auto catcher
+submits each independently verified block and shows its immature reward in the
+connected account. Leave the Coin page visible and the computer awake. Stop,
+turning repeat off, leaving the page, changing accounts or an error ends the loop;
+reopening never resumes it. The mushroom's session counter records accepted
+blocks, not extra rewards or a separate garden coin balance.
+
 ## Native Doodleverse Coin
 
-**0.6b introduces an independent, experimental Doodleverse blockchain.** Open **Doodleverse Coin**, connect a compatible browser wallet, choose SHA-256 or SHA-256d and press the red **MINE NOW** button. One click searches for one block with a visible Stop control and a 60-second limit. A valid block earns native DVC; rewards mature after six further blocks. The fixed maximum is **21,000,000 DVC: 1,000,000 disclosed founder coins and 20,000,000 mineable coins**.
+**0.6b introduced an independent, experimental Doodleverse blockchain.** Open **Doodleverse Coin**, connect a compatible browser wallet, choose SHA-256 or SHA-256d and press the red **MINE NOW** button. Each round searches for one block with a visible Stop control and a 60-second limit; 0.6.1b adds opt-in Keep mining. A valid block earns native DVC; rewards mature after six further blocks. The fixed maximum is **21,000,000 DVC: 1,000,000 disclosed founder coins and 20,000,000 mineable coins**.
 
 Send DVC to another address after reviewing the recipient, amount and native fee, then approving the wallet's DVC message. The Keeper validates signatures, balances, nonces and work before saving anything. Paired browsers exchange blocks and pending payments; each Keeper independently chooses the history with the most verified work. Native DVC is held by the Doodleverse network, not displayed as an Ethereum token in Coinbase Wallet. There is no exchange, cash redemption, established market or promised return.
 

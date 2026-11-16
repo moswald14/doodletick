@@ -1,3 +1,30 @@
+# Validation — Doodle Tick 0.6.1b
+
+## Nightcap, repeat mining and console · 2026-11-16
+
+The update adds an opt-in foreground mining loop, a SHA-256/Eco mushroom preset and a strict application-command console. Consensus, supply, signatures and stored data formats are unchanged.
+
+| Check | Observed evidence |
+| --- | --- |
+| Full application suite | **451/451 passed**, zero failures or skips. This includes the previous 423 checks, 13 console checks and 15 new native UI cases. |
+| Repeat and collection | Controlled UI/miner fixtures check sequential fresh jobs, bounded rounds, independently valid disposable work, exact canonical receipt matching, reward refresh before the next round and session collection counts. Delayed old status responses cannot roll back or stop the following round. |
+| Cancellation | Tests cover Stop, repeat-off, hidden page, page leave, account/network changes and errors, including cancellation between rounds. Repeat does not survive navigation or automatically resume. |
+| Console | Parser, bounded output, safe text rendering, raw-input rejection, Enter/Run submission, clearing, live-log append behavior, concurrent Stop and allowed app commands passed. Driver errors and arbitrary input are not retained in the command log. |
+| Actual Chrome UI | A disposable local Keeper loaded 0.6.1b. Nightcap selected SHA-256, Eco and Keep mining without starting work. Keyboard Enter and Run produced status/help output; an unknown command produced a labeled error; repeat-off cleared the switch; Clear output removed prior entries. Night theme and desktop layout were visually inspected. No owner wallet was connected to this preview. |
+| Source review | A separate AI reviewer found no remaining blocker in the reviewed console/repeat integration. A suggested stale-poll regression was added and passed in the complete suite. This is not a human security audit. |
+
+An initial test run in a restricted execution environment could not connect to localhost. The complete run under normal host permissions passed; network and TLS protections were not disabled.
+
+## GPU and deployment boundaries
+
+The existing 0.6b Home Assistant installation was observed running over HTTPS with its original witness identity, receipt count and automatic updates preserved. After the owner restarted Chrome, its native miner visibly searched hundreds of thousands of candidates with Eco selected. This confirms browser GPU execution after the reported driver failure; no accepted live block or payment was established by that observation. Earlier disposable GTX 1080 shader checks are retained below.
+
+SHA-256/Eco is a conservative working preset, not a benchmark winner or an earnings promise. Each round remains limited to 60 seconds or 4,194,304 candidates. The loop requires a visible Coin page and an awake computer, and errors stop it instead of retrying indefinitely. Collection counts accepted blocks in the current account/page session; canonical balances can change with reorganization and rewards mature after six further blocks. No overnight endurance run, live native payment, multi-device peer test or temperature measurement is claimed.
+
+Publication, release-archive verification and installation of 0.6.1b are subsequent release steps at this source cut. The earlier reports below retain their original wording; later observations above supersede their pending 0.6b browser and installation status.
+
+---
+
 # Validation — Doodle Tick 0.6b
 
 ## Native DVC source verification · 2026-11-16
