@@ -1,3 +1,11 @@
+# 0.5b — Weather and background music
+
+- Add the global expandable Weather & music panel below the top bar.
+- Add manual city search, saved/clearable location, C/F and a short Open-Meteo forecast with provider/license attribution. No automatic geolocation.
+- Add three original local synthesized soundscapes with Play/Pause, Mute and volume. No autoplay; hiding pauses music and page exit releases audio resources.
+- Preserve existing identities, garden data and signed proof formats.
+- Validation: 263 combined checks passed, including all six new ingress assets. Chrome exercised sample-city weather, C/F/cache/clear, music controls without autoplay, view navigation and a 390-pixel red-night layout. Audible speaker output, actual Coinbase signing and the live 0.5b update remain unverified.
+
 # 0.4b — Wallet-bound founder recipient
 
 - Added a separate v2 recipient record that preserves the complete v1 founder proof and requires its original creator key plus the chosen wallet to sign. Fresh bounded GPU work commits both signatures.
