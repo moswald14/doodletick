@@ -1,3 +1,12 @@
+## 0.6.2b — Mine to a reward address
+
+- Add an editable Mining reward address with full nonzero `0x` address validation and mixed-case checksum checks. MINE NOW works without connecting a wallet or opening a wallet prompt.
+- Show the mining destination's available funds, immature rewards and pending outgoing payments separately from the wallet used for sending. Nightcap and its session counter follow the mining address.
+- Add optional Use connected wallet address. Connecting fills only an empty mining field; changing the reward address cancels unfinished work and repeat mode.
+- Make console status and balance identify the mining destination. No new address command is added. Signed sending still requires the controlling wallet's approval.
+- Keep supply, consensus, identities, v1/v2 records and saved chain data unchanged; no migration is required.
+- See [VALIDATION.md](VALIDATION.md) for address-only mining, spending isolation, browser checks and deployment limits.
+
 ## 0.6.1b — Nightcap and GITTIT::GODDIT
 
 - Added command input with labeled output and errors to the native Coin page.

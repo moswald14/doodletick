@@ -1,37 +1,57 @@
-# Native Doodleverse Coin · 0.6.1b
+# Native Doodleverse Coin · 0.6.2b
 
 DVC is an independent experimental proof-of-work coin. It uses its own history,
 balances, signatures and peer validation. It is not Bitcoin-compatible and is
-not an Ethereum or Base token. The browser wallet controls the receiving address
-and signs native DVC payments; Doodle Tick displays the native balance.
+not an Ethereum or Base token. Mining pays the public reward address you enter.
+A browser wallet is needed to sign payments, but is optional for mining.
+Doodle Tick displays the native balances.
+
+The 0.6.2b address-only mining update does not change supply, consensus, signed
+formats or saved chain data. See [validation](VALIDATION.md) for checked behavior
+and deployment limits.
 
 ## Mine, pay and receive
 
 1. Open the Keeper through HTTPS, or the desktop localhost address, and select
-   **Doodleverse Coin**. Find browser wallets, select your extension and connect
-   the account that should receive mining rewards. If Home Assistant's embedded
-   view hides the extension, use **Open Doodle Tick in a wallet window**.
+   **Doodleverse Coin**. Enter the complete address in **Mining reward address**.
+   It must be a nonzero `0x` address; mixed-case addresses must pass checksum
+   validation. Mining needs no wallet connection or signing prompt. Check the
+   destination carefully: spending its rewards later requires its signing key
+   through a supported wallet.
 2. Choose **SHA-256** or **SHA-256d**, then Eco, Balanced or Fast GPU intensity.
    Press the red **MINE NOW** button. Each round searches for one block, bounded
    by 60 seconds and 4,194,304 candidates. **Keep mining** repeats rounds while
    this page remains visible. The toggle starts off; turning it on alone does
-   not start work. Stop, turning it off, hiding the page, changing the account
-   or leaving the view cancels unfinished work and resets the toggle. There is
+   not start work. Stop, turning it off, hiding the page, changing the mining
+   address or connected wallet account, or leaving the view cancels unfinished
+   work and resets the toggle. There is
    no saved mining-on setting or automatic resume after reopening.
 3. A successful proof is submitted to this Keeper. The node verifies it and
    saves it before reporting acceptance. Initially a block earns **50 DVC** plus
    included transfer fees. A reward in block 1 first becomes spendable in block
-   7. A competing chain can replace those blocks and their balances.
-4. To pay another person, enter their complete address and amount. Review the
-   native network, recipient, amount, fee, nonce and expiry. Check the review box,
+   7. **Mining address balances** shows the destination's available funds,
+   immature rewards and pending outgoing payments, separately from the sending
+   wallet. A competing chain can replace those blocks and their balances.
+4. To pay another person, use **Wallet for sending** to find and connect the
+   wallet that controls the funds. If Home Assistant's embedded view hides the
+   extension, use **Open Doodle Tick in a wallet window**. Enter the recipient's
+   complete address and amount. Review the native network, recipient, amount,
+   fee, nonce and expiry. Check the review box,
    then choose **Sign & submit DVC transfer** and approve the wallet message.
    Signing this message authorizes that DVC payment. It is not a harmless login
    message, an Ethereum transaction or a token allowance.
 5. Share your receiving address or the generated payment request with a payer.
+   The payment-request controls use the connected wallet's receiving address.
    A payment remains pending until a miner includes it. Account activity shows
    pending payments, block inclusion and immature rewards. Direct transfers
    support payments between players; there is no built-in exchange, order book,
    automatic trade settlement, bridge or cash redemption.
+
+**Use connected wallet address** optionally copies a connected account into the
+mining field. Connecting a wallet prefills only an empty field and does not
+replace an existing destination. The mining destination and spending account
+may be different. Changing the mining address cancels unfinished work and turns
+Keep mining off; press MINE NOW again only after checking the new address.
 
 Browser WebGPU support and a hardware adapter are required. Both algorithms run
 real SHA-256 compression; SHA-256d hashes the first digest again. The miner checks
@@ -44,21 +64,21 @@ other implementations may use CPUs, GPUs or specialized devices.
 
 **Use Nightcap preset** selects SHA-256, Eco intensity and Keep mining. It uses
 the existing Dot Wave mushroom artwork with a deterministic variation for the
-connected public account. Press MINE NOW to start it. SHA-256 has been observed
+mining reward address. Press MINE NOW to start it. SHA-256 has been observed
 working on the maintainer's GTX 1080 in Chrome; this is a verified compatibility
 choice, not a claim that it is the fastest or most profitable algorithm.
 
 The auto catcher submits a candidate only after independent digest verification.
 It counts a block only after the node confirms that exact block on its current
 chain, then refreshes balances before another round. Rewards are recorded in the
-native account and mature after six further blocks. The session counter resets
-when the account changes or the page closes; saved chain balances do not. A
+mining destination and mature after six further blocks. The session counter resets
+when that address changes or the page closes; saved chain balances do not. A
 later competing chain may replace accepted blocks. The mushroom adds no extra
 issuance and does not plant or change a private garden generator.
 
 For an overnight session, leave the Coin page visible and the computer awake.
-The loop stops on errors rather than retrying a failed GPU, wallet or node.
-Every new round validates fresh node/account/job data and has the same limits.
+The loop stops on GPU or node errors. Every new round validates fresh node,
+mining-address balance and job data and has the same limits.
 No overnight stability, earnings or unattended availability is guaranteed.
 
 ## GITTIT::GODDIT console
@@ -69,14 +89,14 @@ Press Enter or Run to submit one command. Commands are case-insensitive.
 | Command | Result |
 | --- | --- |
 | `help` | Show the command list. |
-| `status` | Show the latest loaded node and mining state. |
-| `balance` | Show the connected account's latest loaded available, immature and pending balances. |
-| `refresh` | Load the node and account state again. |
+| `status` | Show the latest loaded node, mining destination and mining state. |
+| `balance` | Show the mining destination's latest loaded available funds, immature rewards and pending outgoing payments. |
+| `refresh` | Load the node and selected address balances again. |
 | `wallets` | Discover browser wallets; select one in the Wallet extension menu. |
-| `connect` | Request connection to the selected wallet. |
+| `connect` | Request connection to the selected wallet for signing payments or optionally using its address. |
 | `algorithm sha256` or `algorithm sha256d` | Choose the same algorithm offered by the mining menu. |
 | `intensity eco`, `intensity balanced` or `intensity fast` | Choose GPU intensity. |
-| `mine` | Start with the selected algorithm and intensity; repeat if Keep mining is on. |
+| `mine` | Start for the entered mining reward address with the selected algorithm and intensity; repeat if Keep mining is on. No wallet connection is required. |
 | `repeat on` or `repeat off` | Select repeat mode or stop it. Turning it on alone does not start mining. |
 | `stop` | Cancel the current local action. Already submitted records may still confirm. |
 | `clear` | Clear the console transcript. This does not stop mining. |
@@ -84,8 +104,12 @@ Press Enter or Run to submit one command. Commands are case-insensitive.
 Each mining round keeps the 60-second and candidate limits, explicit start, hardware GPU
 requirement and independent result validation. Stop remains available while a
 command is running; commands are never queued or replayed after cancellation.
-Hiding the page or changing accounts cancels unfinished mining. Sending coins
+Hiding the page or changing the mining destination or connected wallet account
+cancels unfinished mining. Sending coins
 still requires the separate transfer review and wallet signature controls.
+
+Set the destination in the **Mining reward address** field. There is no console
+address command.
 
 The console accepts only these app commands. It has no operating-system shell,
 JavaScript evaluator, arbitrary URL fetch or wallet signing command. Unknown

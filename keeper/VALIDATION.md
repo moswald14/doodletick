@@ -1,3 +1,24 @@
+# Validation — Doodle Tick 0.6.2b
+
+## Mining by receiving address · 2026-11-16
+
+Mining now accepts a full, nonzero public reward address without connecting a wallet. The wallet used to sign transfers remains separate. Native consensus, supply, signatures and saved data formats are unchanged.
+
+| Check | Observed evidence |
+| --- | --- |
+| Complete application suite | **461/461 passed**, zero failures or skips, including ten new address-only UI cases. |
+| No wallet required | A disconnected UI fixture mined an independently valid disposable block, credited its immature reward and made zero wallet discovery or RPC calls. Address-only repeat and both button/console start paths passed. |
+| Address validation and cancellation | Missing, short, zero and invalid-checksum addresses cannot request jobs. Editing the payout cancels work held at account loading, job loading, GPU work and receipt handling. Late old balances cannot replace the new destination. |
+| Spending separation | A rich watched payout could not fund a poor connected signing wallet. The real disposable signature used the connected sender after explicit review/consent. Matching mining/wallet balances refresh immediately after a send; different balances stay separate. |
+| Actual Chrome preview | A disposable local Keeper showed checksum rejection, address-only mining readiness, separate balances, console balance output and night-theme layout. A started GPU round was observed without any connected wallet: block 1 was accepted, the entered dummy address showed 50 DVC immature, and Keep mining began the next round. Stop reset repeat and ended work. The preview was then closed. |
+| AI review | A separate reviewer inspected the UI/tests, passed 98 focused console/UI/wallet checks, and checked the final matching-address balance correction. No remaining blocker was found in that scope. This is not a human security audit. |
+
+The browser preview used production work parameters on an isolated disposable local journal with no connected peers, not the owner's Home Assistant chain or wallet. Its test work was not published or propagated. It does not establish multi-device consensus, market value, an overnight endurance run or a live-owner payment.
+
+The prior 0.6.1b update was observed Running over HTTPS with a pre-update backup enabled, unchanged Keeper identity and balances, and automatic updates still on. Publication, archive verification and installation of 0.6.2b remain subsequent release steps at this source cut. The historical reports below retain their original wording.
+
+---
+
 # Validation — Doodle Tick 0.6.1b
 
 ## Nightcap, repeat mining and console · 2026-11-16

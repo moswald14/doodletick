@@ -1,6 +1,8 @@
-# Doodle Tick Keeper 0.6.1b
+# Doodle Tick Keeper 0.6.2b
 
 Doodle Tick is an experimental creator vault, social arcade, file library and shared mushroom garden. Spirographs help people compare signed creator keys when pairing. Your writing and files remain in your browser; Keepers provide signed receipts, a local directory and a shared garden scorekeeper.
+
+The 0.6.2b update makes mining work with a **Mining reward address** alone. Enter a full nonzero `0x` address, choose settings and press **MINE NOW**; no wallet connection or signing prompt is needed. **Mining address balances** belongs to that destination and is separate from **Wallet for sending**. The optional **Use connected wallet address** button copies a connected account; connecting fills only an empty mining field. Changing the destination stops unfinished work and repeat mode. Sending still requires a wallet signature. Supply, consensus and saved formats are unchanged. See [validation](VALIDATION.md) for checked behavior and limits.
 
 The 0.6.1b update adds **Nightcap**, a SHA-256/Eco mushroom preset with opt-in **Keep mining** and automatic collection of accepted blocks. Press MINE NOW to start; keep the page visible and computer awake. **GITTIT::GODDIT** adds command input, output and error messages: type `help`, `status`, `balance`, `mine`, `stop` or `repeat off`. See [the command guide](NATIVE-DVC.md#gittitgoddit-console).
 

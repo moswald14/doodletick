@@ -62,7 +62,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
       const url = new URL(req.url, 'http://' + req.headers.host);
       if (await handleDvc(req, res, url)) return;
       if (await vpn.handleLocal(req, res, url)) return;
-      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.6.1b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt(), nativeCoin: { available: !dvcUnavailable, error: dvcUnavailable ? 'DVC_STORAGE' : null } });
+      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.6.2b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt(), nativeCoin: { available: !dvcUnavailable, error: dvcUnavailable ? 'DVC_STORAGE' : null } });
       if (req.method === 'POST' && url.pathname === '/api/witness') {
         if (!req.headers['content-type']?.startsWith('application/json')) return send(415, { error: 'JSON required.' });
         let raw = '', size = 0;
