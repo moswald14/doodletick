@@ -2,11 +2,12 @@
 import { COIN_RULES, founderAddressFor, verifyFounderProof, hexBytes } from './doodleverse-coin.mjs';
 import { createRecipientProposal, recipientTypedData, recipientContext, verifyRecipientAuthorization, createRecipientProof, verifyRecipientProof, parseRecipientFile } from './doodleverse-recipient.mjs';
 import { createDoodleverseWallet } from './doodleverse-wallet.mjs';
+import { createEthereumReadService } from './doodleverse-rpc.mjs';
 import { mineDoodleverseGpu } from './doodleverse-gpu.mjs';
 
 const STORAGE = 'doodleverse-founder-recipient-v2';
 const MAX_FILE_BYTES = 65536;
-export function createDoodleverseRecipientUI(container, { onUnlockRequest = () => {}, onActivity = () => {}, toast = () => {}, walletFactory = createDoodleverseWallet, mineCandidate = mineDoodleverseGpu } = {}) {
+export function createDoodleverseRecipientUI(container, { onUnlockRequest = () => {}, onActivity = () => {}, toast = () => {}, walletFactory = createDoodleverseWallet, readServiceFactory = createEthereumReadService, mineCandidate = mineDoodleverseGpu } = {}) {
   container.classList.add('doodleverse-recipient');
   container.innerHTML = `
     <h2>Link your wallet recipient</h2>
@@ -22,6 +23,12 @@ export function createDoodleverseRecipientUI(container, { onUnlockRequest = () =
     <p data-dvr-field="window-panel" hidden><a data-dvr-field="window-link" target="_blank" rel="noopener noreferrer">Open this Keeper in a wallet window</a> if your extension is unavailable inside Home Assistant. Keep the same HTTPS address for your saved vault.</p>
     <label>Recipient account <select data-dvr-field="account" aria-label="Recipient account"><option value="">Connect a wallet first</option></select></label>
     <p data-dvr-field="connection">No recipient wallet connected.</p>
+    <details><summary>Blockchain read service</summary>
+      <p>If your wallet connects but cannot check Ethereum blocks, choose PublicNode for those reads. Your selected wallet still connects your account and signs the message.</p>
+      <label>Blockchain read service <select data-dvr-field="read-service" aria-label="Blockchain read service"><option value="wallet" selected>Connected wallet (default)</option><option value="publicnode">PublicNode · Ethereum only</option></select></label>
+      <p>PublicNode is an optional service operated by Allnodes at <a href="https://ethereum.publicnode.com/" target="_blank" rel="noopener noreferrer">ethereum-rpc.publicnode.com</a>. When you choose it and review or verify a record, it receives your IP address, public wallet address and block queries. Smart-wallet verification also sends the public message digest and signature. It receives no vault password or private key.</p>
+      <p>This choice lasts only in this page. It makes no request by itself and never changes automatically. You rely on the selected service for blockchain data; both routes keep the exact-block checks.</p>
+    </details>
     <label>Linked proof difficulty <select data-dvr-field="difficulty"><option value="16">16 bits · shorter test</option><option value="20" selected>20 bits · standard test</option><option value="24">24 bits · longer test</option></select></label>
     <button type="button" data-dvr-action="review">Review wallet recipient</button>
     <p data-dvr-field="review">Review prepares a new creator-signed proposal. Your original proof stays unchanged.</p>
@@ -38,6 +45,7 @@ export function createDoodleverseRecipientUI(container, { onUnlockRequest = () =
     <p data-dvr-field="status" class="dvc-status" role="status" aria-live="polite">Nothing is uploaded or published by this flow. Your existing creator proof and vault are preserved.</p>`;
   const field = name => container.querySelector(`[data-dvr-field="${name}"]`);
   const button = name => container.querySelector(`[data-dvr-action="${name}"]`);
+  field('read-service').value = 'wallet';
   let identity = null, ownAddress = null, source = null, sourceCheck = null, sourceEpoch = 0;
   let prepared = null, authorization = null, snapshot = null, record = null, verified = null, pendingImport = null;
   let visible = false, destroyed = false, busy = false, generation = 0, controller = null, timer = null, restoreAllowed = true;
@@ -75,7 +83,7 @@ export function createDoodleverseRecipientUI(container, { onUnlockRequest = () =
     button('disconnect').disabled = !connected.providerId && !busy;
     button('discover').disabled = busy;
     button('unlock').disabled = busy;
-    for (const name of ['provider', 'account', 'difficulty']) field(name).disabled = busy;
+    for (const name of ['provider', 'account', 'difficulty', 'read-service']) field(name).disabled = busy;
     for (const name of ['export', 'copy']) button(name).disabled = busy || !record || !verified;
     button('verify').disabled = busy || (!record && !pendingImport);
     button('import').disabled = busy;
@@ -120,7 +128,7 @@ export function createDoodleverseRecipientUI(container, { onUnlockRequest = () =
     const typed = await recipientTypedData(next, { signal }); check(); wallet.assertCurrent(nextSnapshot);
     prepared = next; snapshot = nextSnapshot;
     const context = recipientContext(next);
-    field('review').textContent = `Review: 1,000,000 proposed DVC to ${context.address} on EVM chain ${context.chainId}. Verification: ${context.accountType}, block ${context.verificationBlock.number}. Original creator: ${sourceCheck.founderAddress}. Approval expires ${new Date(next.manifest.expiresAt).toLocaleString()}. No coins or spending permissions are issued.`;
+    field('review').textContent = `Review: 1,000,000 proposed DVC to ${context.address} on EVM chain ${context.chainId}. Verification: ${context.accountType}, block ${context.verificationBlock.number}. Blockchain reads: ${nextSnapshot.readServiceId === 'publicnode-ethereum' ? 'PublicNode (Allnodes)' : 'connected wallet'}. Original creator: ${sourceCheck.founderAddress}. Approval expires ${new Date(next.manifest.expiresAt).toLocaleString()}. No coins or spending permissions are issued.`;
     field('message').textContent = JSON.stringify(typed, null, 2); field('message-panel').hidden = false;
     status('The creator vault signed this recipient proposal locally. Check its address and network, acknowledge, then choose Sign to open your wallet.'); render();
   }
@@ -239,9 +247,20 @@ export function createDoodleverseRecipientUI(container, { onUnlockRequest = () =
     renderWallet();
   };
   const consent = () => { if (!field('consent').checked) stop('Recipient acknowledgement removed.', true); render(); };
+  const changeReadService = () => {
+    stop('Blockchain read service changed. Review the recipient again.'); clearDraft();
+    try {
+      const choice = field('read-service').value;
+      if (!['wallet', 'publicnode'].includes(choice)) throw new Error('Choose a listed blockchain read service.');
+      wallet.setReadService(choice === 'publicnode' ? readServiceFactory() : null);
+      status(choice === 'publicnode' ? 'PublicNode selected for Ethereum reads. Review or verify to send the disclosed public queries; the wallet still signs.' : 'The connected wallet will handle blockchain reads. No outside read service selected.');
+    } catch (error) { field('read-service').value = 'wallet'; wallet.setReadService(null); status(String(error?.message || error).slice(0, 400)); }
+    render();
+  };
   const visibility = () => { if (document.hidden) stop('Stopped because the page was hidden.', true); else render(); };
   const pagehide = () => stop('Stopped when leaving the page.', true);
   container.addEventListener('click', click); field('provider').addEventListener('change', changeProvider); field('account').addEventListener('change', changeAccount);
+  field('read-service').addEventListener('change', changeReadService);
   field('consent').addEventListener('change', consent); field('file').addEventListener('change', importRecord);
   document.addEventListener('visibilitychange', visibility); window.addEventListener('pagehide', pagehide);
   if (window.top !== window.self) { field('window-panel').hidden = false; field('window-link').href = window.location.href; }
@@ -265,6 +284,7 @@ export function createDoodleverseRecipientUI(container, { onUnlockRequest = () =
     stop: () => stop('Recipient work stopped.', true),
     destroy() { stop('Recipient work stopped.', true); destroyed = true; identity = null; wallet.destroy();
       container.removeEventListener('click', click); field('provider').removeEventListener('change', changeProvider); field('account').removeEventListener('change', changeAccount); field('consent').removeEventListener('change', consent); field('file').removeEventListener('change', importRecord);
+      field('read-service').removeEventListener('change', changeReadService);
       document.removeEventListener('visibilitychange', visibility); window.removeEventListener('pagehide', pagehide);
     },
   };
