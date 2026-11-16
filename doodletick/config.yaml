@@ -1,7 +1,7 @@
 name: Doodle Tick Keeper
-version: "0.5.1b"
+version: "0.6b"
 slug: doodletick
-description: Local creator vault, shared garden and encrypted direct peer arcade
+description: Creator vault, native DVC mining and payments, garden and direct peer arcade
 url: https://github.com/moswald14/doodletick
 arch:
   - aarch64

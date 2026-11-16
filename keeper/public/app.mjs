@@ -2,6 +2,8 @@ import { verifyGardenResponse, GARDEN_FORMAT } from './mushroom-core.mjs';
 import { createMushroomUI } from './mushroom-ui.mjs';
 import { createDoodleverseCoinUI } from './doodleverse-coin-ui.mjs';
 import { createDoodleverseRecipientUI } from './doodleverse-recipient-ui.mjs';
+import { createDvcUI } from './dvc-ui.mjs';
+import { createDvcPeerUI } from './dvc-peer-ui.mjs';
 import { createClockWheel } from './clock-wheel.mjs';
 import { createWeatherUI } from './weather-ui.mjs';
 import { createBackgroundMusicUI } from './background-music-ui.mjs';
@@ -18,6 +20,7 @@ let saveTimer, toastTimer, queue = Promise.resolve(), generation = 0, busy = fal
 let changeId = 0;
 let arcadeUI;
 let recipientUI;
+let nativePeerUI;
 function markDirty() { changeId++; $('save-status').textContent = 'Encrypting your draft…'; }
 let storageAvailable = true;
 try { savedRaw = localStorage.getItem(STORAGE); } catch { storageAvailable = false; }
@@ -67,17 +70,35 @@ function showView(view) {
   $('page-name').textContent = { garden: 'MUSHROOM GARDEN', coin: 'DOODLEVERSE COIN', arcade: 'THE DOODLEVERSE', vault: 'MY VAULT', files: 'FILES & PEERS', verify: 'CHECK A RECEIPT', about: 'THE IDEA' }[view];
   arcadeUI?.setVisible(view === 'arcade');
   mushroomUI.setVisible(view === 'garden');
-  coinUI.setVisible(view === 'coin');
-  recipientUI?.setVisible(view === 'coin');
+  updateCoinVisibility(view === 'coin');
   history.replaceState(null, '', '#' + view);
 }
 const fileUI = createFilesUI({ toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); } });
 arcadeUI = createArcadeUI({ toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); }, onPackStored: () => fileUI.refresh() });
 const mushroomUI = createMushroomUI({ toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); } });
-const coinUI = createDoodleverseCoinUI($('view-coin'), { toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); recipientUI?.stop(); }, onSourceProof: proof => recipientUI?.setSourceProof(proof) });
+const nativePanel = document.createElement('section');
+const nativePeers = document.createElement('section');
+const founderArchive = document.createElement('details');
+const founderSummary = document.createElement('summary');
+founderSummary.textContent = 'Original founder proofs and recipient certificate';
+const founderPanel = document.createElement('section');
+founderArchive.append(founderSummary, founderPanel);
+$('view-coin').append(nativePanel, nativePeers, founderArchive);
+const nativeCoinUI = createDvcUI(nativePanel, { getBrowserPeerCount: () => nativePeerUI?.connected ? 1 : 0, onActivity: () => { lastActive = Date.now(); coinUI.stop(); recipientUI?.stop(); } });
+nativePeerUI = createDvcPeerUI(nativePeers, { getIdentity: () => vault?.identity, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); } });
+const coinUI = createDoodleverseCoinUI(founderPanel, { toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); recipientUI?.stop(); }, onSourceProof: proof => recipientUI?.setSourceProof(proof) });
 const recipientPanel = document.createElement('section');
-$('view-coin').append(recipientPanel);
+founderArchive.append(recipientPanel);
 recipientUI = createDoodleverseRecipientUI(recipientPanel, { toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); coinUI.stop(); } });
+function updateCoinVisibility(visible = !$('view-coin').hidden) {
+  const archive = founderArchive.open;
+  nativePanel.hidden = nativePeers.hidden = archive;
+  nativeCoinUI.setActive(visible && !archive);
+  nativePeerUI.setActive(visible && !archive);
+  coinUI.setVisible(visible && archive);
+  recipientUI.setVisible(visible && archive);
+}
+founderArchive.addEventListener('toggle', () => updateCoinVisibility());
 createVpnUI();
 for (const button of document.querySelectorAll('[data-view]')) button.addEventListener('click', () => showView(button.dataset.view));
 function showLocked() {
@@ -168,6 +189,7 @@ function clearSession() {
   mushroomUI.lock();
   coinUI.lock();
   recipientUI.lock();
+  nativePeerUI.disconnect('Peer stopped because the creator vault is locked.');
   fileUI.lock();
   arcadeUI.lock();
   generation++; clearTimeout(saveTimer); vault = null; key = null; salt = null; selected = null;

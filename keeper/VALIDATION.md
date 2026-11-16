@@ -1,3 +1,36 @@
+# Validation — Doodle Tick 0.6b
+
+## Native DVC source verification · 2026-11-16
+
+The native network is implemented with a fixed 21-million cap, disclosed one-million founder allocation, signed native payments and independent work validation. This report describes the checked source and local evidence; GitHub publication and Home Assistant installation are separate deployment steps.
+
+| Check | Observed evidence |
+| --- | --- |
+| Complete app suite | **423/423 passed**, zero failures or skips, including the existing 287 checks and 136 native DVC checks. |
+| Native consensus | 17 checks: real disposable signatures and proof of work, fixed genesis, exact shapes, supply, fees, maturity, nonce/overspend, algorithm binding, retarget and forks. |
+| Native node and HTTP | 14 node and 7 HTTP checks: replay/restart, malformed complete records, incomplete-write recovery, storage faults, serialized conflicts, pending reservations, reorgs, bounds and origin restrictions. Normal-extension replay and transaction indexing are checked for linear validation work. |
+| Wallet and native UI | 19 wallet and 41 UI checks with controlled providers/DOM and real disposable signatures; independent core validation of both algorithms, exact receipt matching, explicit review, stale-result cancellation and no automatic wallet or GPU actions. |
+| Miner logic | 20 checks with simulated GPU devices, covering invalid input, resource cleanup, time/attempt bounds, visibility/abort/device loss and independent proof rechecking. |
+| Peer protocol | 10 sync checks including two independently persisted nodes over actual localhost HTTP and simulated bounded RPC delivery: mine, sync, sign, include payment and sync recipient state; fork continuation, ties, invalid peers, cancellation and rotating mempool propagation. |
+| Peer UI | 6 checks, including delayed invitation/answer results across disconnect, hide and leave, explicit start, identity cleanup and safe text rendering. |
+| Integrated desktop and generated HA runtime | 2 checks: native routes/assets, genesis/balance, origin/invalid-input rejection, separate persisted journal and unchanged disposable witness/receipt state across restart. |
+| Actual GPU execution | Both complete mining algorithms ran on an NVIDIA GeForce GTX 1080 hardware adapter through Dawn Node `webgpu@0.6.2` / D3D12. SHA-256 found a block after 983,040 candidates (1,258 ms); SHA-256d after 327,680 (360 ms). Both used the production initial difficulty on a distinct disposable regtest network and passed independent core validation. Cancellation returned `stopped`. These single searches are not a performance comparison or expected earnings. |
+| Source review | Separate AI reviewers inspected consensus/node and wallet/miner/sync changes. Review found and corrected replay scaling, mempool propagation, stale status and exact receipt matching. This is not an independent human security audit or certification. |
+
+The hardware check used the official [Dawn Node binding](https://github.com/dawn-gpu/node-webgpu), with its package pinned outside the distributed application and install scripts disabled. It executed the same WGSL/miner module used by the website. It did not automate Chrome, access a live wallet, mine on the production DVC network or touch the user's Keeper data.
+
+## Unverified and operational limits
+
+- Browser computer control returned **Transport closed**. The new release's actual Chrome rendering, Home Assistant iframe/popup behavior and live Coinbase native-transfer signature remain unverified. Native Dawn execution proves the tested shaders on that adapter, not every browser or driver.
+- The generated Home Assistant runtime passed local tests. Updating and restarting the user's Home Assistant host on 0.6b has not been observed in this source verification.
+- Peer tests are real independent local nodes with simulated authenticated-channel delivery, not a physical multi-device WebRTC/NAT test. No public seed, relay, persistent external peer service or worldwide network was deployed by these checks.
+- No real-owner payment or production-chain mining was performed. The independent native chain is experimental; the stated supply and signature rules do not establish market value, irreversible settlement, decentralization or resistance to a majority of work.
+- Default journal, side-branch and retained-history capacities are finite. See [native rules and operator limits](NATIVE-DVC.md). Sustained operation, resource exhaustion, large account populations, deep reorganizations and external adversarial review require further work.
+
+The following earlier reports retain their original source-cut wording. The later public founder certificate and verification are preserved in [founder-records/0.5.1b](../founder-records/0.5.1b/README.md); those historical records remain separate from native DVC issuance.
+
+---
+
 # Validation — Doodle Tick 0.5.1b
 
 ## Current 0.5.1b evidence

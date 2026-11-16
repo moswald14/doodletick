@@ -1,10 +1,10 @@
 {
   "name": "doodletick-keeper",
-  "version": "0.5.1-beta.0",
+  "version": "0.6.0-beta.0",
   "private": true,
   "license": "GPL-3.0-only",
   "type": "module",
-  "description": "Direct encrypted Doodleverse connections, creator vault, mushroom gardens and GPU founder proof",
+  "description": "Independent Doodleverse Coin, GPU mining, signed payments, creator vault and direct peers",
   "scripts": {
     "start": "node server.mjs",
     "test": "node --test tests/*.test.mjs"
@@ -12,5 +12,5 @@
   "engines": {
     "node": ">=22"
   },
-  "release": "0.5.1b"
+  "release": "0.6b"
 }

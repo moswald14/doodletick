@@ -1,14 +1,18 @@
-# Doodle Tick · 0.5.1b
+# Doodle Tick · 0.6b
 
 A creator arcade inspired by the loops of a telephone cord: an hourly color clock, Dot Wave sound mushrooms, an encrypted vault and direct peer connections. Run a Keeper on your computer or Home Assistant.
 
 [![Add Doodle Tick to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fmoswald14%2Fdoodletick)
 
-## Wallet read compatibility
+## Native Doodleverse Coin
 
-**0.5.1b is in preparation and has not been published or installed.** It adds an explicit optional **PublicNode · Ethereum only** read source for wallets that connect but cannot complete the required block queries. Wallet reads remain the default; the choice is not saved and no fallback or query happens automatically. The wallet still controls account access and message signing. Exact-block verification remains required. PublicNode receives the connecting IP, queried public address and block requests; smart-account checks also send the public digest/signature. See [the read-service disclosure and limits](keeper/WALLET-RECIPIENT.md#optional-ethereum-read-service).
+**0.6b introduces an independent, experimental Doodleverse blockchain.** Open **Doodleverse Coin**, connect a compatible browser wallet, choose SHA-256 or SHA-256d and press the red **MINE NOW** button. One click searches for one block with a visible Stop control and a 60-second limit. A valid block earns native DVC; rewards mature after six further blocks. The fixed maximum is **21,000,000 DVC: 1,000,000 disclosed founder coins and 20,000,000 mineable coins**.
 
-Failures identify a safe method and numeric code without exposing raw provider errors. Existing vaults, original v1 proofs and v2 records retain their formats. This compatibility change requests no payment, token allowance, transaction, delegation or deployment, and creates no spendable DVC. All 287 app tests and repository checks passed. Chrome completed a disposable-creator/mock-wallet proof using live PublicNode reads and real GPU work; actual Coinbase signing remains unresolved. See [validation](keeper/VALIDATION.md) for evidence and limits.
+Send DVC to another address after reviewing the recipient, amount and native fee, then approving the wallet's DVC message. The Keeper validates signatures, balances, nonces and work before saving anything. Paired browsers exchange blocks and pending payments; each Keeper independently chooses the history with the most verified work. Native DVC is held by the Doodleverse network, not displayed as an Ethereum token in Coinbase Wallet. There is no exchange, cash redemption, established market or promised return.
+
+Read the [native coin guide and fixed rules](keeper/NATIVE-DVC.md) before mining or accepting a payment. Direct peer pairing currently needs a reachable route and open browser pages; there are no public seed nodes, automatic Internet relays or availability guarantees. The software is an early independent protocol, not Bitcoin-compatible or independently security-audited. See [validation](keeper/VALIDATION.md) for what was actually tested and what remains unverified.
+
+Your creator vault, garden balances and original founder certificates keep their existing formats. The published [founder recipient record](founder-records/0.5.1b/README.md) remains archival evidence. The separate native genesis identifies the same disclosed recipient and allocation; importing a certificate cannot mint coins.
 
 ## Weather and background music
 
@@ -26,7 +30,7 @@ Weather attribution stays visible: [Open-Meteo data](https://open-meteo.com/en/l
 
 **0.3b removes the required Tailscale runtime** and introduces signed, encrypted WebRTC pairing. Exchange an invitation and answer, compare the spirographs, and confirm on both sides. No outside relay is configured automatically. Direct reachability depends on the networks involved; worldwide discovery and relaying remain development work.
 
-**Doodleverse Coin begins with a disclosed 1,000,000 DVC founder-allocation proposal.** The new Coin page signs a public certificate with an unlocked creator identity, runs a bounded GPU proof search only when requested, and verifies imported proofs independently. Stop, hiding the page, leaving the view and locking the vault cancel work. A successful certificate is a prelaunch record: it establishes a signature and hash target, with no spendable DVC balance or adopted blockchain genesis. Anyone can create a self-signed proposal; compare its full address and hash with the project's published reference before assigning it authority. Future network supply and issuance rules are unadopted.
+**Founder archive:** the original 1,000,000-DVC proposal, GPU proof and wallet recipient certificate remain available under the collapsed founder section. Those historical records do not mint coins. Native DVC uses the separate fixed genesis and supply rules described above.
 
 Read the [Doodleverse direction and developer invitation](DOODLEVERSE.md). Human networking, protocol, GPU, Home Assistant and usability contributors are wanted. The longer-term goals are community-owned free communication, the proposed Moz Republika Socialist Foundation, and eventually monthly Doodle Tick Free Food Days with local partners.
 
@@ -55,7 +59,7 @@ Keep the original installation and backup. Repository apps have a different iden
 
 ## Desktop and Raspberry Pi OS
 
-Once published, download an asset from the [0.5.1b release](https://github.com/moswald14/doodletick/releases/tag/0.5.1b). Until then, 0.5b is the published release. Desktop requires Node.js 22 or newer; development checks use Node 24. Extract the desktop ZIP, run `node server.mjs` inside `doodletick-keeper`, and open **http://127.0.0.1:4317**. No npm dependencies are required to run the app. For a source checkout, run it from `keeper/`.
+Download a complete desktop or Pi asset from [Releases](https://github.com/moswald14/doodletick/releases). Desktop requires Node.js 22 or newer. Extract the desktop ZIP, run `node server.mjs` inside `doodletick-keeper`, and open **http://127.0.0.1:4317**. No npm dependencies are required to run the app. For a source checkout, run it from `keeper/`.
 
 The separate Pi tarball includes checksums and the [Pi OS setup guide](keeper/pi/START-HERE.md). It does not install Tailscale. Pi OS service installation remains a separate hardware verification task from the Home Assistant app.
 

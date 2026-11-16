@@ -68,3 +68,12 @@ public/weather.css
 public/background-music.mjs
 public/background-music-ui.mjs
 public/background-music.css
+dvc-node.mjs
+dvc-http.mjs
+public/dvc-core.mjs
+public/dvc-miner.mjs
+public/dvc-wallet.mjs
+public/dvc-ui.mjs
+public/dvc-sync.mjs
+public/dvc-peer-ui.mjs
+public/dvc.css

@@ -17,3 +17,4 @@ tailscaled.state
 *.key
 .DS_Store
 Thumbs.db
+dvc-chain.jsonl

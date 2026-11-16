@@ -5,6 +5,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { newIdentity, sign, hash, verifyProof, tickAt } from './public/core.mjs';
 import { createVpnNetwork } from './vpn-network.mjs';
+import { createDvcNode } from './dvc-node.mjs';
+import { createDvcHttpHandler } from './dvc-http.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 export async function createKeeperServer({ dataDir = path.join(root, '.doodletick'), lockDir = dataDir, port = 4317, vpnOptions, gardenOptions } = {}) {
@@ -23,11 +25,20 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
   let previous = null, count = 0;
   try { const lines = (await readFile(path.join(dataDir, 'receipts.jsonl'), 'utf8')).trim().split('\n').filter(Boolean); count = lines.length; if (count) previous = await hash(JSON.parse(lines.at(-1))); } catch (e) { if (e.code !== 'ENOENT') { await lock.close(); await unlink(lockPath); throw e; } }
   let queue = Promise.resolve();
-  let garden, vpn;
+  let garden, vpn, dvc, dvcUnavailable = false;
   try {
     garden = await createGardenLedger({ ...gardenOptions, dataDir, identity });
     vpn = await createVpnNetwork({ ...vpnOptions, garden });
-  } catch (e) { await lock.close(); await unlink(lockPath); throw e; }
+    try { dvc = await createDvcNode({ dataDir: path.join(dataDir, 'dvc') }); }
+    catch (error) {
+      if (error.code !== 'DVC_STORAGE') throw error;
+      // A corrupt coin journal fails closed for DVC without taking the user's
+      // existing vault, garden, files and witness interface offline.
+      dvcUnavailable = true;
+    }
+  } catch (e) { await vpn?.close(); await garden?.idle(); await dvc?.close(); await lock.close(); await unlink(lockPath); throw e; }
+  const unavailable = () => { throw Object.assign(new Error('DVC history needs recovery.'), { code: 'DVC_STORAGE' }); };
+  const handleDvc = createDvcHttpHandler({ node: dvc || Object.fromEntries(['status', 'account', 'createJob', 'submitBlock', 'submitTransfer', 'getSegment', 'locate', 'locators', 'ingestSegment', 'getMempool'].map(name => [name, unavailable])), mutationLimit: 120 });
   const types = { '.txt': 'text/plain; charset=utf-8', '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json' };
   const allowedFiles = new Set(['clock-wheel.mjs', 'index.html', 'app.mjs', 'core.mjs', 'style.css', 'logo.svg', 'files.css', 'files-ui.mjs', 'licenses.mjs', 'archive.mjs', 'file-store.mjs', 'peers.mjs', 'manifest.webmanifest', 'sw.mjs', 'theme.mjs', 'theme.css']);
   for (const file of ['spirograph.mjs', 'spirograph-auth.mjs', 'vpn-description.mjs', 'vpn-transport.mjs', 'vpn-ui.mjs', 'arcade.css', 'arcade-ui.mjs', 'arcade-canvas.mjs', 'arcade-room.mjs', 'arcade-store.mjs', 'arcade-link.mjs', 'game-engine.mjs', 'workshop.mjs']) allowedFiles.add(file);
@@ -36,6 +47,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
   for (const file of ["doodleverse-coin.mjs", "doodleverse-coin-ui.mjs", "doodleverse-coin.css", "doodleverse-gpu.mjs"]) allowedFiles.add(file);
   for (const file of ['doodleverse-recipient.mjs', 'doodleverse-recipient-ui.mjs', 'doodleverse-wallet.mjs', 'doodleverse-rpc.mjs', 'recipient-crypto.mjs', 'recipient-crypto-notices.txt']) allowedFiles.add(file);
   for (const file of ['weather.mjs', 'weather-ui.mjs', 'weather.css', 'background-music.mjs', 'background-music-ui.mjs', 'background-music.css']) allowedFiles.add(file);
+  for (const file of ['dvc-core.mjs', 'dvc-miner.mjs', 'dvc-wallet.mjs', 'dvc-ui.mjs', 'dvc-sync.mjs', 'dvc-peer-ui.mjs', 'dvc.css']) allowedFiles.add(file);
   const server = http.createServer(async (req, res) => {
     const address = server.address();
     const hostnames = [`127.0.0.1:${address.port}`, `localhost:${address.port}`];
@@ -48,8 +60,9 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
     if (req.headers.origin && !hostnames.some(h => req.headers.origin === 'http://' + h)) return send(403, { error: 'Origin not allowed.' });
     try {
       const url = new URL(req.url, 'http://' + req.headers.host);
+      if (await handleDvc(req, res, url)) return;
       if (await vpn.handleLocal(req, res, url)) return;
-      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.5.1b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt() });
+      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.6b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt(), nativeCoin: { available: !dvcUnavailable, error: dvcUnavailable ? 'DVC_STORAGE' : null } });
       if (req.method === 'POST' && url.pathname === '/api/witness') {
         if (!req.headers['content-type']?.startsWith('application/json')) return send(415, { error: 'JSON required.' });
         let raw = '', size = 0;
@@ -71,9 +84,9 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
       return send(200, await readFile(path.join(root, 'public', file), 'utf8'), types[path.extname(file)]);
     } catch (e) { return send(e instanceof SyntaxError ? 400 : 500, { error: e instanceof SyntaxError ? 'Invalid JSON.' : 'The local witness could not complete this request.' }); }
   });
-  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); }).catch(async e => { await vpn.close(); await lock.close(); await unlink(lockPath); throw e; });
-  const close = async () => { await vpn.close(); await new Promise(resolve => server.close(resolve)); await queue; await garden.idle(); await lock.close(); await unlink(lockPath); };
-  return { server, close, vpn, port: server.address().port };
+  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); }).catch(async e => { await vpn.close(); await dvc?.close(); await garden.idle(); await lock.close(); await unlink(lockPath); throw e; });
+  const close = async () => { await vpn.close(); await new Promise(resolve => server.close(resolve)); await queue; await garden.idle(); await dvc?.close(); await lock.close(); await unlink(lockPath); };
+  return { server, close, vpn, dvc, port: server.address().port };
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
