@@ -1,0 +1,75 @@
+{
+  "format": "doodleverse-recipient-proof-v2",
+  "proposal": {
+    "format": "doodleverse-recipient-proposal-v2",
+    "sourceProof": {
+      "format": "doodleverse-founder-proof-v1",
+      "proposal": {
+        "format": "doodleverse-founder-proposal-v1",
+        "manifest": {
+          "format": "doodleverse-founder-manifest-v1",
+          "status": "prelaunch-proposal",
+          "network": "dvc-prelaunch-1",
+          "genesisVersion": 1,
+          "genesisStatus": "unadopted",
+          "createdAt": "2026-11-15T23:52:03.125Z",
+          "symbol": "DVC",
+          "decimals": 8,
+          "networkSupplyCapAtoms": null,
+          "allocationAtoms": "100000000000000",
+          "allocation": "100-percent-founder-certificate",
+          "futureIssuance": "unadopted",
+          "founderAddress": "dvc-prelaunch:yaNT6iZ4pIqAtldvH8hevIEBhKp_nTcpMxo3Z8ljdQA",
+          "pow": {
+            "algorithm": "SHA-256",
+            "difficulty": 20,
+            "targetHex": "00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+          }
+        },
+        "publicKey": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE29aBc-BPOyczdv58IT0jodUhaxliz4b7sEgU9edcCA1XA6wnH9ymz4gSK5rApK8bRYjnkPl9eadhhi8TgXkBGw",
+        "signature": "q4Ty9c2K8mf0Bbat42T4GzttIF6sL2Ufsy52QFK3Nz-C44jpEFC8lliZNUB_TpRqL1JRZpVK1ixsr76SBe-8_Q"
+      },
+      "proof": {
+        "algorithm": "SHA-256",
+        "nonce": "11889527314059987885",
+        "digest": "0000043b6fb0fe252f3525f16f2549a8559ddae5bab5f48b3de57c58c33640b0"
+      }
+    },
+    "manifest": {
+      "format": "doodleverse-recipient-manifest-v2",
+      "purpose": "prelaunch-recipient-proposal-only",
+      "audience": "https://github.com/moswald14/doodletick",
+      "network": "dvc-prelaunch-1",
+      "sourceProofId": "0x15b4e76b46e47d853fa24a1d1215fe73a5742e0299a97431bc544c843c43714b",
+      "creatorAddress": "dvc-prelaunch:yaNT6iZ4pIqAtldvH8hevIEBhKp_nTcpMxo3Z8ljdQA",
+      "recipient": {
+        "namespace": "eip155",
+        "chainId": "1",
+        "address": "0x41ed762a78bf3bb6007770bda259d40bbeca2d93"
+      },
+      "accountType": "eoa",
+      "verificationBlock": {
+        "number": "26425868",
+        "hash": "0x10eeccc5c7f5da1a7432f946f0b71a5b6f7f795d88a1707a76673f08b6600f9f"
+      },
+      "allocationAtoms": "100000000000000",
+      "decimals": 8,
+      "symbol": "DVC",
+      "nonce": "0xc60ad928b6202e242232cf623f17d1dac00d9a47bf9698b312327eebb6ca913e",
+      "issuedAt": 1794811414474,
+      "expiresAt": 1794897814474,
+      "pow": {
+        "algorithm": "SHA-256",
+        "difficulty": 20,
+        "targetHex": "00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      }
+    },
+    "creatorSignature": "Rsye0A0L5CnEVg7fpgUSKUcOsQGYyIRJNHMOyC23G8I7cjuYtZv6OoeExkXWerkU55nyOf_Pb0v3QSw0M61EGQ",
+    "walletSignature": "0x24083ded4df8a023130123be816315974a82bc5c253a5255cdd755aa034abc4a08a2d36e512869d9c6c4a339c1292765034cafa694c19a4dac42b36fe868e5201b"
+  },
+  "proof": {
+    "algorithm": "SHA-256",
+    "nonce": "4514976842099068687",
+    "digest": "00000b5a97aedb7f08baadb37ce125ffb05a12f820c5c41f0e8e77fcf393f9ca"
+  }
+}
