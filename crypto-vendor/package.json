@@ -1,0 +1,8 @@
+{
+  "name": "doodletick-recipient-crypto-build",
+  "private": true,
+  "type": "module",
+  "license": "GPL-3.0-only",
+  "scripts": { "build": "node build.mjs", "check": "node build.mjs --check" },
+  "devDependencies": { "ethers": "6.17.0", "esbuild": "0.28.2" }
+}
