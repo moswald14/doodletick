@@ -3,6 +3,8 @@ import { createMushroomUI } from './mushroom-ui.mjs';
 import { createDoodleverseCoinUI } from './doodleverse-coin-ui.mjs';
 import { createDoodleverseRecipientUI } from './doodleverse-recipient-ui.mjs';
 import { createClockWheel } from './clock-wheel.mjs';
+import { createWeatherUI } from './weather-ui.mjs';
+import { createBackgroundMusicUI } from './background-music-ui.mjs';
 import { createVpnUI } from './vpn-ui.mjs';
 import { newIdentity, random, b64, deriveKey, encryptVault, decryptVault, sealEntry, verifyWitness, verifyEntry, receiptFor, verifyReceipt, tickAt, tetrachromaColor, EPOCH, MAX_TEXT, MAX_BACKUP, validateEnvelope } from './core.mjs';
 import { createFilesUI } from './files-ui.mjs';
@@ -50,6 +52,14 @@ function setupThemeControls() {
   updateStatus();
 }
 setupThemeControls();
+const weatherUI = createWeatherUI($('keeper-weather'));
+const atmospherePanel = $('keeper-atmosphere');
+const updateWeatherVisibility = () => weatherUI.setVisible(atmospherePanel.open);
+atmospherePanel.addEventListener('toggle', updateWeatherVisibility);
+updateWeatherVisibility();
+createBackgroundMusicUI($('keeper-music'), { onChange: state => {
+  $('atmosphere-music-status').textContent = state.phase === 'playing' ? (state.muted || state.volume === 0 ? 'Music muted' : 'Music playing') : state.phase === 'starting' ? 'Starting music…' : 'Music paused';
+} });
 function showView(view) {
   if (!['arcade', 'garden', 'coin', 'vault', 'files', 'verify', 'about'].includes(view)) view = 'arcade';
   for (const section of ['arcade', 'garden', 'coin', 'vault', 'files', 'verify', 'about']) $('view-' + section).hidden = view !== section;

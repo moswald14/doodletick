@@ -1,3 +1,23 @@
+# Validation — Doodle Tick 0.5b
+
+## 0.5b source and browser evidence
+
+The full Keeper/Home Assistant suite passed **263/263**, with no failures or skips, including **14 weather** and **11 background-music** checks. An initial restricted run could not connect to localhost (`EACCES`). A subsequent unrestricted run exposed an outdated CSP expectation; it was updated to require exactly the same origin and the two weather API hosts. The final full run passed. Home Assistant ingress checks also verify all six new JavaScript/CSS assets and their content types.
+
+Actual Chrome checks used the public sample city London: city search, current conditions and a three-day forecast loaded; C/F conversion worked offline; the cached report survived reload; and Clear location removed the saved choice/report. Music Play/Pause, mute, volume and mood controls worked, preferences persisted without autoplay, and playback state continued across app-view navigation. Red night mode and a 390-pixel viewport were checked without horizontal overflow.
+
+These observations verify controls and browser behavior, **not audible speaker output**, which was neither heard nor recorded. One unassigned receiving-end extension-style console error appeared; functional checks passed, but no overall clean-console claim is made.
+
+**The live Home Assistant 0.5b update and extracted release-asset checks remain packaging/deployment steps at this source cut.** Actual Coinbase signing, live smart-account verification, physical multi-device reachability and audible-output checks remain separate work. No paid wallet action or DVC issuance is established by these results.
+
+## 0.4b publication and deployment evidence
+
+The 0.4b release was published after its source pull request merged, and release assets were checked. Home Assistant then updated over HTTPS with its backup-before-update switch explicitly enabled. The update and a subsequent restart reached Running with the same Keeper witness and receipt count. Start on boot, watchdog, automatic updates and sidebar visibility remained enabled. This observation does not verify a complete backup restore or an actual Coinbase signature.
+
+## Archived 0.4b source record
+
+Historical pending statements below describe that source cut. The later installation evidence above is separate; the published 0.4b record is preserved.
+
 # Validation — Doodle Tick 0.4b
 
 The combined Keeper/Home Assistant suite passed **238/238**, with no failures or skips: 19 recipient protocol checks, 22 signing-only wallet adapter checks, 15 recipient UI checks, and the preserved existing suite. The first full run exposed a test fixture using inconsistent clocks; sharing one controlled timestamp fixed the fixture without changing production freshness rules. The public garden artifact reproduced and all **10 offline EVM tests** passed. No paid network was used.

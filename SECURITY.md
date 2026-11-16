@@ -1,6 +1,6 @@
 # Security reporting
 
-The supported release is **0.4b**. Earlier releases remain archived; separate backports are not promised. This is experimental software for trusted communities, with an optional public-wallet garden and a separate prelaunch DVC proof tool. It has not had a comprehensive independent security audit. Release and deployment evidence is recorded separately in [validation](keeper/VALIDATION.md).
+This document describes **0.5b**. Earlier releases remain archived; separate backports are not promised. This is experimental software for trusted communities, with an optional public-wallet garden and a separate prelaunch DVC proof tool. It has not had a comprehensive independent security audit. Release and deployment evidence is recorded separately in [validation](keeper/VALIDATION.md).
 
 Use **Security → Report a vulnerability** on the repository when available. Otherwise, request a private reporting channel without publishing exploitable details. Never post witness keys, private wallet/vault material, legacy VPN state, sign-in URLs, personal files or unredacted logs. Include the version, component, disposable reproduction and observed impact. No bounty or response-time guarantee is offered.
 
@@ -29,4 +29,10 @@ The 0.4b recipient flow links an unchanged v1 proof to a new record approved by 
 
 A signed proposal saved before GPU work is not a completed proof. Authorizations last at most 24 hours; new signing/work checks the current window, while archival verification reports its freshness separately. A valid signature does not make an expired authorization current, prove when it was made, or prevent conflicting allocations across independent copies. The recipient record cannot issue coins, prove official founder status or establish Coinbase listing/endorsement. See the [wallet-recipient guide](keeper/WALLET-RECIPIENT.md).
 
-The 0.4b source and disposable browser fixtures have passed the checks recorded in validation. Actual Coinbase Wallet signing, a real smart-account state check and the Home Assistant 0.4b update remain pending. Real public-wallet transactions, physical cross-network operation, production consensus and sustained adversarial load remain outside current verification. Maintainer access is not automatically granted to contributors or AI agents.
+## Weather and audio
+
+Weather is an optional external service. City searches and selected coordinates go directly from the browser to Open-Meteo; the provider also receives ordinary connection metadata. No geolocation permission or vault data is requested. The saved city and forecast are browser preferences outside the encrypted vault. Clear location removes that saved weather state; if storage refuses the change, the UI reports it. Retain provider attribution and respect the free API's non-commercial terms; see [the weather guide](keeper/README.md#weather-and-music).
+
+Background music uses local synthesis and saved sound preferences, not recordings or streaming accounts. It requires Play, pauses when the tab is hidden and releases audio resources when leaving the page. It supplies no medical or sleep benefit claim. No wallet permission or identity access is needed for weather/music.
+
+The 0.5b suite passed 263 checks, including weather/audio lifecycle fixtures and the precise same-origin/two-weather-host CSP boundary. Chrome weather and music-control observations are recorded in validation; audible output was not verified. The Home Assistant 0.5b update, actual Coinbase Wallet signing and a real smart-account state check remain pending. Real public-wallet transactions, physical cross-network operation, production consensus and sustained adversarial load remain outside current verification. Maintainer access is not automatically granted to contributors or AI agents.

@@ -1,8 +1,16 @@
-# Doodle Tick · 0.4b
+# Doodle Tick · 0.5b
 
 A creator arcade inspired by the loops of a telephone cord: an hourly color clock, Dot Wave sound mushrooms, an encrypted vault and direct peer connections. Run a Keeper on your computer or Home Assistant.
 
 [![Add Doodle Tick to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fmoswald14%2Fdoodletick)
+
+## Weather and background music
+
+**0.5b adds an expandable Weather & music panel below the top bar**, available across the app. Search for a city, choose a result, and switch between Celsius and Fahrenheit. The three-day forecast and city choice are saved in this browser; **Clear location** removes them. Weather refreshes while the panel is open and the tab is visible. No automatic geolocation is requested: searches and selected city coordinates go directly to Open-Meteo after your choice.
+
+Choose **Phone cord**, **Mushroom grove** or **Afterglow**, then press Play for original music synthesized locally. Pause, Mute and volume remain under your control. Music continues between app views, pauses when the tab is hidden, and requires Play to resume. There is no autoplay, streaming subscription or health claim.
+
+Weather attribution stays visible: [Open-Meteo data](https://open-meteo.com/en/licence) use CC BY 4.0, with GeoNames location credit. The included free API is for personal, non-commercial use; commercial hosts need a separate compliant plan/integration. See [Open-Meteo's terms](https://open-meteo.com/en/terms) and [the Keeper guide](keeper/README.md#weather-and-music).
 
 ## The wallet recipient update
 
@@ -41,7 +49,7 @@ Keep the original installation and backup. Repository apps have a different iden
 
 ## Desktop and Raspberry Pi OS
 
-Download an asset from [0.4b Releases](https://github.com/moswald14/doodletick/releases/tag/0.4b). Desktop requires Node.js 22 or newer; development checks use Node 24. Extract the desktop ZIP, run `node server.mjs` inside `doodletick-keeper`, and open **http://127.0.0.1:4317**. No npm dependencies are required to run the app. For a source checkout, run it from `keeper/`.
+Download an asset from [0.5b Releases](https://github.com/moswald14/doodletick/releases/tag/0.5b). Desktop requires Node.js 22 or newer; development checks use Node 24. Extract the desktop ZIP, run `node server.mjs` inside `doodletick-keeper`, and open **http://127.0.0.1:4317**. No npm dependencies are required to run the app. For a source checkout, run it from `keeper/`.
 
 The separate Pi tarball includes checksums and the [Pi OS setup guide](keeper/pi/START-HERE.md). It does not install Tailscale. Pi OS service installation remains a separate hardware verification task from the Home Assistant app.
 
