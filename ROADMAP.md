@@ -25,6 +25,10 @@ The **0.4b** combined suite passed **238 tests**. A real Chrome fixture using th
 
 0.5b adds optional city weather and local synthesized music in a global expandable panel. Its **263-check** suite passed, including 14 weather and 11 music checks. Chrome verified live sample-city retrieval, C/F/cache/clear, music controls and saved preferences without autoplay, navigation continuity and a 390-pixel red-night layout. Audible output and the live Home Assistant update remain unverified. Commercial weather hosting requires an appropriate provider plan/integration, separate from the code's GPL license.
 
+## 0.6b native coin
+
+Implemented: independent fixed-supply DVC, two real GPU algorithms, native signed payments, durable replay, most-work fork choice and bounded browser peer sync. Remaining: persistent operator peers, Internet reachability/relay design, scalable indexing/compaction, external protocol review, real multi-device operation and live-wallet/browser acceptance checks. An exchange, bridge and market liquidity are not implemented. See [native DVC](keeper/NATIVE-DVC.md).
+
 ## Next engineering task
 
 Complete the **0.5b package and Home Assistant update**. Check the extracted assets, preserve the original Keeper identity/data, verify HTTPS startup and restart, then record the result. A later audible-output check must involve listening or a recording; browser playback state alone is not that evidence.

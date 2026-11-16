@@ -28,3 +28,5 @@
 .keeper-atmosphere-grid>section{min-width:0}
 @media(max-width:1000px){.keeper-atmosphere{margin:16px 24px 0}.keeper-atmosphere-grid{grid-template-columns:1fr}.keeper-atmosphere>summary small{display:block;margin:7px 0 0}}
 @media(max-width:600px){.keeper-atmosphere{margin:12px 16px 0}.keeper-atmosphere-grid{padding:0 12px 12px}}
+
+.dvc-peer{margin:24px 0;padding:18px;border:1px solid var(--line);border-radius:12px}.dvc-peer summary{cursor:pointer;font-weight:700}.dvc-peer label{display:block;margin:12px 0}.dvc-peer textarea{display:block;width:100%;box-sizing:border-box;font:12px monospace;overflow-wrap:anywhere}.dvc-peer p{line-height:1.5}

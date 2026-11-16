@@ -1,6 +1,10 @@
 # Architecture
 
-Doodle Tick combines an encrypted browser workspace with a trusted local Keeper. Native WebRTC connects browsers after signed invitations and two-sided spirograph comparison. A private garden uses one Keeper as its scorekeeper. Public DGT gardens and the prelaunch DVC certificate are separate mechanisms with separate authority.
+Doodle Tick combines an encrypted browser workspace with a trusted local Keeper. Native WebRTC connects browsers after signed invitations and two-sided spirograph comparison. A private garden uses one Keeper as its scorekeeper. Public DGT gardens, historical founder certificates and native DVC are separate mechanisms with separate authority. Native DVC nodes independently validate signatures and proof of work; the private garden remains a local scorekeeper.
+
+## Native DVC in 0.6b
+
+`dvc-core.mjs` defines immutable genesis, issuance, native signatures and work/fork rules. `dvc-node.mjs` serializes and fsyncs the public journal before publishing balances; `dvc-http.mjs` exposes bounded same-origin routes. Browser `dvc-wallet`, `dvc-miner` and `dvc-ui` handle explicit wallet and GPU actions. `dvc-sync` pulls verified history over the authenticated `dvc-peer-ui` channel; peer input cannot choose URLs or access administrative routes. See [the native protocol](keeper/NATIVE-DVC.md).
 
 ## Source layout
 
@@ -50,7 +54,7 @@ Home Assistant uses `/data/keeper`. Earlier `/data/tailscale` files may remain f
 
 Garden requests retain the existing signed formats, issuer pinning, serialized accounting and idempotent retries. Each Keeper has independent balances. The operator remains trusted to keep time, run the code and protect backups; signatures do not prevent a dishonest operator or snapshot rollback. Public DGT contracts have separate capped rules and wallet-confirmed actions. See [their guide](contracts/README.md).
 
-The DVC certificate binds exactly one proposed 1,000,000-coin founder allocation. Existing creator signatures bind its public identity and canonical manifest; SHA-256 work binds the signed proposal. Export/import verifies strict formats, signatures, hash and difficulty. GPU candidates are checked with WebCrypto. Mining is opt-in and bounded, with cancellation on hiding, navigation, lock and changed consent. A proof establishes its stated target, not GPU provenance, canonical project authority, live genesis or a spendable balance. Total eventual network supply and future issuance remain unadopted.
+The DVC certificate binds exactly one proposed 1,000,000-coin founder allocation. Existing creator signatures bind its public identity and canonical manifest; SHA-256 work binds the signed proposal. Export/import verifies strict formats, signatures, hash and difficulty. GPU candidates are checked with WebCrypto. Mining is opt-in and bounded, with cancellation on hiding, navigation, lock and changed consent. A proof establishes its stated target, not GPU provenance, canonical project authority, live genesis or a spendable balance. Version 0.6b separately defines the independent native chain, with a 21-million cap and 1-million founder allocation; this does not rewrite the archived certificate.
 
 ## Wallet-recipient binding in 0.4b
 

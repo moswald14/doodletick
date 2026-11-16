@@ -1,3 +1,12 @@
+# 0.6b — Native DVC mining and payments
+
+- Add an independent native Doodleverse chain with a fixed 21-million cap: one million disclosed founder coins and 20 million mineable coins. The original founder certificates and existing garden balances are preserved separately.
+- Add the red **MINE NOW** button, real SHA-256/SHA-256d GPU algorithms, three intensity settings, Stop and bounded work. Native rewards mature after six further blocks.
+- Add wallet-controlled native signatures, exact payment review, sending, receiving, payment requests and account history. No Ethereum transaction or token allowance is used by native DVC.
+- Persist and independently replay the chain; validate supply, proof, signatures, nonces, funds and competing-chain work. Add bounded manual peer sync over authenticated, encrypted browser pairing.
+- Keep Home Assistant ingress authentication and loopback-only Keeper access. No new public ports, VPN, seed or relay is installed. Each connected node independently validates the public history.
+- Early network limits: direct reachability and open browser Coin pages are required for pairing; no exchange, bridge, cash value or mature network security is claimed. See [native rules](../keeper/NATIVE-DVC.md) and [validation](../keeper/VALIDATION.md).
+
 # 0.5.1b — Optional Ethereum read compatibility
 
 This update is in preparation; publication and installation are pending.

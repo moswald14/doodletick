@@ -1,8 +1,8 @@
-# Doodle Tick Keeper 0.5.1b
+# Doodle Tick Keeper 0.6b
 
 Doodle Tick is an experimental creator vault, social arcade, file library and shared mushroom garden. Spirographs help people compare signed creator keys when pairing. Your writing and files remain in your browser; Keepers provide signed receipts, a local directory and a shared garden scorekeeper.
 
-The 0.5.1b compatibility update is in preparation; publication and installation remain pending. The published 0.5b Home Assistant update was verified with Keeper identity and receipts preserved. See [validation](VALIDATION.md) for current evidence.
+The 0.6b update adds independent native DVC mining and signed payments. Use **Doodleverse Coin** for the red MINE NOW button, algorithm choice, balances, sending, receiving and peer sync. Read [NATIVE-DVC.md](NATIVE-DVC.md) for the fixed 21-million supply, disclosed founder allocation, mining maturity and experimental network limits. Existing vaults, garden coins and founder certificates retain their formats. See [validation](VALIDATION.md) for evidence.
 
 ## Start
 
@@ -36,7 +36,7 @@ Keep [Open-Meteo](https://open-meteo.com/) and GeoNames attribution beside the w
 
 ## Link a founder recipient
 
-The Coin page preserves the original signed founder proof and can add a wallet recipient record. Connect a compatible browser extension, review the exact account and chain, sign the fixed recipient message, then explicitly start fresh GPU proof. No payment or token approval is requested. See [WALLET-RECIPIENT.md](WALLET-RECIPIENT.md). DVC remains a prelaunch proposal with zero spendable coins.
+The Coin page preserves the original signed founder proof and can add a wallet recipient record. Connect a compatible browser extension, review the exact account and chain, sign the fixed recipient message, then explicitly start fresh GPU proof. No payment or token approval is requested. See [WALLET-RECIPIENT.md](WALLET-RECIPIENT.md). These archived certificates do not mint coins. The separate native DVC panel mines blocks and sends signed native payments; see [NATIVE-DVC.md](NATIVE-DVC.md).
 
 If the wallet connects but cannot read the required blocks, expand **Blockchain read service** and explicitly choose **PublicNode · Ethereum only**. This optional chain-1 service receives the connecting IP, public wallet address and exact block queries; smart-account verification also sends the public digest/signature. The wallet still supplies the account/network and signs. Wallet reads are the default, the choice is page-only, and there are no on-load calls or automatic fallback. Exact-block checks remain enforced; unsupported chains or missing state fail without verification. Error details show a safe method and numeric code, not raw provider payloads. No funds, fees, transaction permissions or data-format migration are required; existing vaults and v1/v2 records remain intact.
 
@@ -74,6 +74,6 @@ Keeper state lives in `.doodletick`: the witness key, receipt journal and garden
 
 The vault uses authenticated encryption and creator signatures through Web Crypto. Passwords and writing bodies are not sent to the witness, but receipt metadata is linkable. The local witness and garden operator control their clocks and storage. Signatures cannot prevent a malicious operator, an old-backup rollback or a person with a key from creating another valid history. Unlocked browsers, extensions and local helpers are trusted endpoints.
 
-The current file library allows 20 MiB per file, 100 MiB and 100 files per identity, with up to four connected file peers. Its storage is encrypted in the browser; it is not an unattended shared-disk service. Private Keeper coins are a game economy. Optional public DGT gardens have separate balances and network fees; see [the contract guide](../contracts/README.md). Doodleverse Coin is a prelaunch certificate with no deployed DVC contract or spendable balance. There is no global identity registry, screenplay generator or consensus recovery system in this release.
+The current file library allows 20 MiB per file, 100 MiB and 100 files per identity, with up to four connected file peers. Its storage is encrypted in the browser; it is not an unattended shared-disk service. Private Keeper coins are a game economy. Optional public DGT gardens have separate balances and network fees; see [the contract guide](../contracts/README.md). Native Doodleverse Coin has its own experimental chain and spendable balances; its earlier certificates remain archival. There is no global identity registry, screenplay generator or consensus recovery system in this release.
 
 See [VALIDATION.md](VALIDATION.md) for evidence and remaining checks, [RELEASES.md](RELEASES.md) for versioning, and [CONTRIBUTING.md](../CONTRIBUTING.md) for development. This edition has not had an independent security audit.
