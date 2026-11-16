@@ -85,3 +85,8 @@ public/sleep-audio.mjs
 public/sleep-mix.mjs
 public/sleep-worker.mjs
 public/sleep.css
+public/jazz.html
+public/jazz.css
+public/jazz-core.mjs
+public/jazz-player.mjs
+public/jazz-worklet.mjs

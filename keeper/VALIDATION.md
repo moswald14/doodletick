@@ -1,3 +1,23 @@
+# Validation — Doodle Tick 0.8b
+
+## Doodle Jazz room · 2026-11-16
+
+The integrated room preserves the standalone trio and controls, while replacing its inline/data-URL loading with external same-origin modules. Desktop and Home Assistant keep their existing script, worker and authenticated-ingress policies.
+
+| Check | Observed evidence |
+| --- | --- |
+| Complete application suite | **509/509 passed**, zero failures or skips. Includes the existing identity, garden, chain, clock, backup and audio checks plus five jazz checks. |
+| Jazz composition and audio | Three styles composed changing, bounded phrases over 1,024 bars each. Actual stereo renders were finite, bounded below clipping, sample-timed, and became silent when instrument levels were muted. A separate original-engine run composed a simulated 24 hours; this is not a day-long listening test. |
+| Serving and access | All five assets loaded with correct content types through desktop and the generated Home Assistant gateway. Both retained script-src 'self' and worker-src 'self'. Spoofed direct ingress access remained blocked. No private-state files were exposed and public witness/receipt status was unchanged by asset requests. |
+| Browser preview | The real Keeper sidebar opened Jazz room. Play produced a nonzero output meter and advancing bars. A Home Assistant-style ingress prefix loaded the generated player, imports and worklet correctly; bossa changes and pause/resume worked. Back to Keeper returns in the same tab and page exit releases jazz audio. |
+| Review and packaging inputs | A separate package review found no blocking source issue. Canonical/generated runtime checks passed: 90 matching generated files, 308 public source files at the reviewed source cut. The five jazz assets are in the server allowlist, desktop offline cache and Pi/runtime inventories. |
+
+These are source and local-browser observations. Physical speaker output, mobile screen-lock playback and overnight uptime remain unverified. Live Home Assistant installation and immutable archive publication are release/deployment steps recorded separately. No live vault, private key, garden ledger or backup was used in testing. Jazz requires no vault, wallet, microphone, minting or mining.
+
+The historical reports below retain their original source-cut evidence and pending wording.
+
+---
+
 # Validation — Doodle Tick 0.7b
 
 ## Keeper time and Sleep garden · 2026-11-16

@@ -1,3 +1,14 @@
+## 0.8b — Doodle Jazz room
+
+Source checks and browser observations are recorded in [VALIDATION.md](VALIDATION.md). Installation and release receipts are separate from this source-cut report.
+
+- Add **Jazz room** to the Keeper sidebar, opening the Doodle Jazz player in the same tab. **Back to Keeper** leaves the jazz page and stops its audio.
+- Generate original piano, plucked upright bass and percussion locally, with **Velvet swing**, **Blue hour** and **Bossa garden** styles. The trio keeps composing new phrases without a programmed final song.
+- Start only on **Play jazz**. Provide Pause/Resume, Stop, New set, master and instrument levels, mute, tempo, swing, room reverb and dim mode. Save sound preferences locally outside the vault; opening the page never resumes playback automatically.
+- Continue background listening while the jazz page remains open and the device stays awake. Page exit, device sleep, browser suspension or an audio interruption can end playback. The Keeper server itself does not play audio through Home Assistant hardware.
+- Serve the player and worklet as external same-origin assets under the existing Keeper and authenticated-ingress policy. Listening needs no vault, wallet connection, microphone or streaming account.
+- Preserve creator identities, signed formats, garden accounting and native-chain rules. See [JAZZ.md](JAZZ.md) for controls and boundaries, and [VALIDATION.md](VALIDATION.md) for checked behavior.
+
 ## 0.7b — Sleep garden and Keeper time
 
 0.7b is published. See the validation report for checked behavior and deployment limits.

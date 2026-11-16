@@ -1,3 +1,14 @@
+# 0.8b — Doodle Jazz room
+
+Source checks and browser observations are recorded in [the validation report](../keeper/VALIDATION.md). Installation and release receipts are separate from this source-cut report.
+
+- Add **Jazz room** to the Keeper sidebar. It opens the Doodle Jazz player in the same tab through authenticated ingress; **Back to Keeper** leaves the page and stops jazz audio.
+- Add original local piano, plucked bass and percussion in swing, blues and bossa styles, with Play/Pause/Resume, Stop, New set and adjustable sound controls.
+- Keep playback opt-in and save preferences locally outside the vault. No vault, wallet connection, microphone or streaming account is required.
+- Allow background listening while the jazz page remains open and the device stays awake. Closing or leaving the page, browser suspension and device sleep can interrupt it. Sound plays on the listening browser's output device.
+- Use external same-origin player and worklet assets without relaxing ingress authentication or its existing script policy. Preserve saved Keeper identities, garden accounting and native DVC rules.
+- See [the jazz guide](../keeper/JAZZ.md) and [validation status](../keeper/VALIDATION.md).
+
 # 0.7b — Sleep garden and Keeper time
 
 0.7b is published. See the validation report for checked behavior and deployment limits.
