@@ -10,6 +10,8 @@ The project owner has requested a **1,000,000 DVC founder allocation** for an ev
 
 The first implementation is a **prelaunch allocation certificate**. It does not put a spendable balance on a running DVC blockchain. A successful proof establishes that its hash meets the stated target. It does not establish which GPU was used, how long someone worked, authorship, unique people, community agreement or economic value. Changing the founder or the signed proposal changes the proof challenge.
 
+The **0.4b wallet-recipient update** links an existing v1 certificate to an address selected in the Coinbase Wallet Chrome extension. The original creator identity and the selected wallet both approve the proposed recipient, then a fresh GPU proof binds those approvals. The original v1 proof is preserved. This feature requests a message signature, with no token approval, transfer, contract deployment or spending permission. It does not add a token or spendable balance to Coinbase Wallet, and it does not establish a Coinbase listing or endorsement. See the [wallet-recipient guide](keeper/WALLET-RECIPIENT.md) for the supported accounts and verification limits.
+
 Before any live issuance, the network still needs agreed genesis rules, independently validating nodes, transaction signatures, double-spend and replay prevention, supply accounting, fork choice, recovery, and adversarial review. The founder allocation must remain visible in the final genesis specification and explorer. Future issuance beyond that proposed allocation has not been agreed. No investment return, exchange listing, redemption, public liquidity or free service is promised by a proof.
 
 Existing private garden Doodle Coins and the optional public-wallet DGT gardens keep their own rules and balances. A DVC certificate does not move, burn, back or convert either balance. The public garden contracts distributed in 0.2b remain a separate experimental feature.
@@ -31,7 +33,7 @@ Useful next work includes a public governance proposal, transparent responsibili
 This project needs people who can review decisions and maintain what ships. Development has used AI coding tools; human review and field testing remain essential.
 
 - **Networking:** signed signaling, connection recovery, NAT/relay testing, admission and abuse controls.
-- **Protocol and accounting:** independently reproducible proof verification, genesis/supply review, signed spends, fork and recovery rules.
+- **Protocol and accounting:** independently reproducible proof verification, wallet-recipient review, genesis/supply review, signed spends, fork and recovery rules.
 - **GPU/browser engineering:** portable WebGPU compute, cancellation, device loss, power and time bounds, accessibility.
 - **Home Assistant:** packaging, updates, HTTPS, migration and real-device testing.
 - **Creators and organizers:** licensing workflows, documentation, usability and practical community pilots.

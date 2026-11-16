@@ -1,4 +1,4 @@
-# Doodle Tick direct connections · 0.3b
+# Doodle Tick direct connections · 0.4b
 
 Games and files now use native browser WebRTC with encrypted DTLS channels. Doodle Tick does not install or run Tailscale. The local Keeper still stores its witness, receipts and garden; its browser service stays on loopback, or behind authenticated Home Assistant ingress.
 
@@ -10,7 +10,7 @@ Games and files now use native browser WebRTC with encrypted DTLS channels. Dood
 4. Compare both spirographs **and every group of the verification code** over a trusted call or in person. Both players must confirm. Reject any mismatch or unexpected pairing.
 5. Keep both pages open. **Files & peers** uses the same invitation/answer/comparison flow with its own connection and licensed library.
 
-Use 0.3b on both sides. Old VPN invitation codes are unsupported; create fresh codes. Saved creator keys, signed entries, receipts and garden records retain their existing formats.
+Use 0.3b or later on both sides. Old VPN invitation codes are unsupported; create fresh codes. Saved creator keys, signed entries, receipts and garden records retain their existing formats.
 
 ## Reachability and room codes
 

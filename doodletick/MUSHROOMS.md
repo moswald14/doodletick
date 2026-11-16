@@ -1,4 +1,4 @@
-# Dot Wave mushrooms in Doodle Tick 0.3b
+# Dot Wave mushrooms in Doodle Tick 0.4b
 
 Open **Mushroom garden** and choose **Private Keeper** or **Public wallet**. Private mode uses your creator vault and **Join this garden**. Public mode uses an existing external wallet and a separate contract; it does not require unlocking the private vault. On Home Assistant, use HTTPS for signed operations. HTTP supports recipe previews and explains the remaining setup.
 
@@ -49,4 +49,4 @@ The included `dot-effects-dsp.mjs`, `dot-amp-tone.mjs`, `dot-studio-dsp.mjs`, `d
 
 These included modules are published under this repository's GPLv3 license. That code license does not automatically apply to separately created recipe content, sound recordings or other Dot Wave Studio distributions. Preserve original creator credits when importing or sharing recipes.
 
-Automated checks cover audio reproduction, normalized identity, hourly boundaries, persistence, duplicate protection, concurrent trades, coin conservation, failed writes, tampered storage and rejection of removed remote garden routes. Live Home Assistant HTTPS access worked, but actual 0.3b cutover, multi-device garden transactions and real public-wallet transactions remain acceptance work. See the repository's validation and release notes for precise evidence.
+Automated checks cover audio reproduction, normalized identity, hourly boundaries, persistence, duplicate protection, concurrent trades, coin conservation, failed writes, tampered storage and rejection of removed remote garden routes. Live Home Assistant HTTPS access worked, but 0.3b cutover and restart subsequently passed. Multi-device garden transactions and real public-wallet transactions remain acceptance work. See the repository's validation and release notes for precise evidence.

@@ -1,6 +1,7 @@
 import { verifyGardenResponse, GARDEN_FORMAT } from './mushroom-core.mjs';
 import { createMushroomUI } from './mushroom-ui.mjs';
 import { createDoodleverseCoinUI } from './doodleverse-coin-ui.mjs';
+import { createDoodleverseRecipientUI } from './doodleverse-recipient-ui.mjs';
 import { createClockWheel } from './clock-wheel.mjs';
 import { createVpnUI } from './vpn-ui.mjs';
 import { newIdentity, random, b64, deriveKey, encryptVault, decryptVault, sealEntry, verifyWitness, verifyEntry, receiptFor, verifyReceipt, tickAt, tetrachromaColor, EPOCH, MAX_TEXT, MAX_BACKUP, validateEnvelope } from './core.mjs';
@@ -14,6 +15,7 @@ let vault = null, key = null, salt = null, savedRaw = null, pendingBackup = null
 let saveTimer, toastTimer, queue = Promise.resolve(), generation = 0, busy = false, lastActive = Date.now();
 let changeId = 0;
 let arcadeUI;
+let recipientUI;
 function markDirty() { changeId++; $('save-status').textContent = 'Encrypting your draft…'; }
 let storageAvailable = true;
 try { savedRaw = localStorage.getItem(STORAGE); } catch { storageAvailable = false; }
@@ -56,12 +58,16 @@ function showView(view) {
   arcadeUI?.setVisible(view === 'arcade');
   mushroomUI.setVisible(view === 'garden');
   coinUI.setVisible(view === 'coin');
+  recipientUI?.setVisible(view === 'coin');
   history.replaceState(null, '', '#' + view);
 }
 const fileUI = createFilesUI({ toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); } });
 arcadeUI = createArcadeUI({ toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); }, onPackStored: () => fileUI.refresh() });
 const mushroomUI = createMushroomUI({ toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); } });
-const coinUI = createDoodleverseCoinUI($('view-coin'), { toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); } });
+const coinUI = createDoodleverseCoinUI($('view-coin'), { toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); recipientUI?.stop(); }, onSourceProof: proof => recipientUI?.setSourceProof(proof) });
+const recipientPanel = document.createElement('section');
+$('view-coin').append(recipientPanel);
+recipientUI = createDoodleverseRecipientUI(recipientPanel, { toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); coinUI.stop(); } });
 createVpnUI();
 for (const button of document.querySelectorAll('[data-view]')) button.addEventListener('click', () => showView(button.dataset.view));
 function showLocked() {
@@ -144,12 +150,14 @@ function showUnlocked() {
   $('identity-error').textContent = ''; pendingBackup = null; renderDraft(); renderEntries(); lastActive = Date.now();
   mushroomUI.unlock(vault.identity);
   coinUI.unlock(vault.identity);
+  recipientUI.unlock(vault.identity);
   fileUI.unlock(vault.identity, key).catch(error => toast(error.message));
   arcadeUI.unlock(vault.identity, key).catch(error => toast(error.message));
 }
 function clearSession() {
   mushroomUI.lock();
   coinUI.lock();
+  recipientUI.lock();
   fileUI.lock();
   arcadeUI.lock();
   generation++; clearTimeout(saveTimer); vault = null; key = null; salt = null; selected = null;

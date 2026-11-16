@@ -43,3 +43,9 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
 CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+## Recipient wallet signature verification
+
+The browser contains a pinned, unminified ethers 6.17.0 signature/encoding bundle, including Noble curve and hash primitives. These components retain their MIT licenses; full component versions, copyrights and license texts are in `keeper/public/recipient-crypto-notices.txt` (or `public/recipient-crypto-notices.txt` in desktop/Pi downloads). The bundle contains no wallet connection or provider API.
+
+Corresponding dependency sources, build entry, pinned dependency lockfile and rebuild instructions are included in `crypto-vendor/` in the repository and Home Assistant source download, or `crypto-source/` in desktop/Pi downloads. `source-inputs.json` contains the contributing source modules and their preferred TypeScript sources where applicable. Rebuilding and checking the bundled output is a development operation; running the app needs no npm installation or CDN. Project integration code remains GPL-3.0-only.

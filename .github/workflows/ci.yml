@@ -28,6 +28,12 @@ jobs:
           package-manager-cache: false
       - name: Check release metadata and generated runtime
         run: node scripts/check-repository.mjs
+      - name: Install pinned recipient verification build tools
+        working-directory: crypto-vendor
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Reproduce recipient signature bundle and sources
+        working-directory: crypto-vendor
+        run: npm run check
       - name: Run Keeper and Home Assistant tests
         run: node scripts/test.mjs
       - name: Install pinned contract verification tools

@@ -105,6 +105,9 @@ def main():
     # Ship corresponding Solidity source and its exact compiler inputs alongside
     # the browser's compiled deployment bytecode in every distribution.
     keeper.update({'contract-source/' + name[len('contracts/'):]: data for name, data in source.items() if name.startswith('contracts/')})
+    # The wallet verifier ships its pinned build and corresponding dependency
+    # sources in desktop and Pi archives as well as the full repository archive.
+    keeper.update({'crypto-source/' + name[len('crypto-vendor/'):]: data for name, data in source.items() if name.startswith('crypto-vendor/')})
     for name in ['LICENSE', notice_names[0]]:
         require(name not in keeper or keeper[name] == source[name], 'Keeper and root license notices differ: ' + name)
         keeper[name] = source[name]

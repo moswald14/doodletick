@@ -1,4 +1,4 @@
-# Doodle Tick Keeper · 0.3b
+# Doodle Tick Keeper · 0.4b
 
 Creator arcade, hourly color clock and Dot Wave mushroom garden for Home Assistant OS. This source-built app/add-on supports aarch64 and amd64.
 
@@ -8,6 +8,6 @@ Read [DOCS.md](DOCS.md) and [HTTPS.md](HTTPS.md). Room directory codes and priva
 
 A repository installation has separate data from a pre-existing local app. The [offline migration procedure](MIGRATION.md) preserves the witness, receipts and garden in a verified one-time import into an unused target. Earlier VPN state, when present, is preserved inert for rollback. Installing the repository alone does not migrate anything.
 
-Private Keeper coins, public wallet DGT gardens and the separate Doodleverse Coin proof-of-work contract have distinct balances. Public transactions require wallet confirmation and network fees. No shared deployed contract, redemption or token value is supplied. See [public-mode rules](../contracts/README.md).
+Private Keeper coins and public wallet DGT gardens have separate balances. Doodleverse Coin produces a separate prelaunch certificate with no balance or deployed DVC contract. The 0.4b recipient flow links that certificate to a self-custody wallet through message signatures and fresh GPU work. Public transactions require wallet confirmation and network fees. No shared deployed contract, redemption or token value is supplied. See [public-mode rules](../contracts/README.md).
 
-Live Home Assistant HTTPS access worked. The actual 0.3b installation, data cutover and real wallet transactions remain unverified at this release's preparation; migration tests use disposable fixtures. Same-machine native Chrome pairing passed. See [validation](../keeper/VALIDATION.md) for evidence and limits. Source is GPL-3.0-only under the repository's LICENSE.
+The 0.3b repository installation, HTTPS access, migration and restart were verified with the original Keeper witness preserved. The 0.4b wallet update has separate validation; real wallet transactions remain untested. Same-machine native Chrome pairing passed. See [validation](../keeper/VALIDATION.md) for evidence and limits. Source is GPL-3.0-only under the repository's LICENSE.
