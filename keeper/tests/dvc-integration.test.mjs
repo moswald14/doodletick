@@ -22,7 +22,7 @@ for (const [label, create] of [['desktop', createKeeperServer], ['Home Assistant
       const account = await (await fetch(base + '/dvc/account/' + MAIN_GENESIS.founderAddress)).json();
       assert.equal(account.availableAtoms, MAIN_GENESIS.founderAtoms);
       assert.equal(account.pendingOutAtoms, '0'); assert.equal(account.nextNonce, '0');
-      for (const asset of ['dvc-core.mjs', 'dvc-ui.mjs', 'dvc-wallet.mjs', 'dvc-miner.mjs', 'dvc-sync.mjs', 'dvc-peer-ui.mjs', 'dvc.css']) {
+      for (const asset of ['dvc-core.mjs', 'dvc-ui.mjs', 'dvc-wallet.mjs', 'dvc-miner.mjs', 'dvc-sync.mjs', 'dvc-peer-ui.mjs', 'dvc.css', 'dvc-console.mjs', 'dvc-console.css']) {
         const response = await fetch(base + '/' + asset); assert.equal(response.status, 200, asset);
         assert.match(response.headers.get('content-type'), asset.endsWith('.css') ? /text\/css/ : /javascript/);
       }

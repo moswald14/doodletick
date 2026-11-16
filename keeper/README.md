@@ -1,6 +1,8 @@
-# Doodle Tick Keeper 0.6b
+# Doodle Tick Keeper 0.6.1b
 
 Doodle Tick is an experimental creator vault, social arcade, file library and shared mushroom garden. Spirographs help people compare signed creator keys when pairing. Your writing and files remain in your browser; Keepers provide signed receipts, a local directory and a shared garden scorekeeper.
+
+The 0.6.1b update adds **Nightcap**, a SHA-256/Eco mushroom preset with opt-in **Keep mining** and automatic collection of accepted blocks. Press MINE NOW to start; keep the page visible and computer awake. **GITTIT::GODDIT** adds command input, output and error messages: type `help`, `status`, `balance`, `mine`, `stop` or `repeat off`. See [the command guide](NATIVE-DVC.md#gittitgoddit-console).
 
 The 0.6b update adds independent native DVC mining and signed payments. Use **Doodleverse Coin** for the red MINE NOW button, algorithm choice, balances, sending, receiving and peer sync. Read [NATIVE-DVC.md](NATIVE-DVC.md) for the fixed 21-million supply, disclosed founder allocation, mining maturity and experimental network limits. Existing vaults, garden coins and founder certificates retain their formats. See [validation](VALIDATION.md) for evidence.
 

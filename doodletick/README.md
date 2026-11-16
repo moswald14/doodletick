@@ -1,4 +1,4 @@
-# Doodle Tick Keeper · 0.6b
+# Doodle Tick Keeper · 0.6.1b
 
 Creator arcade, hourly color clock, encrypted vault, mushroom garden and native Doodleverse Coin for Home Assistant OS (aarch64 and amd64).
 

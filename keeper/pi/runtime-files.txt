@@ -77,3 +77,5 @@ public/dvc-ui.mjs
 public/dvc-sync.mjs
 public/dvc-peer-ui.mjs
 public/dvc.css
+public/dvc-console.mjs
+public/dvc-console.css

@@ -35,11 +35,12 @@ class Element extends EventTarget {
   select() { this.selected = true; }
   closest() { return this; }
 }
-function fixture({ availableAtoms = '1000000000', pendingOutAtoms = '0', requestTimeoutMs = 1000, browserPeerCount = () => 0 } = {}) {
+function fixture({ availableAtoms = '1000000000', pendingOutAtoms = '0', requestTimeoutMs = 1000, browserPeerCount = () => 0, repeatDelayMs = 20 } = {}) {
   const elements = new Map(), doc = new EventTarget(), win = new EventTarget(), calls = [], walletCalls = [], listeners = new Map(), jobs = [];
   doc.hidden = false; doc.createElement = tag => new Element(tag); doc.defaultView = win; win.top = win.self = win;
   let copied = '', wallet, accountNonce = '0', pending = pendingOutAtoms, available = availableAtoms, immature = '0', history = [], serverHook = null, requestHook = null, signGate = null;
-  let exposed = [address], chain = '0x1', mining = null, releaseMining = null, nativeState = validateChain([], { now });
+  let exposed = [address], chain = '0x1', mining = null, releaseMining = null, rejectMining = null, nativeState = validateChain([], { now });
+  const consoleLog = []; let executeCommand, consoleEnabled = false, consoleDestroyed = false;
   win.navigator = { clipboard: { async writeText(value) { copied = value; } } };
   const container = new Element(); container.ownerDocument = doc;
   Object.defineProperty(container, 'innerHTML', { set(value) {
@@ -87,12 +88,14 @@ function fixture({ availableAtoms = '1000000000', pendingOutAtoms = '0', request
     }
     throw Error('Unexpected fixture path.');
   };
-  const ui = createDvcUI(container, { document: doc, window: win, fetchImpl, requestTimeoutMs, getBrowserPeerCount: browserPeerCount,
+  const ui = createDvcUI(container, { document: doc, window: win, fetchImpl, requestTimeoutMs, getBrowserPeerCount: browserPeerCount, repeatDelayMs,
+    consoleFactory: (_host, { execute }) => { executeCommand = execute; return { write(text, level = 'output') { consoleLog.push({ text, level }); }, setEnabled(value) { consoleEnabled = value; }, destroy() { consoleDestroyed = true; } }; },
     walletFactory: opts => { wallet = createDvcWallet({ ...opts, eventTarget: win, getLegacyProvider: () => null, rpcTimeoutMs: 1000, signatureTimeoutMs: 1000 }); return wallet; },
-    mineCandidate: opts => { mining = opts; return new Promise(resolve => { releaseMining = resolve; }); } });
+    mineCandidate: opts => { mining = opts; return new Promise((resolve, reject) => { releaseMining = resolve; rejectMining = reject; }); } });
   const click = name => { const target = button(name); if (target.disabled) return false; const event = new Event('click'); Object.defineProperty(event, 'target', { value: target }); container.dispatchEvent(event); return true; };
   const until = async predicate => { for (let i = 0; i < 250; i++) { if (predicate()) return; await flush(); } assert.fail('UI did not settle: ' + field('status').textContent + ' / ' + field('progress').textContent); };
   return { ui, wallet, calls, walletCalls, container, field, button, click, until, getStatus, getAccount, jobs, mining: () => mining, copied: () => copied,
+    consoleLog, command: (command, args = []) => executeCommand({ command, args }), consoleEnabled: () => consoleEnabled, consoleDestroyed: () => consoleDestroyed,
     hookServer(fn) { serverHook = fn; }, hookWallet(fn) { requestHook = fn; }, setNonce(value) { accountNonce = value; }, setPending(value) { pending = value; },
     async activate() { ui.setActive(true); await until(() => field('node').textContent.startsWith('Block')); },
     async ready() { await this.activate(); click('discover'); field('provider').value = id; field('provider').fire('change'); click('connect'); await until(() => !button('mine').disabled); },
@@ -100,9 +103,171 @@ function fixture({ availableAtoms = '1000000000', pendingOutAtoms = '0', request
     gateSignature() { signGate = deferred(); return { release() { signGate.resolve(); }, waiting: () => walletCalls.some(row => row.method === 'eth_signTypedData_v4') }; },
     hide() { doc.hidden = true; doc.dispatchEvent(new Event('visibilitychange')); }, show() { doc.hidden = false; doc.dispatchEvent(new Event('visibilitychange')); },
     pagehide() { win.dispatchEvent(new Event('pagehide')); }, accountChange() { exposed = [recipient]; listeners.get('accountsChanged')?.(exposed); }, networkChange() { chain = '0x2'; listeners.get('chainChanged')?.(chain); },
-    finishMining(result) { releaseMining(result); }, cleanup() { signGate?.resolve(); releaseMining?.({ status: 'stopped' }); ui.destroy(); },
+    finishMining(result) { releaseMining(result); }, failMining(message) { rejectMining(Error(message)); }, cleanup() { signGate?.resolve(); releaseMining?.({ status: 'stopped' }); ui.destroy(); },
   };
 }
+
+test('command console reports loaded state without connecting, signing or mining automatically', async () => {
+  const f = fixture();
+  try {
+    assert.equal(f.consoleEnabled(), false);
+    await f.activate(); assert.equal(f.consoleEnabled(), true);
+    assert.match(await f.command('status'), /Block 0/);
+    assert.match(await f.command('status'), /Latest loaded/);
+    await f.command('balance'); assert.equal(f.consoleLog.at(-1).level, 'error');
+    assert.equal(f.walletCalls.length, 0); assert.equal(f.mining(), null);
+    await f.command('wallets'); f.field('provider').value = id; f.field('provider').fire('change'); await f.command('connect');
+    assert.match(await f.command('balance'), /Available: 10\.00000000 DVC/);
+    assert.equal(f.walletCalls.some(row => row.method === 'eth_signTypedData_v4'), false);
+    f.hide(); assert.equal(f.consoleEnabled(), false); const calls = f.calls.length;
+    await f.command('mine'); await f.command('connect'); assert.equal(f.calls.length, calls); assert.equal(f.mining(), null);
+  } finally { f.cleanup(); }
+  assert.equal(f.consoleDestroyed(), true);
+});
+
+test('console mining shares the button limits, rejects overlapping work, and stops immediately', async () => {
+  const f = fixture();
+  try {
+    await f.ready(); await f.command('algorithm', ['sha256d']); await f.command('intensity', ['eco']);
+    const running = f.command('mine'); await f.until(() => !!f.mining());
+    assert.equal(f.mining().algorithm, 'sha256d'); assert.equal(f.mining().intensity, 'eco');
+    assert.equal(f.mining().maxMs, 60000); assert.equal(f.mining().maxCandidates, 4194304);
+    assert.equal(f.button('mine').disabled, true);
+    await f.command('mine'); await f.command('algorithm', ['sha256']); assert.equal(f.jobs.length, 1);
+    assert.equal(f.field('algorithm').value, 'sha256d');
+    await f.command('stop'); assert.equal(f.mining().signal.aborted, true); assert.equal(f.button('stop').disabled, true);
+    f.finishMining({ status: 'found', algorithm: 'sha256d', nonce: '0', digest: '0'.repeat(64) }); await running;
+    assert.equal(f.calls.some(row => row.path === '/block'), false);
+    assert.equal(f.consoleLog.some(row => /accepted/.test(row.text)), false);
+  } finally { f.cleanup(); }
+});
+
+test('GPU failures are logged safely with actionable adapter guidance and no raw error echo through status', async () => {
+  const f = fixture();
+  try {
+    await f.ready(); const attempt = f.command('mine'); await f.until(() => !!f.mining());
+    f.failMining('No WebGPU adapter is available. No CPU miner was started.'); await attempt;
+    assert.equal(f.consoleLog.at(-1).level, 'error'); assert.match(f.consoleLog.at(-1).text, /restart the browser/);
+    const previous = f.mining(); const next = f.command('mine'); await f.until(() => f.mining() !== previous);
+    const privateError = 'driver detail private-marker-should-not-copy <img src=x onerror=alert(1)>';
+    f.failMining(privateError); await next;
+    assert.equal(f.consoleLog.at(-1).level, 'error'); assert.doesNotMatch(JSON.stringify(f.consoleLog), /private-marker|<img/);
+    assert.doesNotMatch(await f.command('status'), /private-marker|<img/);
+    assert.equal(f.calls.some(row => row.path === '/block'), false);
+  } finally { f.cleanup(); }
+});
+
+test('console samples progress and never reports late work after hiding the view', async () => {
+  const f = fixture();
+  try {
+    await f.ready(); const running = f.command('mine'); await f.until(() => !!f.mining());
+    const before = f.consoleLog.length;
+    for (let elapsedMs = 0; elapsedMs < 10000; elapsedMs += 100) f.mining().onProgress({ phase: 'searching', attempts: elapsedMs, elapsedMs });
+    assert.equal(f.consoleLog.length - before, 3);
+    f.hide(); const hiddenCount = f.consoleLog.length;
+    f.mining().onProgress({ phase: 'searching', attempts: 20000, elapsedMs: 12000 });
+    f.finishMining({ status: 'exhausted' }); await running;
+    assert.equal(f.consoleLog.length, hiddenCount); assert.equal(f.calls.some(row => row.path === '/block'), false);
+    f.show(); await f.until(() => f.consoleEnabled()); assert.equal(f.jobs.length, 1);
+  } finally { f.cleanup(); }
+});
+
+test('console does not expose transfer signing or arbitrary action commands', async () => {
+  const f = fixture();
+  try {
+    await f.ready(); const calls = f.calls.length, walletCalls = f.walletCalls.length;
+    for (const command of ['send', 'sign', 'eval', 'fetch', 'shutdown', 'transfer']) await f.command(command);
+    await f.command('algorithm', ['unlisted']); await f.command('intensity', ['999']);
+    assert.equal(f.calls.length, calls); assert.equal(f.walletCalls.length, walletCalls); assert.equal(f.mining(), null);
+    assert.equal(f.field('algorithm').value, 'sha256'); assert.equal(f.field('intensity').value, 'balanced');
+    assert.equal(f.consoleLog.slice(-8).every(row => row.level === 'error'), true);
+  } finally { f.cleanup(); }
+});
+
+test('Nightcap configures SHA-256 Eco repeat without connecting or starting, and starts fresh after reopening', async () => {
+  const f = fixture();
+  try {
+    await f.activate(); assert.equal(f.field('repeat').checked, false);
+    f.click('nightcap'); assert.equal(f.field('algorithm').value, 'sha256'); assert.equal(f.field('intensity').value, 'eco'); assert.equal(f.field('repeat').checked, true);
+    assert.equal(f.jobs.length, 0); assert.equal(f.walletCalls.length, 0); assert.match(f.field('mushroom-art').innerHTML, /<svg/);
+    f.hide(); assert.equal(f.field('repeat').checked, false); f.show(); await flush(); assert.equal(f.jobs.length, 0);
+  } finally { f.cleanup(); }
+});
+
+test('Keep mining repeats exhausted rounds sequentially and repeat off cancels the current round', async () => {
+  const f = fixture();
+  try {
+    await f.ready(); await f.command('repeat', ['on']); assert.equal(f.jobs.length, 0);
+    const running = f.command('mine'); await f.until(() => f.jobs.length === 1 && !!f.mining()); const first = f.mining();
+    f.finishMining({ status: 'exhausted' }); await f.until(() => f.jobs.length === 2 && f.mining() !== first);
+    assert.equal(f.mining().maxMs, 60000); assert.equal(f.field('repeat').disabled, false);
+    await f.command('repeat', ['off']); assert.equal(f.field('repeat').checked, false); assert.equal(f.mining().signal.aborted, true);
+    f.finishMining({ status: 'exhausted' }); await running; await new Promise(resolve => setTimeout(resolve, 35));
+    assert.equal(f.jobs.length, 2); assert.equal(f.calls.some(row => row.path === '/block'), false);
+  } finally { f.cleanup(); }
+});
+
+test('auto catcher records only accepted work and refreshes immature rewards before the following round', async () => {
+  const f = fixture();
+  try {
+    await f.ready(); f.click('nightcap'); const running = f.command('mine'); await f.until(() => !!f.mining());
+    const first = f.mining(); f.finishMining(fixtureWork(f.jobs[0]));
+    await f.until(() => f.jobs.length === 2 && f.mining() !== first);
+    assert.match(f.field('catcher').textContent, /1 block accepted this session/);
+    assert.match(f.field('immature').textContent, /^50\.00000000 DVC$/);
+    assert.equal(f.jobs[1].header.parent, f.getStatus().tip.hash);
+    assert.equal(f.calls.filter(row => row.path === '/block').length, 1);
+    f.field('repeat').checked = false; f.field('repeat').fire('change'); assert.equal(f.mining().signal.aborted, true);
+    f.finishMining({ status: 'stopped' }); await running;
+    f.accountChange(); assert.match(f.field('catcher').textContent, /0 blocks accepted this session/);
+  } finally { f.cleanup(); }
+});
+
+for (const transition of ['hide', 'pagehide', 'accountChange', 'networkChange']) test(`repeat mining cancels pending work and resets after ${transition}`, async () => {
+  const f = fixture();
+  try {
+    await f.ready(); await f.command('repeat', ['on']); const running = f.command('mine'); await f.until(() => !!f.mining());
+    f[transition](); assert.equal(f.field('repeat').checked, false); assert.equal(f.mining().signal.aborted, true);
+    f.finishMining({ status: 'found', algorithm: 'sha256', nonce: '0', digest: '0'.repeat(64) }); await running;
+    await new Promise(resolve => setTimeout(resolve, 35)); assert.equal(f.jobs.length, 1); assert.equal(f.calls.some(row => row.path === '/block'), false);
+  } finally { f.cleanup(); }
+});
+
+test('hiding during the interval between rounds prevents a fresh job', async () => {
+  const f = fixture({ repeatDelayMs: 80 });
+  try {
+    await f.ready(); await f.command('repeat', ['on']); const running = f.command('mine'); await f.until(() => !!f.mining());
+    f.finishMining({ status: 'exhausted' }); await f.until(() => /Preparing the next round/.test(f.field('progress').textContent));
+    f.hide(); await running; await new Promise(resolve => setTimeout(resolve, 100));
+    assert.equal(f.jobs.length, 1); assert.equal(f.field('repeat').checked, false);
+  } finally { f.cleanup(); }
+});
+
+test('an old in-flight status response cannot roll back or stop the next mining round', async () => {
+  const f = fixture(), delayed = deferred();
+  try {
+    await f.ready(); await f.command('repeat', ['on']); const running = f.command('mine'); await f.until(() => !!f.mining());
+    const oldStatus = f.getStatus(), first = f.mining(); let holdStatus = true;
+    f.hookServer(path => path === '/status' && holdStatus ? delayed.promise : undefined);
+    f.click('refresh'); await f.until(() => f.button('refresh').disabled); holdStatus = false;
+    f.finishMining(fixtureWork(f.jobs[0])); await f.until(() => f.jobs.length === 2 && f.mining() !== first);
+    delayed.resolve(json(oldStatus)); await flush(); await flush();
+    assert.match(f.field('node').textContent, /Block 1/); assert.equal(f.mining().signal.aborted, false); assert.equal(f.field('repeat').checked, true);
+    await f.command('stop'); f.finishMining({ status: 'stopped' }); await running;
+  } finally { delayed.resolve(json(f.getStatus())); f.cleanup(); }
+});
+
+test('a GPU failure or invalid miner result turns repeat off without retrying', async () => {
+  for (const invalid of [false, true]) {
+    const f = fixture();
+    try {
+      await f.ready(); await f.command('repeat', ['on']); const running = f.command('mine'); await f.until(() => !!f.mining());
+      if (invalid) f.finishMining({ status: 'unexpected' }); else f.failMining('No WebGPU adapter is available. No CPU miner was started.');
+      await running; await new Promise(resolve => setTimeout(resolve, 35));
+      assert.equal(f.field('repeat').checked, false); assert.equal(f.jobs.length, 1); assert.equal(f.calls.some(row => row.path === '/block'), false);
+    } finally { f.cleanup(); }
+  }
+});
 
 test('native amount parsing preserves all eight decimals without floating-point rounding', () => {
   assert.equal(parseDvcAmount('0.00000001'), '1'); assert.equal(parseDvcAmount('21000000'), DVC_RULES.maxSupplyAtoms); assert.equal(formatDvcAmount('123456789'), '1.23456789');

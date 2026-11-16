@@ -1,3 +1,17 @@
+# 0.6.1b — Nightcap and GITTIT::GODDIT
+
+- Added command input with labeled output and errors to the native Coin page.
+- Added help, status, balance, refresh, wallet discovery/connection, algorithm,
+  intensity, repeat, mine, stop and clear commands using existing app controls.
+- Added the Nightcap mushroom preset, opt-in Keep mining and an auto catcher
+  that counts exact accepted blocks and refreshes immature rewards.
+- Repeat mode stays in the foreground, starts only on MINE NOW or mine, and
+  resets on Stop, off, hide, account changes or errors.
+- Recorded sampled mining progress and known GPU recovery guidance, with bounded
+  in-memory output, safe text rendering and no command replay after cancellation.
+- Kept the native genesis, supply, signatures, saved identities and transfer
+  review unchanged. This update does not start mining automatically.
+
 # 0.6b — Native DVC mining and payments
 
 - Add an independent native Doodleverse chain with a fixed 21-million cap: one million disclosed founder coins and 20 million mineable coins. The original founder certificates and existing garden balances are preserved separately.
