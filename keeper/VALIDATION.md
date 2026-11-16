@@ -1,3 +1,21 @@
+# Validation — Doodle Tick 0.4b
+
+The combined Keeper/Home Assistant suite passed **238/238**, with no failures or skips: 19 recipient protocol checks, 22 signing-only wallet adapter checks, 15 recipient UI checks, and the preserved existing suite. The first full run exposed a test fixture using inconsistent clocks; sharing one controlled timestamp fixed the fixture without changing production freshness rules. The public garden artifact reproduced and all **10 offline EVM tests** passed. No paid network was used.
+
+The pinned recipient cryptography bundle reproduced byte-for-byte, including component notices and preferred dependency source. Rebuild checks passed in both the repository and an extracted-Keeper layout. This is a bounded implementation review, not a comprehensive security audit.
+
+Actual Chrome completed the full recipient interface with a disposable creator, the real signing adapter and a mock wallet provider: explicit discovery/connection, creator review, an EOA signature, fresh bounded 16-bit WebGPU proof, public JSON copy, restoration after reload and import while locked. The resulting public record also passed independent Node verification. The fixture's block and wallet were simulated; its GPU work was real. One unassigned receiving-end extension-style console error appeared after copying; the proof/import checks completed. The full standalone 0.4b app rendered both Coin panels and routed an imported v1 proof into the recipient panel with no console warnings/errors.
+
+**Actual Coinbase extension compatibility and the live 0.4b Home Assistant update remain deployment steps at this source cut.** No real wallet signature, deployed DVC contract, spendable DVC issuance or canonical founder recipient is claimed. ERC-1271 checks use controlled exact-block fixtures, not a live smart wallet. Physical multi-device reachability and long-term operation remain separate acceptance work.
+
+## 0.3b deployment evidence
+
+After the archived source record below, 0.3b was published and installed in Home Assistant over HTTPS. Migration completed; an explicit restart preserved the original witness and receipt count. Startup, watchdog and automatic updates were enabled. The owner created and privately backed up a creator vault, and its bounded 20-bit GPU founder proof passed browser and independent Node verification. That public certificate is held locally while the requested wallet recipient link is prepared. The temporary migration stage was removed and the temporary terminal helper stopped; backups remain in Home Assistant. No private vault or backup was published.
+
+## Archived 0.3b source record
+
+Historical pending statements below describe release preparation, not the current installation.
+
 # Validation — Doodle Tick 0.3b
 
 The combined Keeper/Home Assistant suite passed **182/182**. This includes native signaling/transport fixtures, local route protections, preserved garden accounting, legacy and Keeper-only backup staging, ingress/HTTPS behavior, and 47 GPU/founder protocol/UI checks. An independent team review repeated the original 44 GPU/founder checks and reproduced/fixed a consent-withdrawal race; three additional checks cover public proof copying and clipboard fallback. This is bounded implementation review, not a security audit.

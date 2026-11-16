@@ -1,4 +1,4 @@
-# Doodleverse direct arcade 0.3b
+# Doodleverse direct arcade 0.4b
 
 ## Play and invite friends
 

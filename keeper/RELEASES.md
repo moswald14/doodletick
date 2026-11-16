@@ -1,3 +1,11 @@
+## 0.4b — Wallet-bound founder recipient
+
+- Added a separate v2 recipient record that preserves the complete v1 founder proof and requires its original creator key plus the chosen wallet to sign. Fresh bounded GPU work commits both signatures.
+- Added explicit injected-wallet discovery, account selection, recipient review and message signing. No payment, approval, network switch, delegation or deployment method is available in this flow.
+- Ordinary wallet signatures verify offline; deployed ERC-1271 wallets need read-only verification against their declared chain and block. Unsupported wallet variants fail without granting a verified status.
+- Preserved browser vaults, garden balances, Keeper state and v1 certificates. DVC remains prelaunch with zero spendable coins and no adopted issuance mechanism.
+- Validation: 238 combined app checks and 10 offline EVM tests passed; the signature bundle reproduces. Chrome verified the full disposable-wallet flow with real WebGPU, public copy, reload and import. Actual Coinbase and live 0.4b installation remain deployment checks.
+
 ## 0.3b — Doodleverse direction, direct peers and GPU founder proof
 
 - Removed the Tailscale runtime, peer HTTP bridge and Home Assistant tunnel/network privileges. Native WebRTC now carries signed game/file pairings with two-sided spirograph confirmation. No outside relay is configured; direct reachability remains network-dependent.
