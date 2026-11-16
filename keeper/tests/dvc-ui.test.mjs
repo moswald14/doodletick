@@ -40,7 +40,7 @@ function fixture({ availableAtoms = '1000000000', pendingOutAtoms = '0', request
   doc.hidden = false; doc.createElement = tag => new Element(tag); doc.defaultView = win; win.top = win.self = win;
   let copied = '', wallet, accountNonce = '0', pending = pendingOutAtoms, available = availableAtoms, immature = '0', history = [], serverHook = null, requestHook = null, signGate = null;
   let exposed = [address], chain = '0x1', mining = null, releaseMining = null, rejectMining = null, nativeState = validateChain([], { now });
-  const consoleLog = []; let executeCommand, consoleEnabled = false, consoleDestroyed = false;
+  const consoleLog = []; let executeCommand, consoleEnabled = false, consoleDestroyed = false, discoveries = 0;
   win.navigator = { clipboard: { async writeText(value) { copied = value; } } };
   const container = new Element(); container.ownerDocument = doc;
   Object.defineProperty(container, 'innerHTML', { set(value) {
@@ -64,7 +64,7 @@ function fixture({ availableAtoms = '1000000000', pendingOutAtoms = '0', request
     }
     throw Error('Unexpected wallet RPC.');
   } };
-  win.addEventListener('eip6963:requestProvider', () => { const event = new Event('eip6963:announceProvider'); Object.defineProperty(event, 'detail', { value: { info: { uuid: id.slice(8), name: 'Disposable UI Wallet' }, provider } }); win.dispatchEvent(event); });
+  win.addEventListener('eip6963:requestProvider', () => { discoveries++; const event = new Event('eip6963:announceProvider'); Object.defineProperty(event, 'detail', { value: { info: { uuid: id.slice(8), name: 'Disposable UI Wallet' }, provider } }); win.dispatchEvent(event); });
   const getStatus = () => ({ networkId: MAIN_NETWORK_ID, genesis: network, tip: { height: nativeState.height, hash: nativeState.tipHash, chainWork: nativeState.chainWork, timestamp: nativeState.timestamp, baseTarget: nativeState.history.at(-1).baseTarget },
     supply: { issuedAtoms: nativeState.issuedAtoms, mineableRemainingAtoms: (BigInt(DVC_RULES.miningReserveAtoms) - BigInt(nativeState.minedAtoms)).toString(), maxSupplyAtoms: DVC_RULES.maxSupplyAtoms }, mempoolSize: history.filter(row => row.status === 'pending').length, peers: { configured: 2, connected: 1 } });
   const getAccount = (who = address) => ({ networkId: MAIN_NETWORK_ID, tipHash: nativeState.tipHash, height: nativeState.height, address: who, availableAtoms: available, immatureAtoms: immature, totalAtoms: (BigInt(available) + BigInt(immature)).toString(), nextNonce: accountNonce, pendingOutAtoms: pending, recentTransactions: history });
@@ -95,9 +95,12 @@ function fixture({ availableAtoms = '1000000000', pendingOutAtoms = '0', request
   const click = name => { const target = button(name); if (target.disabled) return false; const event = new Event('click'); Object.defineProperty(event, 'target', { value: target }); container.dispatchEvent(event); return true; };
   const until = async predicate => { for (let i = 0; i < 250; i++) { if (predicate()) return; await flush(); } assert.fail('UI did not settle: ' + field('status').textContent + ' / ' + field('progress').textContent); };
   return { ui, wallet, calls, walletCalls, container, field, button, click, until, getStatus, getAccount, jobs, mining: () => mining, copied: () => copied,
+    discoveries: () => discoveries,
     consoleLog, command: (command, args = []) => executeCommand({ command, args }), consoleEnabled: () => consoleEnabled, consoleDestroyed: () => consoleDestroyed,
     hookServer(fn) { serverHook = fn; }, hookWallet(fn) { requestHook = fn; }, setNonce(value) { accountNonce = value; }, setPending(value) { pending = value; },
     async activate() { ui.setActive(true); await until(() => field('node').textContent.startsWith('Block')); },
+    setPayout(value) { field('mining-address').value = value; field('mining-address').fire('input'); },
+    async addressReady(value = address) { await this.activate(); this.setPayout(value); await until(() => !button('refresh').disabled && field('mining-available').textContent !== 'Unavailable'); },
     async ready() { await this.activate(); click('discover'); field('provider').value = id; field('provider').fire('change'); click('connect'); await until(() => !button('mine').disabled); },
     async review(amount = '1.25') { field('recipient').value = recipient; field('amount').value = amount; field('amount').fire('input'); click('review'); await until(() => !field('review-panel').hidden && !button('review').disabled); field('consent').checked = true; field('consent').fire('change'); },
     gateSignature() { signGate = deferred(); return { release() { signGate.resolve(); }, waiting: () => walletCalls.some(row => row.method === 'eth_signTypedData_v4') }; },
@@ -106,6 +109,126 @@ function fixture({ availableAtoms = '1000000000', pendingOutAtoms = '0', request
     finishMining(result) { releaseMining(result); }, failMining(message) { rejectMining(Error(message)); }, cleanup() { signGate?.resolve(); releaseMining?.({ status: 'stopped' }); ui.destroy(); },
   };
 }
+
+test('an address alone mines and collects an independently valid block with no wallet discovery or RPC', async () => {
+  const f = fixture({ availableAtoms: '0' });
+  try {
+    f.hookWallet(() => { throw Error('Mining must not request a wallet.'); });
+    await f.addressReady(computeAddress(key.publicKey));
+    assert.equal(f.wallet.state().address, null); assert.equal(f.button('mine').disabled, false);
+    assert.equal(f.button('review').disabled, true); assert.equal(f.button('send').disabled, true);
+    assert.equal(f.field('available').textContent, 'Unavailable'); assert.equal(f.field('mining-available').textContent, '0.00000000 DVC');
+    assert.equal(f.mining(), null); assert.match(await f.command('balance'), new RegExp(address));
+    const running = f.command('mine'); await f.until(() => !!f.mining());
+    assert.equal(f.jobs[0].header.miner, address); assert.equal(f.mining().isVisible(), true);
+    f.finishMining(fixtureWork(f.jobs[0])); await running;
+    assert.match(f.field('catcher').textContent, /1 block accepted/); assert.equal(f.field('mining-immature').textContent, '50.00000000 DVC');
+    assert.equal(f.field('immature').textContent, 'Unavailable'); assert.equal(f.walletCalls.length, 0); assert.equal(f.discoveries(), 0);
+    assert.equal(f.button('review').disabled, true); assert.equal(f.calls.find(row => row.path === '/block').body.miner, address);
+  } finally { f.cleanup(); }
+});
+
+test('invalid mining addresses never request a job or echo rejected input into the console', async () => {
+  const f = fixture();
+  try {
+    await f.activate();
+    for (const value of ['', '0x1234', '0x' + '0'.repeat(40), '0x52908400098527886E0F7030069857D2E4169Ee7', '<img src=x onerror=private-marker>']) {
+      f.setPayout(value); await f.until(() => !f.button('refresh').disabled);
+      assert.equal(f.button('mine').disabled, true); await f.command('mine');
+      assert.equal(f.jobs.length, 0); assert.equal(f.mining(), null); assert.equal(f.field('mining-available').textContent, 'Unavailable');
+    }
+    assert.equal(f.walletCalls.length, 0); assert.equal(f.discoveries(), 0);
+    assert.doesNotMatch(JSON.stringify(f.consoleLog), /private-marker|0x1234|529084/);
+  } finally { f.cleanup(); }
+});
+
+test('a rich mining destination cannot fund a poor signing wallet or change its reviewed sender', async () => {
+  const f = fixture({ availableAtoms: '1000000' });
+  try {
+    f.hookServer(path => path === '/account/' + recipient ? json({ ...f.getAccount(recipient), availableAtoms: '100000000000', totalAtoms: '100000000000' }) : undefined);
+    await f.addressReady(recipient); assert.equal(f.field('mining-available').textContent, '1000.00000000 DVC');
+    assert.equal(f.button('review').disabled, true);
+    f.click('discover'); f.field('provider').value = id; f.field('provider').fire('change'); f.click('connect');
+    await f.until(() => f.field('available').textContent === '0.01000000 DVC' && !f.button('connect').disabled);
+    assert.equal(f.field('mining-address').value, recipient);
+    const walletCount = f.walletCalls.length, running = f.command('mine'); await f.until(() => !!f.mining());
+    assert.equal(f.jobs[0].header.miner, recipient); assert.equal(f.walletCalls.length, walletCount);
+    f.finishMining({ status: 'exhausted' }); await running;
+    f.field('recipient').value = recipient; f.field('amount').value = '1'; f.click('review');
+    await f.until(() => /does not cover/.test(f.field('status').textContent));
+    assert.equal(f.walletCalls.some(row => row.method === 'eth_signTypedData_v4'), false); assert.equal(f.calls.some(row => row.path === '/transfer'), false);
+    await f.review('0.001'); assert.match(f.field('review').textContent, new RegExp('From: ' + address));
+    f.click('send'); await f.until(() => f.calls.some(row => row.path === '/transfer') && !f.button('mine').disabled);
+    const transfer = f.calls.find(row => row.path === '/transfer').body;
+    assert.equal(transfer.sender, address); assert.equal(transfer.recipient, recipient); assert.equal(verifyTransfer(transfer, { height: '1' }).valid, true);
+    assert.equal(f.field('mining-available').textContent, '1000.00000000 DVC');
+  } finally { f.cleanup(); }
+});
+
+test('using a wallet address is explicit, and disconnecting keeps the selected mining destination usable', async () => {
+  const f = fixture();
+  try {
+    await f.ready(); assert.equal(f.field('mining-address').value, address);
+    f.setPayout(recipient); await f.until(() => !f.button('refresh').disabled);
+    f.click('use-wallet-address'); await f.until(() => !f.button('refresh').disabled);
+    assert.equal(f.field('mining-address').value, address);
+    f.click('disconnect'); assert.equal(f.wallet.state().address, null); assert.equal(f.field('mining-address').value, address);
+    assert.equal(f.button('mine').disabled, false); assert.equal(f.button('review').disabled, true);
+    const walletCount = f.walletCalls.length; f.click('mine'); await f.until(() => !!f.mining());
+    assert.equal(f.jobs[0].header.miner, address); assert.equal(f.walletCalls.length, walletCount);
+    f.finishMining({ status: 'exhausted' }); await f.until(() => !f.button('mine').disabled);
+  } finally { f.cleanup(); }
+});
+
+test('late watched-account data cannot restore the previous payout after an address edit', async () => {
+  const f = fixture(), held = deferred(); let waiting = false;
+  try {
+    await f.addressReady();
+    f.hookServer(path => { if (path === '/account/' + address) { waiting = true; return held.promise; } if (path === '/account/' + recipient) return json({ ...f.getAccount(recipient), availableAtoms: '300000000', totalAtoms: '300000000' }); });
+    f.click('refresh'); await f.until(() => waiting); f.setPayout(recipient);
+    await f.until(() => f.field('mining-available').textContent === '3.00000000 DVC');
+    held.resolve(json({ ...f.getAccount(address), availableAtoms: '99900000000', totalAtoms: '99900000000' })); await flush(); await flush();
+    assert.equal(f.field('mining-available').textContent, '3.00000000 DVC'); assert.match(await f.command('balance'), new RegExp(recipient));
+    assert.equal(f.field('available').textContent, 'Unavailable'); assert.equal(f.button('review').disabled, true);
+  } finally { held.resolve(json(f.getAccount())); f.cleanup(); }
+});
+
+for (const phase of ['account', 'job', 'GPU', 'receipt']) test(`editing the payout cancels old mining work during ${phase}`, async () => {
+  const f = fixture(), held = deferred(); let waiting = false;
+  const job = createMiningJob(validateChain([], { now }), { miner: address, algorithm: 'sha256', now });
+  try {
+    await f.addressReady(); await f.command('repeat', ['on']);
+    if (phase === 'account' || phase === 'job') f.hookServer(path => { if (path === (phase === 'account' ? '/account/' + address : '/job')) { waiting = true; return held.promise; } });
+    const running = f.command('mine');
+    if (phase === 'account' || phase === 'job') await f.until(() => waiting);
+    else {
+      await f.until(() => !!f.mining());
+      if (phase === 'receipt') { f.hookServer(path => { if (path === '/block') { waiting = true; return held.promise; } }); f.finishMining(fixtureWork(f.jobs[0])); await f.until(() => waiting); }
+    }
+    f.setPayout(recipient); assert.equal(f.field('repeat').checked, false);
+    if (f.mining()) assert.equal(f.mining().signal.aborted, true);
+    if (phase === 'account') held.resolve(json(f.getAccount(address)));
+    if (phase === 'job') held.resolve(json({ networkId: MAIN_NETWORK_ID, prefixHex: job.prefixHex, targetHex: job.targetHex, algorithm: 'sha256', block: finalizeBlock(job, '0') }));
+    if (phase === 'GPU') f.finishMining(fixtureWork(f.jobs[0]));
+    if (phase === 'receipt') held.resolve(json({ accepted: true, canonical: true, hash: fixtureWork(f.jobs[0]).digest, height: '1' }));
+    await running; await f.until(() => !f.button('refresh').disabled);
+    assert.equal(f.field('mining-address').value, recipient); assert.match(f.field('catcher').textContent, /0 blocks accepted/);
+    assert.equal(f.field('mining-immature').textContent, '0.00000000 DVC'); assert.equal(f.walletCalls.length, 0);
+    assert.equal(f.calls.filter(row => row.path === '/block').length, phase === 'receipt' ? 1 : 0);
+    assert.equal(f.jobs.length, phase === 'GPU' || phase === 'receipt' ? 1 : 0);
+  } finally { held.resolve(json(f.getAccount())); f.cleanup(); }
+});
+
+test('address-only repeat keeps the payout fixed and turning it off starts no more work', async () => {
+  const f = fixture();
+  try {
+    await f.addressReady(); f.click('nightcap'); const running = f.command('mine'); await f.until(() => !!f.mining());
+    const first = f.mining(); f.finishMining({ status: 'exhausted' }); await f.until(() => f.mining() !== first);
+    assert.equal(f.jobs.length, 2); assert.ok(f.jobs.every(job => job.header.miner === address));
+    await f.command('repeat', ['off']); f.finishMining({ status: 'stopped' }); await running;
+    assert.equal(f.jobs.length, 2); assert.equal(f.walletCalls.length, 0); assert.equal(f.discoveries(), 0);
+  } finally { f.cleanup(); }
+});
 
 test('command console reports loaded state without connecting, signing or mining automatically', async () => {
   const f = fixture();
@@ -219,7 +342,8 @@ test('auto catcher records only accepted work and refreshes immature rewards bef
     assert.equal(f.calls.filter(row => row.path === '/block').length, 1);
     f.field('repeat').checked = false; f.field('repeat').fire('change'); assert.equal(f.mining().signal.aborted, true);
     f.finishMining({ status: 'stopped' }); await running;
-    f.accountChange(); assert.match(f.field('catcher').textContent, /0 blocks accepted this session/);
+    f.accountChange(); assert.match(f.field('catcher').textContent, /1 block accepted this session/);
+    f.setPayout(recipient); assert.match(f.field('catcher').textContent, /0 blocks accepted this session/);
   } finally { f.cleanup(); }
 });
 
@@ -306,6 +430,7 @@ test('real native signature requires full review plus a separate click, and pend
     const submitted = f.calls.find(row => row.path === '/transfer').body; assert.equal(verifyTransfer(submitted, { height: '1' }).valid, true);
     assert.equal(f.walletCalls.filter(row => row.method === 'eth_signTypedData_v4').length, 1); assert.equal(f.field('review-panel').hidden, true);
     assert.equal(f.field('available').textContent, '6.74999000 DVC'); assert.equal(f.field('pending').textContent, '3.25001000 DVC'); assert.match(f.field('status').textContent, /pending/);
+    assert.equal(f.field('mining-available').textContent, '6.74999000 DVC'); assert.match(await f.command('balance'), /Available: 6\.74999000 DVC/);
     assert.match(f.field('transactions').children[0].textContent, /pending · 1.25000000 DVC/);
     for (const call of f.calls) { assert.match(call.url, /^\.\/dvc\/(status|account\/0x[0-9a-f]{40}|transfer)$/); assert.equal(call.options.credentials, 'same-origin'); assert.equal(call.options.redirect, 'error'); assert.equal(call.options.referrerPolicy, 'no-referrer'); assert.equal(call.options.cache, 'no-store'); }
     assert.deepEqual([...new Set(f.walletCalls.map(row => row.method))].sort(), ['eth_accounts', 'eth_chainId', 'eth_requestAccounts', 'eth_signTypedData_v4'].sort());
@@ -386,7 +511,8 @@ test('late data from a previous account cannot restore balances or review contro
   const f = fixture(), gate = deferred(); let waiting = false;
   try {
     await f.ready(); f.hookServer(path => { if (path.startsWith('/account/')) { waiting = true; return gate.promise; } }); f.click('refresh'); await f.until(() => waiting); f.accountChange();
-    gate.resolve(json(f.getAccount())); await flush(); await flush(); assert.equal(f.field('available').textContent, 'Unavailable'); assert.equal(f.button('mine').disabled, true); assert.equal(f.wallet.state().address, null);
+    gate.resolve(json(f.getAccount())); await flush(); await flush(); assert.equal(f.field('available').textContent, 'Unavailable'); assert.equal(f.button('review').disabled, true); assert.equal(f.wallet.state().address, null);
+    assert.equal(f.button('mine').disabled, false); assert.equal(f.field('mining-address').value, address);
   } finally { gate.resolve(json(f.getAccount())); f.cleanup(); }
 });
 

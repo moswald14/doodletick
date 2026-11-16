@@ -1,8 +1,10 @@
-# Doodle Tick Keeper · 0.6.1b
+# Doodle Tick Keeper · 0.6.2b
 
 Creator arcade, hourly color clock, encrypted vault, mushroom garden and native Doodleverse Coin for Home Assistant OS (aarch64 and amd64).
 
-The Coin page has a red **MINE NOW** button, SHA-256/SHA-256d choices, GPU intensity, Stop, native balances, signed payments and receiving requests. Supply is fixed at 21 million: one million disclosed founder coins and 20 million mineable coins. Native DVC is separate from Ethereum tokens, private garden coins and the original founder certificates. See [native rules and limitations](../keeper/NATIVE-DVC.md).
+Enter a full nonzero **Mining reward address** on the Coin page, choose SHA-256/SHA-256d and GPU intensity, then press **MINE NOW**. Mining needs no wallet connection or signature. The destination's available funds, immature rewards and pending outgoing payments appear under **Mining address balances**, separately from **Wallet for sending**. A connected account can fill an empty mining field or be copied with **Use connected wallet address**. Editing the destination cancels work and repeat mode; sending still requires the controlling wallet's signature.
+
+Supply and consensus stay fixed at 21 million coins: one million disclosed founder coins and 20 million mineable coins. No data migration is added. Native DVC remains separate from Ethereum tokens, private garden coins and the original founder certificates. See [native rules and limitations](../keeper/NATIVE-DVC.md).
 
 Install through the [Doodle Tick repository](https://github.com/moswald14/doodletick), then open its Web UI over trusted HTTPS. Enable Start on boot, Watchdog and Auto update. This is a Home Assistant app/add-on, not a HACS integration. Read [DOCS.md](DOCS.md) and [HTTPS.md](HTTPS.md).
 
