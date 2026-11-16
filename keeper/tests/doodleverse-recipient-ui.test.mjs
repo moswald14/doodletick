@@ -32,6 +32,7 @@ function fixture({ saved = null } = {}) {
   const originalCreate = URL.createObjectURL, originalRevoke = URL.revokeObjectURL;
   let copied = null, blob = null, signGate = null, reviewGate = null, signWaiting = false, reviewWaiting = false, mining = null, releaseMining;
   let preparedProposal = null, signedProposal = null, connects = 0, signs = 0, starts = 0, change;
+  const readChoices = [], createdReadServices = [];
   const state = { phase: 'disconnected', providerId: null, accounts: [], address: null, chainId: null, generation: 0, providers: [] };
   function element() { const listeners = new Map(); return { value: '', disabled: false, checked: false, hidden: false, textContent: '', files: [], children: [],
     addEventListener: (event, cb) => listeners.set(event, cb), removeEventListener: event => listeners.delete(event),
@@ -48,13 +49,14 @@ function fixture({ saved = null } = {}) {
     discover() { state.providers = [{ id: 'fixture', name: '<Fixture Wallet>', kind: 'eip6963' }]; notify('providers-discovered'); },
     async connect(id) { connects++; state.providerId = id; state.accounts = [address]; state.address = address; state.chainId = '1'; state.phase = 'connected'; state.generation++; notify('connected'); },
     select(value) { if (!state.providerId || !state.accounts.includes(value)) throw Error('Choose and connect a wallet first.'); state.address = value; state.generation++; notify('selected'); },
+    setReadService(service) { readChoices.push(service); state.readService = service; state.generation++; notify('read-service-changed'); },
     cancel() { this.disconnect(); },
     disconnect() { state.generation++; state.providerId = state.address = state.chainId = null; state.accounts = []; notify('disconnected'); },
     destroy() { this.disconnect(); },
     assertCurrent(snap) { if (snap.generation !== state.generation || snap.address !== state.address || snap.chainId !== state.chainId) throw Error('Wallet changed.'); },
     async readRecipientContext({ sourceProofId, verificationBlock }) {
       if (reviewGate) { reviewWaiting = true; await reviewGate.promise; reviewGate = null; }
-      return { providerId: state.providerId, generation: state.generation, address: state.address, chainId: state.chainId, accountType: 'eoa', sourceProofId,
+      return { providerId: state.providerId, generation: state.generation, address: state.address, chainId: state.chainId, accountType: 'eoa', sourceProofId, readServiceId: state.readService?.id ?? 'wallet',
         verificationBlock: verificationBlock ?? { number: '123', hash: '0x' + 'ab'.repeat(32) } };
     },
     verifier() { return undefined; },
@@ -66,13 +68,13 @@ function fixture({ saved = null } = {}) {
       signedProposal = await attachRecipientSignature(proposal, signature); return signedProposal;
     },
   };
-  const ui = createDoodleverseRecipientUI(container, { walletFactory: ({ onChange }) => { change = onChange; return wallet; }, mineCandidate: async opts => { starts++; mining = opts; return new Promise(resolve => { releaseMining = resolve; }); } });
+  const ui = createDoodleverseRecipientUI(container, { walletFactory: ({ onChange }) => { change = onChange; return wallet; }, readServiceFactory: () => { const service = { id: 'publicnode-ethereum' }; createdReadServices.push(service); return service; }, mineCandidate: async opts => { starts++; mining = opts; return new Promise(resolve => { releaseMining = resolve; }); } });
   const field = name => container.querySelector(`[data-dvr-field="${name}"]`), button = name => container.querySelector(`[data-dvr-action="${name}"]`);
   field('difficulty').value = '16';
   const click = action => events.get('click')?.({ target: { closest: () => ({ dataset: { dvrAction: action } }) } });
   const flush = () => new Promise(resolve => setTimeout(resolve, 0));
   const until = async predicate => { for (let i = 0; i < 3000; i++) { if (predicate()) return; await flush(); } throw Error('Recipient UI condition did not settle: ' + field('status').textContent); };
-  return { ui, wallet, field, button, click, flush, until, storage, container, copied: () => copied, blob: () => blob, counts: () => ({ connects, signs, starts }),
+  return { ui, wallet, field, button, click, flush, until, storage, container, readChoices, createdReadServices, copied: () => copied, blob: () => blob, counts: () => ({ connects, signs, starts }),
     prepared: () => preparedProposal, signed: () => signedProposal, request: () => mining,
     async ready() { ui.setSourceProof(source); ui.unlock(founder); ui.setVisible(true); await until(() => field('source').textContent.includes(source.proof.digest) === false && field('source').textContent.startsWith('Original creator proof:') && field('identity').textContent.includes(founder.fingerprint)); click('discover'); field('provider').value = 'fixture'; field('provider').fire('change'); click('connect'); await until(() => !button('review').disabled); },
     async review() { click('review'); await until(() => !field('message-panel').hidden && !button('review').disabled); field('consent').checked = true; field('consent').fire('change'); },
@@ -101,7 +103,7 @@ test('wallet work is explicit; the original source and private fields never chan
   } finally { f.cleanup(); }
 });
 
-for (const action of ['cancel', 'hide', 'lock', 'wallet event', 'source change', 'withdraw consent']) {
+for (const action of ['cancel', 'hide', 'lock', 'wallet event', 'source change', 'withdraw consent', 'read service change']) {
   test(`late wallet signature is discarded after ${action}`, async () => {
     const f = fixture();
     try {
@@ -112,11 +114,29 @@ for (const action of ['cancel', 'hide', 'lock', 'wallet event', 'source change',
       if (action === 'wallet event') f.invalidate();
       if (action === 'source change') f.ui.setSourceProof(null);
       if (action === 'withdraw consent') { f.field('consent').checked = false; f.field('consent').fire('change'); }
+      if (action === 'read service change') { f.field('read-service').value = 'publicnode'; f.field('read-service').fire('change'); }
       gate.release(); await f.until(() => f.signed()); await f.flush();
       assert.equal(f.storage.has('doodleverse-founder-recipient-v2'), false); assert.equal(f.button('start').disabled, true); assert.equal(f.counts().starts, 0);
     } finally { f.cleanup(); }
   });
 }
+
+test('external reads require a page-local choice and retain the same connected wallet', async () => {
+  const f = fixture();
+  try {
+    await f.ready();
+    assert.equal(f.field('read-service').value, 'wallet');
+    assert.equal(f.createdReadServices.length, 0); assert.equal(f.readChoices.length, 0);
+    f.field('read-service').value = 'publicnode'; f.field('read-service').fire('change');
+    assert.equal(f.createdReadServices.length, 1); assert.equal(f.readChoices[0].id, 'publicnode-ethereum');
+    assert.equal(f.wallet.state().address, address); assert.equal(f.counts().connects, 1); assert.equal(f.counts().signs, 0);
+    assert.equal(f.storage.size, 1, 'read service preference is not persisted');
+    await f.review(); assert.match(f.field('review').textContent, /PublicNode \(Allnodes\)/);
+    f.field('read-service').value = 'wallet'; f.field('read-service').fire('change');
+    assert.equal(f.readChoices.at(-1), null); assert.equal(f.field('message-panel').hidden, true); assert.equal(f.field('consent').checked, false);
+    assert.equal(f.button('sign').disabled, true); assert.equal(f.wallet.state().address, address);
+  } finally { f.cleanup(); }
+});
 test('late review cannot restore consent or a prepared proposal after cancellation', async () => {
   const f = fixture();
   try { await f.ready(); const gate = f.gateReview(); f.click('review'); await f.until(gate.waiting); f.click('stop'); gate.release(); await f.flush(); await f.flush(); assert.equal(f.field('message-panel').hidden, true); assert.equal(f.field('consent').checked, false); assert.equal(f.button('sign').disabled, true); } finally { f.cleanup(); }

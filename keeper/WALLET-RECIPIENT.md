@@ -1,4 +1,6 @@
-# DVC wallet-recipient records · 0.4b
+# DVC wallet-recipient records · 0.5.1b
+
+The 0.5.1b compatibility update is in preparation; publication and a complete live-wallet proof remain pending.
 
 The recipient feature links a Doodleverse prelaunch founder proof to an Ethereum address selected in a browser wallet. The intended owner setup is the **Coinbase Wallet Chrome extension**; actual Coinbase signing remains a field-test step. The record proposes a recipient for the disclosed **1,000,000 DVC founder allocation**. It creates **zero spendable DVC**, no live blockchain and no token balance in Coinbase Wallet. Coinbase listing, approval or endorsement is not implied.
 
@@ -25,7 +27,7 @@ The public formats are `doodleverse-recipient-proposal-v2` and `doodleverse-reci
 1. Open Doodle Tick in a supported Chrome context over trusted HTTPS or localhost. Keep a backup of the original v1 proof and creator vault. An embedded Home Assistant view or mobile WebView may not expose the extension; compatibility must be checked in the actual browser.
 2. Unlock the creator vault that signed the original proof, and select or import that proof. A different creator key cannot approve the mapping.
 3. Choose **Find browser wallets**, select the extension you installed, then **Connect selected wallet**. Choose the recipient if the wallet exposes multiple accounts. Check its full address and EVM chain ID; change the network in the wallet if needed. Connection requests public accounts, not balances or transaction history. Doodle Tick never needs recovery words, private keys, wallet passwords or a Coinbase exchange API key.
-4. Choose **Review wallet recipient**. This signs the new proposal locally with the unlocked original creator key. Review the displayed source proof, creator fingerprint, full recipient, network, allocation and expiration. Expand **Exact wallet message** to inspect the structured data. Check the acknowledgement, then choose **Sign recipient message in wallet**. The request uses the `Doodleverse Founder Recipient` signing domain and requests no token spending permission, transfer, transaction fee or contract deployment.
+4. Leave **Blockchain read service** on **Connected wallet (default)**, or explicitly select **PublicNode · Ethereum only** as described below. Then choose **Review wallet recipient**. This signs the new proposal locally with the unlocked original creator key. Review the displayed source proof, creator fingerprint, full recipient, network, read source, allocation and expiration. Expand **Exact wallet message** to inspect the structured data. Check the acknowledgement, then choose **Sign recipient message in wallet**. The request uses the `Doodleverse Founder Recipient` signing domain and requests no token spending permission, transfer, transaction fee or contract deployment.
 5. Choose **Start wallet-linked GPU proof**. Each explicit run is limited to 60 seconds or 4,194,304 candidates. **Cancel wallet work**, leaving the view, hiding the page, locking the vault or withdrawing consent cancels unfinished work. Cancel discards late replies but cannot close the wallet's own prompt; finish or dismiss that prompt before attempting another connection/signature.
 6. Choose **Copy recipient record** or **Export recipient record** and retain the v1 proof separately. Copy also shows selectable public JSON if the clipboard is unavailable. Use **Import recipient record** and **Verify recipient record again** to check a saved copy. Connecting, signing and copying do not publish anything automatically.
 
@@ -33,12 +35,26 @@ The wallet connection is specific to the selected provider/account/chain. Changi
 
 Reload/import restores public verification data only. It does not reconnect a wallet, reopen its signing prompt or resume mining. To begin another active work session, connect, review and approve a fresh proposal. The old saved record remains useful for independent verification.
 
+## Optional Ethereum read service
+
+**Wallet reads are the default.** Some wallet providers cannot complete the required exact-block reads even though account connection succeeds. Expand **Blockchain read service** and explicitly choose **PublicNode · Ethereum only** to use it for those reads. The fixed endpoint is `https://ethereum-rpc.publicnode.com`, listed by [PublicNode's Ethereum service](https://ethereum.publicnode.com/). This option supports **Ethereum mainnet, chain ID 1**, only. Other networks fail while it is selected; the app does not switch networks or silently select another service.
+
+The wallet still supplies the selected account and chain and handles the message-signing prompt. PublicNode receives only the allowed blockchain reads: network identification, block queries, account code, and an ERC-1271 signature check when needed. No password, private key, recovery phrase or encrypted creator vault is sent. Message signing and these read-only checks require no wallet funds or transaction fees.
+
+Direct requests expose your IP address, queried public wallet address and exact block numbers/hashes to the service operator. ERC-1271 verification also sends its public message digest and signature as call data. The operator can observe these together. Review PublicNode's [privacy policy](https://www.publicnode.com/privacy) and [terms](https://www.publicnode.com/terms) before choosing it; Doodle Tick cannot independently verify its data handling. Service limits or unavailable historical state can prevent verification.
+
+There is **no automatic fallback**, saved service preference or read-service request on page load. Selecting the service alone makes no query. The selection lasts only for the current page session; changing it cancels pending work and requires a new review. Explicit review, signing or verification actions can perform the necessary reads.
+
+The exact block-hash selector with `requireCanonical: true` is retained for account-code and smart-signature reads, with canonical block checks around them. Unsupported selectors, the wrong chain, changed blocks or missing state leave the attempt unverified. The app does not retry using `latest` or a block number as a substitute for an exact-block state query. These checks still depend on the selected RPC operator's answers; they are **not independent, trustless verification** of Ethereum state.
+
+If an operation fails, diagnostics identify the safe request stage or method and a bounded numeric error code when available. Raw provider messages, nested error payloads and request parameters are not displayed as diagnostics. A failure before signing is not evidence that the wallet approved a record.
+
 ## Account support and verification
 
-| Account | 0.4b treatment |
+| Account | Supported treatment |
 | --- | --- |
 | Ordinary externally owned account (EOA) | Verify the Ethereum signature against the exact typed message and recipient. This offline check proves the address's signature, not historical code on a blockchain. |
-| Deployed ERC-1271 smart account | Connect the matching account/network, then check the signature through a read-only query at the exact declared canonical block. The wallet's RPC must support that block and EIP-1898 block-hash selection. |
+| Deployed ERC-1271 smart account | Connect the matching account/network, then check the signature through a read-only query at the exact declared canonical block. The selected read source must support that historical state and EIP-1898 block-hash selection. PublicNode selection is limited to chain 1. |
 | Undeployed/counterfactual ERC-6492 signature | Unsupported. Keep the record unverified; do not deploy or fund the account to bypass this limit. |
 | EIP-7702 delegated account | The connected adapter rejects delegation code observed at the declared canonical block. Offline EOA imports cannot independently certify that code/delegation state. Do not change delegation to make the prototype pass. |
 
@@ -58,10 +74,12 @@ Public exports contain public identities, signatures and proof data. Keep recove
 
 ## Verification status
 
-The combined 0.4b suite passed **238 tests**, including 19 recipient-protocol, 22 wallet-adapter and 15 recipient-UI checks. The separate existing garden-contract reproduction passed 10 offline EVM tests; those are not live DVC issuance tests.
+For 0.5.1b, all 287 combined app tests and repository checks passed. A real Chrome fixture demonstrated safe method/code diagnostics after a deliberate wallet-read rejection, no automatic fallback, explicit PublicNode selection and live exact-block reads. Disposable creator/mock-wallet signatures and real difficulty-16 WebGPU work produced a public record that passed independent Node verification. Reload retained the record while returning to wallet reads without requesting accounts, signing or mining. This does not verify an actual Coinbase signature; publication and installation remain pending.
+
+The historical 0.4b suite passed **238 tests**, including 19 recipient-protocol, 22 wallet-adapter and 15 recipient-UI checks. The separate existing garden-contract reproduction passed 10 offline EVM tests; those are not live DVC issuance tests.
 
 An actual Chrome fixture used the real adapter, a **mock wallet** and a disposable creator. It completed both signatures, fresh difficulty-16 WebGPU work, public copy, reload and locked import. The exported proof passed independent Node verification. The integrated standalone app rendered both Coin panels and connected an imported v1 proof to the recipient flow without console errors in that check. The separate fixture logged one unassigned extension-style receiving-end error after copying, so no overall clean-console claim is made.
 
-Actual Coinbase Wallet signing, a real smart-account state check and the Home Assistant 0.4b update remain pending. No personal founder address or chosen official certificate is established by disposable fixtures. See [VALIDATION.md](VALIDATION.md) for the full evidence and remaining limits. These checks are not a production security audit.
+A live Coinbase Wallet extension connected on Ethereum chain 1 in 0.5b, but recipient review failed before wallet signing. That preparatory request failure remains unidentified until the new diagnostics are deployed. The complete live-wallet recipient proof and a real smart-account state check remain unresolved; disposable fixtures establish no official founder certificate. See [VALIDATION.md](VALIDATION.md) for release-specific checks and deployment evidence. These checks are not a production security audit.
 
 See [security reporting](../SECURITY.md), [architecture](../ARCHITECTURE.md) and [the Doodleverse direction](../DOODLEVERSE.md).

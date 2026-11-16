@@ -1,8 +1,14 @@
-# Doodle Tick · 0.5b
+# Doodle Tick · 0.5.1b
 
 A creator arcade inspired by the loops of a telephone cord: an hourly color clock, Dot Wave sound mushrooms, an encrypted vault and direct peer connections. Run a Keeper on your computer or Home Assistant.
 
 [![Add Doodle Tick to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fmoswald14%2Fdoodletick)
+
+## Wallet read compatibility
+
+**0.5.1b is in preparation and has not been published or installed.** It adds an explicit optional **PublicNode · Ethereum only** read source for wallets that connect but cannot complete the required block queries. Wallet reads remain the default; the choice is not saved and no fallback or query happens automatically. The wallet still controls account access and message signing. Exact-block verification remains required. PublicNode receives the connecting IP, queried public address and block requests; smart-account checks also send the public digest/signature. See [the read-service disclosure and limits](keeper/WALLET-RECIPIENT.md#optional-ethereum-read-service).
+
+Failures identify a safe method and numeric code without exposing raw provider errors. Existing vaults, original v1 proofs and v2 records retain their formats. This compatibility change requests no payment, token allowance, transaction, delegation or deployment, and creates no spendable DVC. All 287 app tests and repository checks passed. Chrome completed a disposable-creator/mock-wallet proof using live PublicNode reads and real GPU work; actual Coinbase signing remains unresolved. See [validation](keeper/VALIDATION.md) for evidence and limits.
 
 ## Weather and background music
 
@@ -49,7 +55,7 @@ Keep the original installation and backup. Repository apps have a different iden
 
 ## Desktop and Raspberry Pi OS
 
-Download an asset from [0.5b Releases](https://github.com/moswald14/doodletick/releases/tag/0.5b). Desktop requires Node.js 22 or newer; development checks use Node 24. Extract the desktop ZIP, run `node server.mjs` inside `doodletick-keeper`, and open **http://127.0.0.1:4317**. No npm dependencies are required to run the app. For a source checkout, run it from `keeper/`.
+Once published, download an asset from the [0.5.1b release](https://github.com/moswald14/doodletick/releases/tag/0.5.1b). Until then, 0.5b is the published release. Desktop requires Node.js 22 or newer; development checks use Node 24. Extract the desktop ZIP, run `node server.mjs` inside `doodletick-keeper`, and open **http://127.0.0.1:4317**. No npm dependencies are required to run the app. For a source checkout, run it from `keeper/`.
 
 The separate Pi tarball includes checksums and the [Pi OS setup guide](keeper/pi/START-HERE.md). It does not install Tailscale. Pi OS service installation remains a separate hardware verification task from the Home Assistant app.
 

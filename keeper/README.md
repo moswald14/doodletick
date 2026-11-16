@@ -1,6 +1,8 @@
-# Doodle Tick Keeper 0.5b
+# Doodle Tick Keeper 0.5.1b
 
 Doodle Tick is an experimental creator vault, social arcade, file library and shared mushroom garden. Spirographs help people compare signed creator keys when pairing. Your writing and files remain in your browser; Keepers provide signed receipts, a local directory and a shared garden scorekeeper.
+
+The 0.5.1b compatibility update is in preparation; publication and installation remain pending. The published 0.5b Home Assistant update was verified with Keeper identity and receipts preserved. See [validation](VALIDATION.md) for current evidence.
 
 ## Start
 
@@ -35,6 +37,8 @@ Keep [Open-Meteo](https://open-meteo.com/) and GeoNames attribution beside the w
 ## Link a founder recipient
 
 The Coin page preserves the original signed founder proof and can add a wallet recipient record. Connect a compatible browser extension, review the exact account and chain, sign the fixed recipient message, then explicitly start fresh GPU proof. No payment or token approval is requested. See [WALLET-RECIPIENT.md](WALLET-RECIPIENT.md). DVC remains a prelaunch proposal with zero spendable coins.
+
+If the wallet connects but cannot read the required blocks, expand **Blockchain read service** and explicitly choose **PublicNode · Ethereum only**. This optional chain-1 service receives the connecting IP, public wallet address and exact block queries; smart-account verification also sends the public digest/signature. The wallet still supplies the account/network and signs. Wallet reads are the default, the choice is page-only, and there are no on-load calls or automatic fallback. Exact-block checks remain enforced; unsupported chains or missing state fail without verification. Error details show a safe method and numeric code, not raw provider payloads. No funds, fees, transaction permissions or data-format migration are required; existing vaults and v1/v2 records remain intact.
 
 ## Direct connections
 

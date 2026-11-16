@@ -7,8 +7,10 @@ const HASH = /^0x[0-9a-f]{64}$/, DECIMAL = /^(0|[1-9][0-9]{0,77})$/;
 const WRAPPER = '6492'.repeat(16);
 const MAX_UINT = (1n << 256n) - 1n, MAX_SIGNATURE_BYTES = 8192, MAX_CODE_BYTES = 65536;
 const METHODS = new Set(['eth_requestAccounts', 'eth_accounts', 'eth_chainId', 'eth_getBlockByNumber', 'eth_getCode', 'eth_call', 'eth_signTypedData_v4']);
+const READ_METHODS = new Set(['eth_getBlockByNumber', 'eth_getCode', 'eth_call']);
+const LOCAL_ERRORS = new WeakSet();
 const sameAccounts = (a, b) => a.length === b.length && a.every(value => b.includes(value));
-const fail = (message, code = 'WALLET_INVALID') => Object.assign(new Error(message), { code });
+const fail = (message, code = 'WALLET_INVALID') => { const error = Object.assign(new Error(message), { code }); LOCAL_ERRORS.add(error); return error; };
 function uint(value, label, positive = false) {
   if (typeof value !== 'string' || !DECIMAL.test(value) || BigInt(value) > MAX_UINT || positive && value === '0') throw fail('Invalid ' + label + '.');
   return value;
@@ -53,10 +55,19 @@ function guardNow(signal, guard) {
 }
 function metadata(value, max = 80) { return typeof value === 'string' ? value.replace(/[\u0000-\u001f\u007f-\u009f]/g, '').slice(0, max) : ''; }
 function supportedProvider(value) { try { return value && typeof value.request === 'function' && typeof value.on === 'function' && typeof value.removeListener === 'function'; } catch { return false; } }
-function walletError(error) {
-  if (error?.code === 4001) return fail('The wallet request was declined. Nothing was signed or submitted by this app.', 4001);
-  if ([4200, -32601, -32602].includes(error?.code)) return fail('This wallet does not support the required signing or exact-block verification method. No fallback was attempted.', 'WALLET_UNSUPPORTED');
-  return fail('The wallet could not complete the requested operation. No fallback was attempted.', 'WALLET_REQUEST_FAILED');
+function walletError(error, method, external = false) {
+  // Only fixed method names and a bounded numeric code cross this boundary.
+  // Provider messages, nested payloads and spoofed WALLET_* errors may contain secrets.
+  let code = null;
+  try { const value = error?.rpcCode ?? error?.code; if (Number.isSafeInteger(value) && Math.abs(value) <= 2147483647) code = value; } catch {}
+  const detail = ` (${method}${code === null ? '' : '; code ' + code})`;
+  const source = external ? 'The selected read service' : 'The wallet';
+  let result;
+  if (code === 4001) result = fail('The wallet request was declined. Nothing was signed or submitted by this app.' + detail, 4001);
+  else if ([4200, -32601, -32602].includes(code)) result = fail(source + ' does not support the required signing or exact-block verification method.' + detail + ' No fallback was attempted.', 'WALLET_UNSUPPORTED');
+  else if (code === 4100) result = fail(source + ' refused the requested operation.' + detail + ' Check its connection and permissions, or choose a supported read service for Ethereum queries.', 'WALLET_REQUEST_FAILED');
+  else result = fail(source + ' could not complete the requested operation.' + detail + ' No fallback was attempted.', 'WALLET_REQUEST_FAILED');
+  return Object.assign(result, { rpcMethod: method, rpcCode: code });
 }
 
 export function createDoodleverseWallet({
@@ -66,9 +77,9 @@ export function createDoodleverseWallet({
   if (![rpcTimeoutMs, signatureTimeoutMs].every(value => Number.isSafeInteger(value) && value > 0 && value <= 120000)) throw fail('Invalid wallet request deadline.');
   const providers = new Map(), snapshots = new WeakMap(), consumed = new WeakSet();
   let active = null, generation = 0, selected = null, chainId = null, exposed = [], phase = 'disconnected', error = null;
-  let discovering = false, disposed = false, promptPending = false, signing = false, latestSnapshot = null;
+  let discovering = false, disposed = false, promptPending = false, signing = false, latestSnapshot = null, readService = null;
   const list = () => [...providers.values()].map(row => Object.freeze({ id: row.id, name: row.name, rdns: row.rdns, kind: row.kind }));
-  const state = () => Object.freeze({ phase, providerId: active?.id || null, accounts: Object.freeze([...exposed]), address: selected, chainId, generation, error, providers: Object.freeze(list()) });
+  const state = () => Object.freeze({ phase, providerId: active?.id || null, accounts: Object.freeze([...exposed]), address: selected, chainId, generation, error, providers: Object.freeze(list()), readService: readService ? Object.freeze({ id: readService.id, name: readService.name, chainId: readService.chainId }) : null });
   const emit = (reason, invalidated = false) => { try { onChange({ reason, invalidated, state: state() }); } catch { /* A rendering error cannot authorize a wallet operation. */ } };
   function detach() {
     if (active) for (const [name, handler] of active.listeners) { try { active.provider.removeListener(name, handler); } catch {} }
@@ -106,7 +117,7 @@ export function createDoodleverseWallet({
   }
   function session() {
     if (!active || disposed) throw fail('Choose and connect a wallet first.');
-    return { generation, provider: active.provider, request: active.request, id: active.id };
+    return { generation, provider: active.provider, request: active.request, id: active.id, readService };
   }
   function current(token, signal, guard) {
     guardNow(signal, guard);
@@ -126,15 +137,29 @@ export function createDoodleverseWallet({
     if (!METHODS.has(method)) throw fail('Wallet method is not permitted.');
     if (prompt && promptPending) throw fail('A wallet prompt is still open. Finish or cancel it in the wallet before trying again.', 'WALLET_PENDING');
     if (prompt) promptPending = true;
-    const underlying = Promise.resolve().then(() => { current(token, signal, guard); return token.request.call(token.provider, { method, params }); });
+    const external = READ_METHODS.has(method) && !!token.readService;
+    const deadline = new AbortController(), requestSignal = signal ? AbortSignal.any([signal, deadline.signal]) : deadline.signal;
+    const underlying = Promise.resolve().then(async () => {
+      current(token, requestSignal, guard);
+      if (!external) return token.request.call(token.provider, { method, params });
+      const service = token.readService;
+      if (chainId !== service.chainId) throw fail('This read service supports Ethereum mainnet (chain 1) only. Choose wallet reads for another network.', 'WALLET_READ_CHAIN');
+      let serviceChain;
+      try { serviceChain = await service.request({ method: 'eth_chainId', params: [] }, { signal: requestSignal }); }
+      catch (reason) { throw walletError(reason, 'eth_chainId', true); }
+      const actualChain = quantity(serviceChain, 'read-service chain ID', true);
+      current(token, requestSignal, guard);
+      if (actualChain !== service.chainId) throw fail('The read service returned a different network. No signature was requested.', 'WALLET_READ_CHAIN');
+      return service.request({ method, params }, { signal: requestSignal });
+    });
     if (prompt) underlying.then(() => { promptPending = false; }, () => { promptPending = false; });
     const result = await new Promise((resolve, reject) => {
       let settled = false;
-      const done = (fn, value) => { if (settled) return; settled = true; clearTimeout(timer); signal?.removeEventListener('abort', aborted); fn(value); };
+      const done = (fn, value) => { if (settled) return; settled = true; clearTimeout(timer); signal?.removeEventListener('abort', aborted); if (fn === reject) deadline.abort(); fn(value); };
       const aborted = () => done(reject, fail('Wallet attempt canceled. A wallet prompt may still be open.', 'WALLET_CANCELED'));
       const timer = setTimeout(() => done(reject, fail('The wallet request timed out. A wallet prompt may still be open.', 'WALLET_TIMEOUT')), prompt ? signatureTimeoutMs : rpcTimeoutMs);
       signal?.addEventListener('abort', aborted, { once: true });
-      underlying.then(value => done(resolve, value), reason => done(reject, reason?.code?.startsWith?.('WALLET_') ? reason : walletError(reason)));
+      underlying.then(value => done(resolve, value), reason => done(reject, LOCAL_ERRORS.has(reason) ? reason : walletError(reason, method, external)));
       if (signal?.aborted) aborted();
     });
     current(token, signal, guard); return result;
@@ -179,6 +204,13 @@ export function createDoodleverseWallet({
     if (!exposed.includes(normalized)) throw fail('Select one of the accounts exposed by this wallet.');
     generation++; latestSnapshot = null; selected = normalized; phase = 'connected'; error = null; emit('account-selected'); return state();
   }
+  function setReadService(service = null) {
+    if (disposed) throw fail('This wallet connection is closed.');
+    if (service !== null && (service.id !== 'publicnode-ethereum' || service.chainId !== '1' || typeof service.request !== 'function')) throw fail('Unsupported read service.');
+    readService = service === null ? null : Object.freeze({ id: service.id, name: 'PublicNode · Ethereum', chainId: '1', request: service.request.bind(service) });
+    invalidate('Read service changed. Review the recipient again.', false);
+    return state();
+  }
   async function recheck(token, snapshot, options) {
     current(token, options.signal, options.guard);
     const ids = accounts(await rpc(token, 'eth_accounts', [], options));
@@ -209,7 +241,7 @@ export function createDoodleverseWallet({
     await canonicalBlock(token, chosenBlock, options);
     await recheck(token, { address, chainId: expectedChain }, options);
     current(token, signal, guard);
-    const snapshot = Object.freeze({ providerId: token.id, generation: token.generation, address, chainId: expectedChain, verificationBlock: chosenBlock, accountType, sourceProofId });
+    const snapshot = Object.freeze({ providerId: token.id, generation: token.generation, address, chainId: expectedChain, verificationBlock: chosenBlock, accountType, sourceProofId, readServiceId: token.readService?.id ?? 'wallet' });
     snapshots.set(snapshot, token); latestSnapshot = snapshot; emit('recipient-reviewed'); return snapshot;
   }
   function assertCurrent(snapshot) {
@@ -267,5 +299,5 @@ export function createDoodleverseWallet({
   }
   function disconnect() { invalidate('Wallet connection cleared locally. Any wallet prompt must be closed in the wallet.', false, true); }
   function dispose() { disconnect(); disposed = true; if (discovering) eventTarget?.removeEventListener('eip6963:announceProvider', announce); providers.clear(); }
-  return Object.freeze({ discover, state, connect, select, selectAccount: select, readRecipientContext, assertCurrent, signRecipient, authorize: signRecipient, verifier, disconnect, cancel: disconnect, dispose, destroy: dispose });
+  return Object.freeze({ discover, state, connect, select, selectAccount: select, setReadService, readRecipientContext, assertCurrent, signRecipient, authorize: signRecipient, verifier, disconnect, cancel: disconnect, dispose, destroy: dispose });
 }

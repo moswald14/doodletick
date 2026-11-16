@@ -1,3 +1,15 @@
+## 0.5.1b — Optional Ethereum read compatibility
+
+This update is in preparation; publication and installation are pending.
+
+- Add explicit PublicNode Ethereum chain-1 reads for wallets whose account connection works but exact-block queries fail. The selected wallet still handles account/network checks and purpose-specific message signing.
+- Keep wallet reads as the default. Do not save the service choice, call it on load, switch networks or fall back automatically. Disclose the connecting IP, public-address/block queries and ERC-1271 public digest/signature sent to the read operator.
+- Preserve EIP-1898 block-hash/canonicality checks and reject unsupported chains or unavailable state. Safe method/numeric-code diagnostics replace opaque failures without displaying raw provider payloads.
+- Preserve creator vaults, Keeper data and existing v1/v2 proof formats. This flow requests no payment, allowance, transaction, delegation or deployment; DVC remains non-spendable.
+- Validation: all 287 combined app checks passed, including 44 wallet/UI and 17 mock-transport checks. Repository checks verified 241 public files and 68 matching generated runtime files. Chrome verified safe method/code diagnostics with no fallback, explicit PublicNode selection, live exact-block reads, disposable creator/mock-wallet signatures, real difficulty-16 GPU work, independent public-record verification and reload without automatic wallet activity. A separate public-address Node read probe passed with TLS verification enabled. Publication and deployment are pending; a complete live Coinbase Wallet recipient proof remains unresolved.
+
+Earlier entries retain their source-cut wording. The published 0.5b Home Assistant update was subsequently verified with the same witness, zero receipts and automatic-update setting preserved; see [VALIDATION.md](VALIDATION.md).
+
 ## 0.5b — Weather and background music
 
 - Add the expandable Weather & music panel below the top bar, across app views.

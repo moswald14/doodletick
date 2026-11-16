@@ -1,3 +1,15 @@
+# 0.5.1b — Optional Ethereum read compatibility
+
+This update is in preparation; publication and installation are pending.
+
+- Add an explicitly selected PublicNode Ethereum chain-1 read service; the connected wallet keeps account/network checks and message signing.
+- Default to wallet reads, with no saved service choice, on-load calls, automatic fallback or network switching. Disclose the public queries sent to the operator.
+- Retain exact-block EIP-1898 verification and report safe method/numeric-code diagnostics without raw provider errors. Unsupported chains or missing state remain unverified.
+- Preserve creator vaults, Keeper identity/data and v1/v2 records. No payment, spending permission, transaction, delegation or deployment is requested by this flow.
+- Validation: all 287 app checks and repository checks passed. Chrome verified safe diagnostics/no fallback, explicit PublicNode reads, a disposable creator/mock-wallet proof with real GPU work, public-record verification and reload without automatic wallet activity. The live read-only Node probe also passed. Publication and deployment are pending; a complete live Coinbase recipient proof remains unresolved.
+
+Earlier entries retain their source-cut status. The published 0.5b installation was later verified with the same Keeper witness, zero receipts and automatic-update setting preserved. See [validation](../keeper/VALIDATION.md).
+
 # 0.5b — Weather and background music
 
 - Add the global expandable Weather & music panel below the top bar.

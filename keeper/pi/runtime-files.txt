@@ -59,6 +59,7 @@ public/doodleverse-gpu.mjs
 public/doodleverse-recipient.mjs
 public/doodleverse-recipient-ui.mjs
 public/doodleverse-wallet.mjs
+public/doodleverse-rpc.mjs
 public/recipient-crypto.mjs
 public/recipient-crypto-notices.txt
 public/weather.mjs

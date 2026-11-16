@@ -34,7 +34,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
   for (const file of ['mushroom-core.mjs', 'mushroom-ui.mjs', 'mushroom-art.mjs', 'mushroom.css', 'mushroom-mining.mjs', 'mushroom-miner.mjs', 'dot-effects-dsp.mjs', 'dot-amp-tone.mjs', 'dot-studio-dsp.mjs', 'dot-collision-audio.mjs', 'dot-wave-export.mjs', 'dot-mushroom-dsp.mjs', 'dot-mushroom-motion.mjs']) allowedFiles.add(file);
   for (const file of ['public-chain.mjs', 'public-chain-wallet.mjs', 'public-chain-artifact.mjs', 'public-chain.css']) allowedFiles.add(file);
   for (const file of ["doodleverse-coin.mjs", "doodleverse-coin-ui.mjs", "doodleverse-coin.css", "doodleverse-gpu.mjs"]) allowedFiles.add(file);
-  for (const file of ['doodleverse-recipient.mjs', 'doodleverse-recipient-ui.mjs', 'doodleverse-wallet.mjs', 'recipient-crypto.mjs', 'recipient-crypto-notices.txt']) allowedFiles.add(file);
+  for (const file of ['doodleverse-recipient.mjs', 'doodleverse-recipient-ui.mjs', 'doodleverse-wallet.mjs', 'doodleverse-rpc.mjs', 'recipient-crypto.mjs', 'recipient-crypto-notices.txt']) allowedFiles.add(file);
   for (const file of ['weather.mjs', 'weather-ui.mjs', 'weather.css', 'background-music.mjs', 'background-music-ui.mjs', 'background-music.css']) allowedFiles.add(file);
   const server = http.createServer(async (req, res) => {
     const address = server.address();
@@ -43,13 +43,13 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'no-referrer');
-    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://geocoding-api.open-meteo.com https://api.open-meteo.com; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://geocoding-api.open-meteo.com https://api.open-meteo.com https://ethereum-rpc.publicnode.com; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
     if (!hostnames.includes(req.headers.host)) return send(403, { error: 'Local access only.' });
     if (req.headers.origin && !hostnames.some(h => req.headers.origin === 'http://' + h)) return send(403, { error: 'Origin not allowed.' });
     try {
       const url = new URL(req.url, 'http://' + req.headers.host);
       if (await vpn.handleLocal(req, res, url)) return;
-      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.5b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt() });
+      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.5.1b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt() });
       if (req.method === 'POST' && url.pathname === '/api/witness') {
         if (!req.headers['content-type']?.startsWith('application/json')) return send(415, { error: 'JSON required.' });
         let raw = '', size = 0;
