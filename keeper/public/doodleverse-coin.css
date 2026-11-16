@@ -13,3 +13,7 @@
 .doodleverse-coin button { min-height: 2.7rem; }
 .doodleverse-coin [data-dvc-field="founder"], .doodleverse-coin [data-dvc-field="proposal"], .doodleverse-coin [data-dvc-field="proof"] { font-family: ui-monospace, monospace; font-size: .85em; }
 @media (max-width: 650px) { .dvc-facts { grid-template-columns: 1fr; } .dvc-actions > button { flex: 1 1 100%; } }
+.doodleverse-recipient { display: grid; gap: .9rem; border-top: 2px solid var(--line); padding-top: 1.5rem; margin-top: 1.2rem; min-width: 0; }
+.doodleverse-recipient pre { white-space: pre-wrap; overflow-wrap: anywhere; font: .8rem/1.5 ui-monospace, monospace; max-height: 24rem; overflow: auto; padding: 1rem; border: 1px solid var(--line); border-radius: .5rem; }
+.doodleverse-recipient select { min-width: 0; max-width: 100%; min-height: 2.7rem; }
+.doodleverse-recipient [data-dvr-field="connection"], .doodleverse-recipient [data-dvr-field="review"], .doodleverse-recipient [data-dvr-field="record"] { font: .85rem/1.6 ui-monospace, monospace; }

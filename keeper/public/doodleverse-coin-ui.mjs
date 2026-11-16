@@ -3,7 +3,7 @@ import { COIN_RULES, createFounderProposal, createFounderProof, verifyFounderPro
 import { mineDoodleverseGpu } from './doodleverse-gpu.mjs';
 
 const STORAGE = 'doodleverse-prelaunch-founder-proof-v1';
-export function createDoodleverseCoinUI(container, { onUnlockRequest = () => {}, toast = () => {}, onActivity = () => {}, mineCandidate = mineDoodleverseGpu } = {}) {
+export function createDoodleverseCoinUI(container, { onUnlockRequest = () => {}, toast = () => {}, onActivity = () => {}, onSourceProof = () => {}, mineCandidate = mineDoodleverseGpu } = {}) {
   if (!container) throw new Error('A founder-proof container is required.');
   container.classList.add('doodleverse-coin');
   container.innerHTML = `
@@ -65,6 +65,7 @@ export function createDoodleverseCoinUI(container, { onUnlockRequest = () => {},
   }
   function selected(value, verified, kind) {
     proposal = kind === 'proof' ? value.proposal : value; bundle = kind === 'proof' ? value : null; verification = verified;
+    onSourceProof(bundle);
     field('copy-text').value = ''; field('copy-panel').hidden = true;
     field('consent').checked = false; render();
   }
@@ -110,7 +111,7 @@ export function createDoodleverseCoinUI(container, { onUnlockRequest = () => {},
         const found = await createFounderProof(selectedProposal, result.nonce), checked = await verifyFounderProof(found);
         if (result.digest !== found.proof.digest) throw new Error('GPU result disagreed with independent CPU verification. No proof was accepted.');
         if (!current(ticket) || active !== session || controller.signal.aborted || !visible || document.hidden || identity !== signer) return;
-        bundle = found; verification = checked; field('copy-text').value = ''; field('copy-panel').hidden = true; savePublicFile();
+        bundle = found; verification = checked; onSourceProof(bundle); field('copy-text').value = ''; field('copy-panel').hidden = true; savePublicFile();
         field('progress').textContent = 'GPU candidate independently verified. Work has stopped.';
         status('Proof complete for this prelaunch allocation proposal. You can export it for independent verification. No blockchain was launched and no spendable coin was issued.');
       } else if (result?.stopped) field('progress').textContent = 'GPU proof stopped. No new proof was accepted.';
