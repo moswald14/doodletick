@@ -1,8 +1,12 @@
-# Doodle Tick · 0.3b
+# Doodle Tick · 0.4b
 
 A creator arcade inspired by the loops of a telephone cord: an hourly color clock, Dot Wave sound mushrooms, an encrypted vault and direct peer connections. Run a Keeper on your computer or Home Assistant.
 
 [![Add Doodle Tick to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fmoswald14%2Fdoodletick)
+
+## The wallet recipient update
+
+**0.4b links a founder proposal to a self-custody browser wallet.** Choose the Coinbase Wallet extension (or another compatible injected wallet), review the recipient and network, then approve a narrowly scoped message. The original creator key also signs the new record. Fresh GPU work binds both approvals; the previous public proof stays intact. See [wallet recipient steps and verification limits](keeper/WALLET-RECIPIENT.md). This does not launch a coin or make a balance appear in a wallet.
 
 ## The Doodleverse Coin update
 
@@ -37,7 +41,7 @@ Keep the original installation and backup. Repository apps have a different iden
 
 ## Desktop and Raspberry Pi OS
 
-Download an asset from [0.3b Releases](https://github.com/moswald14/doodletick/releases/tag/0.3b). Desktop requires Node.js 22 or newer; development checks use Node 24. Extract the desktop ZIP, run `node server.mjs` inside `doodletick-keeper`, and open **http://127.0.0.1:4317**. No npm dependencies are required to run the app. For a source checkout, run it from `keeper/`.
+Download an asset from [0.4b Releases](https://github.com/moswald14/doodletick/releases/tag/0.4b). Desktop requires Node.js 22 or newer; development checks use Node 24. Extract the desktop ZIP, run `node server.mjs` inside `doodletick-keeper`, and open **http://127.0.0.1:4317**. No npm dependencies are required to run the app. For a source checkout, run it from `keeper/`.
 
 The separate Pi tarball includes checksums and the [Pi OS setup guide](keeper/pi/START-HERE.md). It does not install Tailscale. Pi OS service installation remains a separate hardware verification task from the Home Assistant app.
 
