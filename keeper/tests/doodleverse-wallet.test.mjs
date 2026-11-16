@@ -68,6 +68,83 @@ async function review(f, options = {}, proposalOptions = {}) {
 }
 function signerCount(provider) { return provider.calls.filter(call => call.method === 'eth_signTypedData_v4').length; }
 
+function readService(provider = new Provider()) {
+  return { id: 'publicnode-ethereum', name: 'Public test fixture', chainId: '1', request: input => provider.request(input), provider };
+}
+
+test('explicit read service supplies exact-block data while only the selected wallet signs', async t => {
+  const f = fixture(t), service = readService();
+  await f.wallet.connect('eip6963:' + UUID);
+  f.provider.intercept = (call, normal) => {
+    if (['eth_getBlockByNumber', 'eth_getCode', 'eth_call'].includes(call.method)) throw Object.assign(Error('unsupported read'), { code: 4100 });
+    return normal();
+  };
+  await assert.rejects(f.wallet.readRecipientContext({ sourceProofId }), error => error.rpcMethod === 'eth_getBlockByNumber' && error.rpcCode === 4100);
+  assert.equal(service.provider.calls.length, 0);
+  f.wallet.setReadService(service);
+  assert.equal(service.provider.calls.length, 0, 'selection must not make a request');
+  assert.equal(f.wallet.state().address, address, 'the wallet connection is retained');
+  const { snapshot, proposal } = await review(f);
+  assert.equal(snapshot.readServiceId, 'publicnode-ethereum');
+  const signed = await f.wallet.signRecipient(proposal, { snapshot });
+  assert.equal((await verifyRecipientAuthorization(signed)).walletAuthorized, true);
+  assert.equal(signerCount(f.provider), 1);
+  assert(service.provider.calls.every(call => ['eth_chainId', 'eth_getBlockByNumber', 'eth_getCode'].includes(call.method)));
+  for (const call of service.provider.calls.filter(call => call.method === 'eth_getCode')) assert.deepEqual(call.params[1], { blockHash: HASH, requireCanonical: true });
+  const calls = service.provider.calls;
+  for (let i = 0; i < calls.length; i++) if (calls[i].method !== 'eth_chainId') assert.equal(calls[i - 1].method, 'eth_chainId');
+});
+
+test('read-service network mismatch stops before address queries or signing', async t => {
+  for (const wrongWallet of [false, true]) {
+    const f = fixture(t), service = readService();
+    if (wrongWallet) f.provider.chain = '0x2105'; else service.provider.chain = '0x2105';
+    await f.wallet.connect('eip6963:' + UUID); f.wallet.setReadService(service);
+    await assert.rejects(f.wallet.readRecipientContext({ sourceProofId }), error => error.code === 'WALLET_READ_CHAIN');
+    assert(service.provider.calls.every(call => call.method === 'eth_chainId'));
+    assert.equal(signerCount(f.provider), 0);
+  }
+});
+
+test('changing read service invalidates a reviewed proposal and late read replies', async t => {
+  const f = fixture(t), service = readService();
+  f.wallet.setReadService(service); const { snapshot, proposal } = await review(f);
+  f.wallet.setReadService(null);
+  await assert.rejects(f.wallet.signRecipient(proposal, { snapshot }), /no longer current/);
+  assert.equal(signerCount(f.provider), 0);
+  const gate = deferred(); let started = false;
+  service.provider.intercept = (call, normal) => { if (call.method === 'eth_getCode') { started = true; return gate.promise; } return normal(); };
+  f.wallet.setReadService(service);
+  const pending = f.wallet.readRecipientContext({ sourceProofId });
+  const rejection = assert.rejects(pending, /selection changed/i);
+  while (!started) await turn();
+  f.wallet.setReadService(null); gate.resolve('0x'); await rejection;
+  assert.equal(signerCount(f.provider), 0);
+});
+
+test('smart-wallet verification uses the selected read service with exact block and fixed call', async t => {
+  const f = fixture(t), service = readService(); service.provider.code = '0x6000';
+  f.wallet.setReadService(service); const { snapshot, proposal } = await review(f);
+  const signed = await f.wallet.signRecipient(proposal, { snapshot });
+  const checked = await verifyRecipientAuthorization(signed, { verifyContractSignature: f.wallet.verifier({ snapshot }) });
+  assert.equal(checked.method, 'erc1271');
+  const calls = service.provider.calls.filter(call => call.method === 'eth_call'); assert(calls.length > 0);
+  for (const call of calls) { assert.equal(call.params[0].data.slice(0, 10), '0x1626ba7e'); assert.deepEqual(call.params[1], { blockHash: HASH, requireCanonical: true }); }
+  assert.equal(f.provider.calls.filter(call => call.method === 'eth_call').length, 0);
+});
+
+test('wallet diagnostics expose fixed methods and numeric codes, never raw provider errors', async t => {
+  for (const rejection of [Object.assign(Error('SECRET_ADDRESS_AND_TOKEN'), { code: 4100 }), Object.assign(Error('SECRET_ADDRESS_AND_TOKEN'), { code: 'WALLET_SPOOFED' }), Object.assign(Error('SECRET_ADDRESS_AND_TOKEN'), { code: -32001 })]) {
+    const f = fixture(t); await f.wallet.connect('eip6963:' + UUID);
+    f.provider.intercept = (call, normal) => { if (call.method === 'eth_getCode') throw rejection; return normal(); };
+    await assert.rejects(f.wallet.readRecipientContext({ sourceProofId }), error => {
+      assert.equal(error.rpcMethod, 'eth_getCode'); assert.equal(error.message.includes('SECRET'), false);
+      assert.match(error.message, /eth_getCode/); assert.equal(error.rpcCode, Number.isInteger(rejection.code) ? rejection.code : null); return true;
+    });
+    assert.equal(signerCount(f.provider), 0);
+  }
+});
+
 test('EIP6963 discovery never requests accounts, trusts no brand and never touches untrusted icons', t => {
   const f = fixture(t);
   const info = { name: '<b>Coinbase impostor</b>', rdns: 'untrusted.example' };
