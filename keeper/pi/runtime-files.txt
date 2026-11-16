@@ -79,3 +79,9 @@ public/dvc-peer-ui.mjs
 public/dvc.css
 public/dvc-console.mjs
 public/dvc-console.css
+public/keeper-clock.mjs
+public/sleep-ui.mjs
+public/sleep-audio.mjs
+public/sleep-mix.mjs
+public/sleep-worker.mjs
+public/sleep.css

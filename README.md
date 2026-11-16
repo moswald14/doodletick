@@ -1,8 +1,16 @@
-# Doodle Tick · 0.6.2b
+# Doodle Tick · 0.7b
 
 A creator arcade inspired by the loops of a telephone cord: an hourly color clock, Dot Wave sound mushrooms, an encrypted vault and direct peer connections. Run a Keeper on your computer or Home Assistant.
 
 [![Add Doodle Tick to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fmoswald14%2Fdoodletick)
+
+## Sleep garden and Keeper time
+
+**0.7b adds a Sleep garden** with soft wind, blended mushroom voices, reduced static and quiet arcade blips and pops. Open **Sleep garden** and press **Start sleep sounds**. Three listening-only starter mushrooms work without a vault; you can also load your saved garden or open a Dot Wave recipe. The default is eight hours at 15% volume, with a fade during the final minute. Nothing starts automatically.
+
+Sleep sounds can continue between app views and in a background tab. Keep the page open and the computer awake. Stop, a new mix, page exit or a browser audio interruption ends playback. Your vault can lock while already-rendered sound continues; locked keys cannot sign or trade. This listening feature does not plant, mint or mine coins.
+
+The clock now checks signed, fresh responses from this Keeper, shows synchronization status and uncertainty, and projects time using the browser's elapsed-time clock. Private garden requests require fresh Keeper time. Automatic day/night appearance follows the same projected time while retaining the device's time zone and your chosen hours. A Keeper signature identifies the clock source; it does not prove Internet UTC accuracy or change DVC consensus. Read [time and Sleep garden details](keeper/TIME-AND-SLEEP.md) and the [validation status](keeper/VALIDATION.md).
 
 ## Mine to an address
 

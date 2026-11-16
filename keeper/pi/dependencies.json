@@ -1,5 +1,5 @@
 {
-  "bundle": "0.6.2b-pi.1",
+  "bundle": "0.7b-pi.1",
   "architecture": "linux-arm64",
   "node": {
     "version": "v24.22.3",

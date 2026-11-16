@@ -1,6 +1,8 @@
-# Doodle Tick Keeper 0.6.2b
+# Doodle Tick Keeper 0.7b
 
 Doodle Tick is an experimental creator vault, social arcade, file library and shared mushroom garden. Spirographs help people compare signed creator keys when pairing. Your writing and files remain in your browser; Keepers provide signed receipts, a local directory and a shared garden scorekeeper.
+
+The 0.7b update adds a **Sleep garden** for locally synthesized wind and mushroom voices, plus signed Keeper clock synchronization. See [time and Sleep garden](TIME-AND-SLEEP.md) for controls, source trust and interruption limits. Existing vault, garden and native-chain formats remain unchanged.
 
 The 0.6.2b update makes mining work with a **Mining reward address** alone. Enter a full nonzero `0x` address, choose settings and press **MINE NOW**; no wallet connection or signing prompt is needed. **Mining address balances** belongs to that destination and is separate from **Wallet for sending**. The optional **Use connected wallet address** button copies a connected account; connecting fills only an empty mining field. Changing the destination stops unfinished work and repeat mode. Sending still requires a wallet signature. Supply, consensus and saved formats are unchanged. See [validation](VALIDATION.md) for checked behavior and limits.
 
@@ -27,6 +29,14 @@ Use the same browser and address for the same saved vault: `localhost` and `127.
 - **Doodleverse:** practice with bots, join a private four-player room, or build a world. Games include Stardust Dash, Color Conquest and Four to Orbit. The room's host must remain online. See [the game guide](NETWORK.md).
 - **Files & peers:** add a file and choose its content license, then explicitly enable sharing. Pair with another member and compare every group of the spirograph verification code. Received files can be re-shared with their original credits. Keep a holder online and unlocked when others need a copy.
 - **Check a receipt:** verify signed writing or garden receipts. Arcade replays are checked in Doodleverse. A historical receipt is not proof of a current balance, independent time, original authorship or legal ownership.
+
+## Sleep garden
+
+Open **Sleep garden** and press **Start sleep sounds**. The three starter mushrooms are ready without a vault. **Use my saved mushrooms** reads recipes from your joined Keeper garden after you unlock; **Open a Dot Wave recipe** loads a local recipe for listening. Neither action plants a generator, changes its saved recipe or earns coins.
+
+The bedtime preset uses 15% listening volume, soft wind, strong static reduction and gentle blips and pops. **Fade out after** defaults to eight hours; the final minute fades before playback stops. Volume can change while listening. Changing the mix, source or duration stops it until you press Start again. **Dim garden** reduces the visible controls; **Stop sounds** ends playback.
+
+Sound can continue across app views and in a hidden tab while the page and device remain active. Vault locking clears owned recipe references and selects the starter collection for next time; already-rendered audio may finish without any identity or key. A mix still preparing when the vault locks is canceled. Leaving the page or a browser audio interruption stops the sound and requires another Start. Device sleep, browser suspension and overnight playback are not guaranteed. Preferences are stored locally outside the encrypted vault; playback never resumes automatically. See [the full guide](TIME-AND-SLEEP.md).
 
 ## Weather and music
 
@@ -56,9 +66,11 @@ Keep the game host or unlocked file holder's page open. Outages and restarts req
 
 The UTC clock visits every one of the 16,777,216 RGB colors once per full pass, beginning red and ending green. One color per hour takes about 1,914 years; subsequent passes change order. The wheel displays 24 hours. The epoch is November 11, 2026, 00:00 UTC. The galaxy countdown is poetic, not an astronomical forecast or a secret key.
 
+The clock status reports signed Keeper synchronization, uncertainty and stale samples. **Sync time** checks it again. Before verification the display uses device time; a stale display estimate is not accepted as garden-request time. Fresh signed requests use the Keeper estimate, and the color wheel advances with elapsed time between checks. The Keeper operator can still have an inaccurate clock. This does not set the device clock, alter recorded hours or establish distributed time consensus. See [time synchronization](TIME-AND-SLEEP.md#keeper-time).
+
 Tetrachroma adds a custom focusable-black channel, `tetrachroma:#RRGGBBTT`. `00` preserves the RGB color and `FF` previews full black. This is a display adjustment, not a fourth physical primary or an authentication feature. Eight-digit CSS hex instead uses its fourth pair for transparency; do not treat these formats as interchangeable.
 
-The automatic theme uses muted red and dark backgrounds from **9 PM to 7 AM** in the viewing browser's local time. Adjust the hours in Appearance or restore Automatic after a manual Daylight/Red night choice. Appearance does not change signed colors or saved records.
+The automatic theme uses muted red and dark backgrounds from **9 PM to 7 AM** in the device's time zone. After synchronization it uses projected Keeper time; before verification it uses device time. Adjust the hours in Appearance or restore Automatic after a manual Daylight/Red night choice. Your chosen hours and time zone are preserved. Appearance does not change signed colors or saved records.
 
 ## Content licenses
 

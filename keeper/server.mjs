@@ -7,6 +7,7 @@ import { newIdentity, sign, hash, verifyProof, tickAt } from './public/core.mjs'
 import { createVpnNetwork } from './vpn-network.mjs';
 import { createDvcNode } from './dvc-node.mjs';
 import { createDvcHttpHandler } from './dvc-http.mjs';
+import { KEEPER_TIME_FORMAT, validTimeNonce } from './public/keeper-clock.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 export async function createKeeperServer({ dataDir = path.join(root, '.doodletick'), lockDir = dataDir, port = 4317, vpnOptions, gardenOptions } = {}) {
@@ -48,6 +49,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
   for (const file of ['doodleverse-recipient.mjs', 'doodleverse-recipient-ui.mjs', 'doodleverse-wallet.mjs', 'doodleverse-rpc.mjs', 'recipient-crypto.mjs', 'recipient-crypto-notices.txt']) allowedFiles.add(file);
   for (const file of ['weather.mjs', 'weather-ui.mjs', 'weather.css', 'background-music.mjs', 'background-music-ui.mjs', 'background-music.css']) allowedFiles.add(file);
   for (const file of ['dvc-core.mjs', 'dvc-miner.mjs', 'dvc-wallet.mjs', 'dvc-ui.mjs', 'dvc-sync.mjs', 'dvc-peer-ui.mjs', 'dvc.css', 'dvc-console.mjs', 'dvc-console.css']) allowedFiles.add(file);
+  for (const file of ['keeper-clock.mjs', 'sleep-ui.mjs', 'sleep-audio.mjs', 'sleep-mix.mjs', 'sleep-worker.mjs', 'sleep.css']) allowedFiles.add(file);
   const server = http.createServer(async (req, res) => {
     const address = server.address();
     const hostnames = [`127.0.0.1:${address.port}`, `localhost:${address.port}`];
@@ -62,7 +64,13 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
       const url = new URL(req.url, 'http://' + req.headers.host);
       if (await handleDvc(req, res, url)) return;
       if (await vpn.handleLocal(req, res, url)) return;
-      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.6.2b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt(), nativeCoin: { available: !dvcUnavailable, error: dvcUnavailable ? 'DVC_STORAGE' : null } });
+      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.7b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt(), nativeCoin: { available: !dvcUnavailable, error: dvcUnavailable ? 'DVC_STORAGE' : null } });
+      if (req.method === 'GET' && url.pathname === '/api/time') {
+        const receivedAt = Date.now(), nonce = url.searchParams.get('nonce');
+        if (!validTimeNonce(nonce) || url.searchParams.getAll('nonce').length !== 1) return send(400, { error: 'A fresh clock challenge is required.' });
+        const record = { format: KEEPER_TIME_FORMAT, issuer: identity.fingerprint, nonce, receivedAt, sentAt: Date.now() };
+        return send(200, { record, publicKey: identity.publicKey, signature: await sign(record, identity.privateKey) });
+      }
       if (req.method === 'POST' && url.pathname === '/api/witness') {
         if (!req.headers['content-type']?.startsWith('application/json')) return send(415, { error: 'JSON required.' });
         let raw = '', size = 0;

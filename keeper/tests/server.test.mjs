@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import http from 'node:http';
 import { createKeeperServer } from '../server.mjs';
-import { newIdentity, sealEntry, verifyWitness, receiptFor, verifyReceipt } from '../public/core.mjs';
+import { newIdentity, sealEntry, verifyWitness, receiptFor, verifyReceipt, checkSignature, b64 } from '../public/core.mjs';
 
 test('local server serves app, witnesses valid proofs, rejects spoofing, and retains identity', async () => {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'doodletick-test-'));
@@ -15,6 +15,14 @@ test('local server serves app, witnesses valid proofs, rejects spoofing, and ret
     const page = await fetch(base); assert.equal(page.status, 200); assert.match(await page.text(), /Make a mark/); assert.match(page.headers.get('content-security-policy'), /frame-ancestors 'none'/);
     assert.equal((await fetch(base + '/.doodletick/witness-key.json')).status, 404);
     const status = await (await fetch(base + '/api/status')).json(); assert.equal(status.mode, 'local-witness');
+    const nonce = b64(new Uint8Array(16).fill(3));
+    const timeResponse = await fetch(base + '/api/time?nonce=' + nonce), time = await timeResponse.json();
+    assert.equal(timeResponse.status, 200); assert.equal(timeResponse.headers.get('cache-control'), 'no-store');
+    assert.equal(time.publicKey, status.publicKey); assert.equal(time.record.issuer, status.fingerprint);
+    assert.equal(time.record.nonce, nonce); assert.ok(Math.abs(Date.now() - time.record.sentAt) < 5000);
+    assert.equal(await checkSignature(time.record, time.signature, status.publicKey), true);
+    for (const suffix of ['', '?nonce=bad', '?nonce=' + nonce + '&nonce=' + nonce]) assert.equal((await fetch(base + '/api/time' + suffix)).status, 400);
+    assert.equal((await fetch(base + '/api/time?nonce=' + nonce, { headers: { origin: 'https://attacker.example' } })).status, 403);
     await assert.rejects(createKeeperServer({ dataDir: dir, port: 0 }), /already running/);
     const identity = await newIdentity('server_test');
     const entry = await sealEntry(identity, [], { title: 'A secret title', body: 'The server must never store this private body.', kind: 'Idea', revisionOf: null });

@@ -1,3 +1,25 @@
+# Validation — Doodle Tick 0.7b
+
+## Keeper time and Sleep garden · 2026-11-16
+
+This update adds signed Keeper clock samples and a listening-only Sleep garden. Saved identities, signed record formats, private garden rewards and native DVC consensus are unchanged.
+
+| Check | Observed evidence |
+| --- | --- |
+| Complete application suite | **504/504 passed**, zero failures or skips, including 43 additional checks since 0.6.2b. |
+| Clock and garden integration | Nonce/signature checks, round-trip bounds, stale/sleep invalidation, elapsed-time projection and fresh garden-request timestamps passed. Large forward and backward changes require a second coherent check and reanchor promptly. An actual disposable ledger rejects a 48-hour client offset, accepts the verified Keeper time, credits concurrent duplicate harvest requests only once and preserves exact-retry idempotence. |
+| Audio and listening lifecycle | Bounded deterministic mixing, levels, source cancellation, independent volume/fade scheduling, audio interruption and timer behavior passed with controlled fixtures. UI tests cover settings, late imports/owned reads, vault autolock, safe text rendering and distinct voice-slider/scene selectors. |
+| Actual Chrome preview | A disposable local Keeper showed a verified clock, automatic night appearance, three starter voices and the eight-hour preset. The voice slider changed correctly, Start progressed from preparation to playing, dim mode worked, playback continued while another tab was active, and Stop ended it. No owner vault or live journal was used. |
+| AI review | Separate component and integration reviews found and corrected a scene/slider selector collision and slow recovery after a long clock gap. Final release review is recorded with the publishing PR. This is not a human security audit. |
+
+Generated-runtime and repository checks passed on the integrated source. Publication, immutable archive verification and the observed Home Assistant installation are subsequent release steps at this source cut.
+
+Audible speaker output, a continuous eight-hour session, responsive breakpoint coverage and behavior through physical system sleep have not been verified for this release. Browser and operating-system suspension can interrupt audio; the timer is not an OS wake alarm. Signed Keeper samples identify the source clock, not independent Internet/NTP accuracy. No new multi-device consensus or mining-security evidence is claimed by this update.
+
+The historical source-cut reports below retain their original evidence and pending wording.
+
+---
+
 # Validation — Doodle Tick 0.6.2b
 
 ## Mining by receiving address · 2026-11-16

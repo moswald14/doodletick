@@ -7,6 +7,8 @@ import { createDvcPeerUI } from './dvc-peer-ui.mjs';
 import { createClockWheel } from './clock-wheel.mjs';
 import { createWeatherUI } from './weather-ui.mjs';
 import { createBackgroundMusicUI } from './background-music-ui.mjs';
+import { createSleepUI } from './sleep-ui.mjs';
+import { createKeeperClock } from './keeper-clock.mjs';
 import { createVpnUI } from './vpn-ui.mjs';
 import { newIdentity, random, b64, deriveKey, encryptVault, decryptVault, sealEntry, verifyWitness, verifyEntry, receiptFor, verifyReceipt, tickAt, tetrachromaColor, EPOCH, MAX_TEXT, MAX_BACKUP, validateEnvelope } from './core.mjs';
 import { createFilesUI } from './files-ui.mjs';
@@ -21,6 +23,13 @@ let changeId = 0;
 let arcadeUI;
 let recipientUI;
 let nativePeerUI;
+let sleepUI;
+function renderClockStatus(state) {
+  $('keeper-clock-status').dataset.state = state.state;
+  const corrected = state.lastCorrectionMs !== null && state.lastCorrectionAgeMs < 120000;
+  $('keeper-clock-message').textContent = state.fresh ? `Keeper time synced · estimated uncertainty ±${state.uncertaintyMs} ms${corrected ? ' · clock corrected after confirmation' : Math.abs(state.correctionMs) > 1000 ? ' · display is catching up gently' : ''}` : state.message + (state.error ? ' ' + state.error : '');
+}
+const keeperClock = createKeeperClock({ onChange: renderClockStatus });
 function markDirty() { changeId++; $('save-status').textContent = 'Encrypting your draft…'; }
 let storageAvailable = true;
 try { savedRaw = localStorage.getItem(STORAGE); } catch { storageAvailable = false; }
@@ -36,7 +45,7 @@ function setupThemeControls() {
     $('theme-toggle').querySelector('.theme-icon').textContent = state.theme === 'night' ? '☾' : '☀';
     $('theme-toggle').setAttribute('aria-label', `${label}. Open appearance settings.`);
     $('theme-toggle').title = automatic ? `Red night: ${formatTime(state.start)}–${formatTime(state.end)}, local time` : 'Open appearance settings to restore automatic switching';
-    $('theme-zone').textContent = 'Uses this device’s local time · ' + Intl.DateTimeFormat().resolvedOptions().timeZone + '. Hours apply in Automatic mode.';
+    $('theme-zone').textContent = 'Uses this device’s time zone · ' + Intl.DateTimeFormat().resolvedOptions().timeZone + '. Keeper time is used after synchronization. Hours apply in Automatic mode.';
   }
   $('theme-toggle').addEventListener('click', () => {
     const state = theme.getState();
@@ -55,19 +64,20 @@ function setupThemeControls() {
   updateStatus();
 }
 setupThemeControls();
+window.KeeperTheme?.setTimeSource(() => keeperClock.now());
 const weatherUI = createWeatherUI($('keeper-weather'));
 const atmospherePanel = $('keeper-atmosphere');
 const updateWeatherVisibility = () => weatherUI.setVisible(atmospherePanel.open);
 atmospherePanel.addEventListener('toggle', updateWeatherVisibility);
 updateWeatherVisibility();
-createBackgroundMusicUI($('keeper-music'), { onChange: state => {
+const backgroundMusicUI = createBackgroundMusicUI($('keeper-music'), { onBeforePlay: () => { sleepUI?.stop('Paused for background music.'); mushroomUI.stopListening(); }, onChange: state => {
   $('atmosphere-music-status').textContent = state.phase === 'playing' ? (state.muted || state.volume === 0 ? 'Music muted' : 'Music playing') : state.phase === 'starting' ? 'Starting music…' : 'Music paused';
 } });
 function showView(view) {
-  if (!['arcade', 'garden', 'coin', 'vault', 'files', 'verify', 'about'].includes(view)) view = 'arcade';
-  for (const section of ['arcade', 'garden', 'coin', 'vault', 'files', 'verify', 'about']) $('view-' + section).hidden = view !== section;
+  if (!['arcade', 'garden', 'sleep', 'coin', 'vault', 'files', 'verify', 'about'].includes(view)) view = 'arcade';
+  for (const section of ['arcade', 'garden', 'sleep', 'coin', 'vault', 'files', 'verify', 'about']) $('view-' + section).hidden = view !== section;
   for (const button of document.querySelectorAll('[data-view]')) { button.classList.toggle('active', button.dataset.view === view); button.setAttribute('aria-current', button.dataset.view === view ? 'page' : 'false'); }
-  $('page-name').textContent = { garden: 'MUSHROOM GARDEN', coin: 'DOODLEVERSE COIN', arcade: 'THE DOODLEVERSE', vault: 'MY VAULT', files: 'FILES & PEERS', verify: 'CHECK A RECEIPT', about: 'THE IDEA' }[view];
+  $('page-name').textContent = { garden: 'MUSHROOM GARDEN', sleep: 'SLEEP GARDEN', coin: 'DOODLEVERSE COIN', arcade: 'THE DOODLEVERSE', vault: 'MY VAULT', files: 'FILES & PEERS', verify: 'CHECK A RECEIPT', about: 'THE IDEA' }[view];
   arcadeUI?.setVisible(view === 'arcade');
   mushroomUI.setVisible(view === 'garden');
   updateCoinVisibility(view === 'coin');
@@ -75,7 +85,8 @@ function showView(view) {
 }
 const fileUI = createFilesUI({ toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); } });
 arcadeUI = createArcadeUI({ toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); }, onPackStored: () => fileUI.refresh() });
-const mushroomUI = createMushroomUI({ toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); } });
+const mushroomUI = createMushroomUI({ toast, clock: keeperClock, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); }, onBeforeListen: () => { backgroundMusicUI.pause(); sleepUI?.stop('Paused for a recipe preview.'); } });
+sleepUI = createSleepUI($('view-sleep'), { getOwnedMushrooms: () => mushroomUI.listeningMushrooms(), onActivity: () => { lastActive = Date.now(); }, onBeforePlay: () => { backgroundMusicUI.pause(); mushroomUI.stopListening(); } });
 const nativePanel = document.createElement('section');
 const nativePeers = document.createElement('section');
 const founderArchive = document.createElement('details');
@@ -186,7 +197,7 @@ function showUnlocked() {
   arcadeUI.unlock(vault.identity, key).catch(error => toast(error.message));
 }
 function clearSession() {
-  mushroomUI.lock();
+  mushroomUI.lock(); sleepUI.forgetOwned();
   coinUI.lock();
   recipientUI.lock();
   nativePeerUI.disconnect('Peer stopped because the creator vault is locked.');
@@ -369,7 +380,7 @@ try {
   const savedFocus = localStorage.getItem(BLACK_FOCUS);
   if (/^\d{1,3}$/.test(savedFocus ?? '') && Number(savedFocus) <= 255) blackFocus = Number(savedFocus);
 } catch { $('tetra-save').textContent = 'Black focus lasts for this visit; browser storage is unavailable.'; }
-function renderTetrachroma(tick = tickAt()) {
+function renderTetrachroma(tick = tickAt(keeperClock.now())) {
   const color = tetrachromaColor(tick.color, blackFocus), pair = color.value.slice(-2);
   $('tick-rgb').textContent = color.rgb; $('tick-black').textContent = pair;
   $('tick-color').title = `Tetrachroma ${color.value} · RGB preview ${color.preview}`;
@@ -378,7 +389,7 @@ function renderTetrachroma(tick = tickAt()) {
   $('black-percent').textContent = Math.round(blackFocus / 255 * 100) + '%';
   $('black-focus').setAttribute('aria-valuetext', `${blackFocus} of 255; hex ${pair}; ${$('black-percent').textContent} black`);
   $('black-focus').style.setProperty('--focus-rgb', color.rgb);
-  drawClock(Date.now(), blackFocus);
+  drawClock(keeperClock.now(), blackFocus);
 }
 function setBlackFocus(value) {
   blackFocus = value;
@@ -396,13 +407,13 @@ $('black-byte').addEventListener('input', () => {
 $('black-byte').addEventListener('keydown', event => { if (event.key === 'Escape') { $('black-byte').value = blackFocus.toString(16).padStart(2, '0').toUpperCase(); $('black-byte').removeAttribute('aria-invalid'); $('black-error').textContent = ''; } });
 $('reset-black').addEventListener('click', () => setBlackFocus(0));
 $('copy-tetrachroma').addEventListener('click', async () => {
-  const color = tetrachromaColor(tickAt().color, blackFocus);
+  const color = tetrachromaColor(tickAt(keeperClock.now()).color, blackFocus);
   try { await navigator.clipboard.writeText('tetrachroma:' + color.value); toast('Copied tetrachroma:' + color.value); }
   catch { toast('Clipboard unavailable. Copy tetrachroma:' + color.value); }
 });
 let currentTick = -1;
 function updateTick() {
-  const now = Date.now(), tick = tickAt(now);
+  const clockState = keeperClock.snapshot(), now = clockState.now, tick = tickAt(now); renderClockStatus(clockState);
   const seconds = Math.max(0, Math.ceil((3600000 - ((now - EPOCH) % 3600000)) / 1000));
   $('next-tick').textContent = String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
   drawClock(now, blackFocus);
@@ -421,6 +432,14 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && vau
 window.addEventListener('beforeunload', event => { if (vault && (busy || $('save-status').textContent !== 'Encrypted & saved')) { event.preventDefault(); event.returnValue = ''; } });
 if (!crypto.subtle || !navigator.locks) { $('identity-error').textContent = 'Open the Keeper through its local address in a current Chrome, Edge, or Firefox browser.'; $('identity-submit').disabled = true; }
 showLocked(); updateTick(); refreshWitness(); setInterval(updateTick, 1000); setInterval(refreshWitness, 60000);
+let clockTimer;
+const syncTime = () => { if (!document.hidden) void keeperClock.sync().catch(() => {}); };
+function startClockPolling() { clearInterval(clockTimer); syncTime(); clockTimer = setInterval(syncTime, 60000); }
+$('keeper-clock-refresh').addEventListener('click', syncTime);
+document.addEventListener('visibilitychange', () => { keeperClock.invalidate('Checking time after a visibility change.'); if (!document.hidden) syncTime(); });
+window.addEventListener('pagehide', () => { clearInterval(clockTimer); keeperClock.invalidate('Page suspended. Sync again on return.'); });
+window.addEventListener('pageshow', startClockPolling);
+startClockPolling();
 showView(location.hash.slice(1) || 'arcade');
 window.addEventListener('hashchange', () => showView(location.hash.slice(1)));
 // Offline service worker is disabled inside authenticated Home Assistant ingress.
