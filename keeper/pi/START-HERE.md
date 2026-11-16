@@ -25,7 +25,7 @@ cd doodletick-keeper
 sha256sum --check --strict SHA256SUMS
 ```
 
-The filename above is the 0.7b example; that release is still in preparation. Use it only once published, and substitute the selected bundle's actual filename for another release. Stop on a mismatch or missing checksum file. Review `pi/install.sh` before granting it administrative access.
+The filename above is the 0.7b example. For another release, substitute that release bundle's actual filename. Stop on a mismatch or missing checksum file. Review `pi/install.sh` before granting it administrative access.
 
 ## Install and connect
 
