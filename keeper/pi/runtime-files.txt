@@ -61,3 +61,9 @@ public/doodleverse-recipient-ui.mjs
 public/doodleverse-wallet.mjs
 public/recipient-crypto.mjs
 public/recipient-crypto-notices.txt
+public/weather.mjs
+public/weather-ui.mjs
+public/weather.css
+public/background-music.mjs
+public/background-music-ui.mjs
+public/background-music.css
