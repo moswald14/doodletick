@@ -1,3 +1,11 @@
+## 0.5b — Weather and background music
+
+- Add the expandable Weather & music panel below the top bar, across app views.
+- Add manual city search, saved/clearable location, C/F and a three-day Open-Meteo forecast. No automatic geolocation; attribution and free-API usage terms stay visible.
+- Add original local Phone cord, Mushroom grove and Afterglow soundscapes with Play/Pause, Mute and volume. No autoplay; hiding pauses playback and page exit releases audio resources.
+- Preserve creator identities, signed proof formats and garden accounting.
+- Validation: 263 combined checks passed, including 14 weather and 11 music checks. Chrome verified live sample-city weather, saved/cleared state, music controls/preferences, app-view continuity and narrow/red-night layouts. Audible output, actual Coinbase signing and the Home Assistant 0.5b update remain unverified; see VALIDATION.md.
+
 ## 0.4b — Wallet-bound founder recipient
 
 - Added a separate v2 recipient record that preserves the complete v1 founder proof and requires its original creator key plus the chosen wallet to sign. Fresh bounded GPU work commits both signatures.
