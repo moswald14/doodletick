@@ -51,14 +51,14 @@ test('authenticated ingress serves relative UI, protects mutations, signs proofs
   try {
     const page = await fetch(base + '/'); const html = await page.text();
     assert.equal(page.status, 200); assert.match(page.headers.get('content-security-policy'), /frame-ancestors 'self'/);
-    assert.deepEqual(page.headers.get('content-security-policy').match(/connect-src ([^;]+);/)[1].split(' '), ["'self'", 'https://geocoding-api.open-meteo.com', 'https://api.open-meteo.com']);
+    assert.deepEqual(page.headers.get('content-security-policy').match(/connect-src ([^;]+);/)[1].split(' '), ["'self'", 'https://geocoding-api.open-meteo.com', 'https://api.open-meteo.com', 'https://ethereum-rpc.publicnode.com']);
     assert(!/(?:href|src)="\//.test(html)); assert.match(html, /Your always-on Keeper/);
     for (const [, resource] of html.matchAll(/(?:src|href)="\.\/([^"#]+)"/g)) {
       assert.equal((await fetch(base + '/' + resource)).status, 200, resource);
     }
     assert.equal((await fetch(base + '/sw.mjs')).status, 404);
     assert.equal((await fetch(base + '/clock-wheel.mjs')).status, 200);
-    for (const name of ['weather.mjs', 'weather-ui.mjs', 'weather.css', 'background-music.mjs', 'background-music-ui.mjs', 'background-music.css']) {
+    for (const name of ['doodleverse-rpc.mjs', 'weather.mjs', 'weather-ui.mjs', 'weather.css', 'background-music.mjs', 'background-music-ui.mjs', 'background-music.css']) {
       const asset = await fetch(base + '/' + name);
       assert.equal(asset.status, 200, name);
       assert.match(asset.headers.get('content-type'), name.endsWith('.css') ? /text\/css/ : /javascript/, name);
