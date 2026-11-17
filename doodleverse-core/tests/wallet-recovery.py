@@ -13,8 +13,9 @@ Only public receiving addresses, a public transaction ID and balances are output
 
 The encrypted backup predates funding. A fresh wallet-disabled node downloads
 the test chain, then loads that backup with -rescan. Recovering the later reward
-therefore requires discovering history absent from the backup. No production
-network is started. The main test has a 240-second budget, with separately
+therefore requires discovering history absent from the backup. A fresh main
+identity probe has no wallet or peers and stays at height zero; all funding,
+mining and payments use regtest. The test has a 240-second budget, with separately
 bounded shutdown/cleanup. Windows child processes do not open console windows.
 """
 
@@ -32,7 +33,7 @@ import subprocess
 import tempfile
 import time
 
-from functional import COIN, GENESIS, free_port, wait_for
+from functional import COIN, GENESIS, free_port, probe_mainnet, wait_for
 
 
 # This already-disclosed fixture receives padding rewards only. Neither test
@@ -333,7 +334,9 @@ def main():
         root = Path(temporary).resolve()
         assert root.parent == temporary_parent and root.name.startswith('dvc-wallet-recovery-')
         try:
+            probe_mainnet(daemon, root / 'main-identity')
             result = exercise(daemon, cli, root, nodes, budget)
+            result['checks'].insert(0, 'main identity without wallet, peers or coins')
         finally:
             errors = []
             for node in reversed(nodes):

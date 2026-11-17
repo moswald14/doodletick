@@ -1,8 +1,10 @@
-# Doodle Tick on Raspberry Pi OS
+# Doodle Tick 0.13b on Raspberry Pi OS
 
 This guide is for a Raspberry Pi 4 running **Raspberry Pi OS Lite 64-bit** or a supported ARM64 Debian installation with systemd. For **Home Assistant OS**, use the Home Assistant app instead; do not run this installer on its host.
 
 The Pi keeps its local room directory, witness and shared garden online. Players host game simulation and encrypted WebRTC connections in their browsers; file libraries remain in those browsers. This is not unattended P2P disk storage or a dedicated game server.
+
+This Pi support bundle installs Keeper only. It does not install a Doodleverse Core node or GPU mining service. For the bundled native node, use the [Home Assistant app](../../doodletick/DOCS.md); for the complete Windows node and browser miner, use the [Windows package](../../doodleverse-core/windows/README.md). A separate Pi OS Core setup needs its own build and service verification. The browser's computer performs GPU work, and mining never starts automatically.
 
 ## Prepare the Pi
 
@@ -19,13 +21,13 @@ Copy the bundle to your Pi using your normal SSH/file-transfer method. Confirm t
 On the Pi, first calculate the archive's SHA-256 and compare it with the checksum published alongside that exact release. Then extract it and verify the internal inventory:
 
 ```bash
-sha256sum doodletick-pi-0.7b-pi.1.tar.gz
-tar -xzf doodletick-pi-0.7b-pi.1.tar.gz
+sha256sum doodletick-pi-0.13b-pi.1.tar.gz
+tar -xzf doodletick-pi-0.13b-pi.1.tar.gz
 cd doodletick-keeper
 sha256sum --check --strict SHA256SUMS
 ```
 
-The filename above is the 0.7b example. For another release, substitute that release bundle's actual filename. Stop on a mismatch or missing checksum file. Review `pi/install.sh` before granting it administrative access.
+The filename above is the 0.13b bundle. For another release, substitute that release bundle's actual filename. Stop on a mismatch or missing checksum file. Review `pi/install.sh` before granting it administrative access.
 
 ## Install and connect
 
@@ -65,7 +67,7 @@ sudo systemctl restart doodletick-keeper
 
 Keep power and network connected, and shut down cleanly before removing storage. To stop automatic startup, use `sudo systemctl disable --now doodletick-keeper`; this preserves persistent data.
 
-Private Keeper data lives in `/var/lib/doodletick-keeper`. Back it up privately while the service is stopped, retaining the garden ledger and original witness key together. Browser vault/files/arcade backups are separate. Temporary locks live under `/run/doodletick-keeper`; do not delete persistent state as a startup repair. Never run two restored clones of one witness identity. Retain older private VPN backups separately if you need to roll back to an earlier release.
+Private Keeper data lives in `/var/lib/doodletick-keeper`. Back it up privately while the service is stopped, retaining the garden ledger and original witness key together. Browser creator-vault/native-wallet/files/arcade backups are separate. A native wallet's receiving address or public founder record cannot replace its encrypted backup and password. Temporary locks live under `/run/doodletick-keeper`; do not delete persistent state as a startup repair. Never run two restored clones of one witness identity. Retain older private VPN backups separately if you need to roll back to an earlier release.
 
 ## Validation limit
 

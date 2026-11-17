@@ -1,6 +1,16 @@
-# Doodle Tick Keeper 0.12b
+# Doodle Tick Keeper 0.13b
 
-**0.12b brings MozCorp’s cloud savepoints, fictional HOPE-LON feed and upgrade desk into Keeper.** Open **MozCorp → Keeper cloud** or **Upgrade desk**. Shared records live with this Keeper and survive restarts. AI drafts are optional and use a server-side key with explicit instruction-only consent. See [the MozCorp guide](MOZCORP.md).
+**0.13b adds a Pepecoin-derived Scrypt blockchain, encrypted native wallet and address-only GPU miner.** Open **Doodleverse Coin** and check the connected network. Create or restore a native wallet under **Your wallet · Receive & send**, save its encrypted backup and password, then mine using its public receiving address. The signing key stays in this browser; the creator vault and Keeper server backups do not replace the native-wallet backup.
+
+Press **MINE NOW** to start. **Keep mining** submits found blocks and requests fresh work; Stop or hiding the page ends GPU work. Eco and Balanced change intensity, while Scrypt 1024/1/1 is fixed by the chain. Hardware WebGPU is required and no CPU miner starts as a fallback. Payments require an unlocked wallet, explicit recipient/amount/fee/change review and **Sign and send this payment**. Mined rewards need **30 confirmations**; pending payments need another block before confirmation.
+
+The native maximum is **21,000,000 DVC**, with **1,000,000 for the publicly recorded founder recipient** and **20,000,000 mineable**. The first mined block includes the founder allocation plus the normal 50 DVC miner subsidy; the public certificate alone does not issue coins. Native addresses are separate from Ethereum/Coinbase `0x` addresses, PEPE, Pepecoin, the legacy DVC ledger and private garden balances. No conversion, guaranteed value or earnings is provided. Read [the native chain rules](../doodleverse-core/README.md).
+
+For the complete Windows node and GPU miner, extract the portable Windows release and run **Start-Doodleverse.cmd**; see [its guide](../doodleverse-core/windows/README.md). Home Assistant bundles its own wallet-disabled Core node. The general Keeper desktop ZIP and Pi support bundle require a separately configured matching Core node for native mining and payments. The browser does the GPU work; the node validates blocks and keeps chain data.
+
+Disposable Core tests have covered GPU acceptance, wallet payments, encrypted-backup restoration and chain reorganizations. These checks do not establish a live distributed launch or a security audit. Existing creator identities, signed legacy records, garden ledgers and creative work are preserved.
+
+**0.12b brought MozCorp’s cloud savepoints, fictional HOPE-LON feed and upgrade desk into Keeper.** Open **MozCorp → Keeper cloud** or **Upgrade desk**. Shared records live with this Keeper and survive restarts. AI drafts are optional and use a server-side key with explicit instruction-only consent. See [the MozCorp guide](MOZCORP.md).
 
 Open **Shelf Defense** for the original tower-defense game, or **Idle shelves** for a shared Keeper cookie bakery. Battles save in this browser; idle progress saves with Keeper. Both use fictional game currency separate from DVC and garden coins. See [Shelf Defense](SHELF-DEFENSE.md).
 
@@ -16,15 +26,19 @@ The 0.8b source update adds a **Jazz room** with an original local piano, bass a
 
 The 0.7b update adds a **Sleep garden** for locally synthesized wind and mushroom voices, plus signed Keeper clock synchronization. See [time and Sleep garden](TIME-AND-SLEEP.md) for controls, source trust and interruption limits. Existing vault, garden and native-chain formats remain unchanged.
 
+### Legacy DVC history
+
+The following 0.6.x notes describe the preserved **Legacy DVC history** page. Its `0x` addresses, SHA algorithms and signed formats do not apply to the current native Scrypt chain, and its balances are not converted.
+
 The 0.6.2b update makes mining work with a **Mining reward address** alone. Enter a full nonzero `0x` address, choose settings and press **MINE NOW**; no wallet connection or signing prompt is needed. **Mining address balances** belongs to that destination and is separate from **Wallet for sending**. The optional **Use connected wallet address** button copies a connected account; connecting fills only an empty mining field. Changing the destination stops unfinished work and repeat mode. Sending still requires a wallet signature. Supply, consensus and saved formats are unchanged. See [validation](VALIDATION.md) for checked behavior and limits.
 
 The 0.6.1b update adds **Nightcap**, a SHA-256/Eco mushroom preset with opt-in **Keep mining** and automatic collection of accepted blocks. Press MINE NOW to start; keep the page visible and computer awake. **GITTIT::GODDIT** adds command input, output and error messages: type `help`, `status`, `balance`, `mine`, `stop` or `repeat off`. See [the command guide](NATIVE-DVC.md#gittitgoddit-console).
 
-The 0.6b update adds independent native DVC mining and signed payments. Use **Doodleverse Coin** for the red MINE NOW button, algorithm choice, balances, sending, receiving and peer sync. Read [NATIVE-DVC.md](NATIVE-DVC.md) for the fixed 21-million supply, disclosed founder allocation, mining maturity and experimental network limits. Existing vaults, garden coins and founder certificates retain their formats. See [validation](VALIDATION.md) for evidence.
+The 0.6b update added the earlier independent DVC ledger, mining and signed payments, now accessible through **Legacy DVC history**. Read [NATIVE-DVC.md](NATIVE-DVC.md) for that ledger's fixed 21-million supply, disclosed founder allocation, mining maturity and experimental network limits. Existing vaults, garden coins and founder certificates retain their formats. See [validation](VALIDATION.md) for evidence.
 
 ## Start
 
-Install [Node.js](https://nodejs.org/) 22 or newer, extract the complete desktop release, and run this command from the Keeper folder:
+Install [Node.js](https://nodejs.org/) 24 or newer, extract the complete Keeper desktop release, and run this command from the Keeper folder:
 
 ```sh
 node server.mjs
@@ -66,9 +80,9 @@ Keep [Open-Meteo](https://open-meteo.com/) and GeoNames attribution beside the w
 
 **Play music** starts original local synthesis: Phone cord, Mushroom grove or Afterglow. Use Pause, Mute and volume as needed. Music continues between Doodle Tick views and when this panel is collapsed, pauses when the tab is hidden, and releases its audio resources on page exit. It never autoplays or automatically resumes. Sound preferences are saved locally; no music is streamed and no third-party recording rights, subscription or health benefit is supplied.
 
-## Link a founder recipient
+## Historical founder recipient certificates
 
-The Coin page preserves the original signed founder proof and can add a wallet recipient record. Connect a compatible browser extension, review the exact account and chain, sign the fixed recipient message, then explicitly start fresh GPU proof. No payment or token approval is requested. See [WALLET-RECIPIENT.md](WALLET-RECIPIENT.md). These archived certificates do not mint coins. The separate native DVC panel mines blocks and sends signed native payments; see [NATIVE-DVC.md](NATIVE-DVC.md).
+The **Legacy DVC history** page preserves the original signed founder proof and its Ethereum wallet recipient record. The historical flow connects a compatible browser extension, reviews the exact account and chain, signs the fixed recipient message, then explicitly starts fresh GPU proof. No payment or token approval is requested. See [WALLET-RECIPIENT.md](WALLET-RECIPIENT.md). These archived certificates do not mint coins and are separate from the native 0.13b founder enrollment. The earlier ledger is documented in [NATIVE-DVC.md](NATIVE-DVC.md).
 
 If the wallet connects but cannot read the required blocks, expand **Blockchain read service** and explicitly choose **PublicNode · Ethereum only**. This optional chain-1 service receives the connecting IP, public wallet address and exact block queries; smart-account verification also sends the public digest/signature. The wallet still supplies the account/network and signs. Wallet reads are the default, the choice is page-only, and there are no on-load calls or automatic fallback. Exact-block checks remain enforced; unsupported chains or missing state fail without verification. Error details show a safe method and numeric code, not raw provider payloads. No funds, fees, transaction permissions or data-format migration are required; existing vaults and v1/v2 records remain intact.
 

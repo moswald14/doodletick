@@ -2,24 +2,24 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Doodleverse — Scrypt mushroom miner</title><link rel="icon" href="./logo.svg" type="image/svg+xml">
 <link rel="stylesheet" href="./scrypt.css"><script type="module" src="./scrypt-ui.mjs"></script></head>
-<body><main><header><a href="./">← Doodle Tick</a><span class="tag">SCRYPT TEST NETWORK</span></header>
+<body><main><header><a href="./">← Doodle Tick</a><a href="./scrypt-wallet.html">Your wallet · Receive &amp; send</a><span class="tag" id="network-tag">DOODLEVERSE SCRYPT</span></header>
 <section class="intro"><p class="eyebrow">DOODLEVERSE COIN • Pepecoin-derived Core</p><h1>A mushroom.<br>A miner. <em>Your node.</em></h1>
-<p>Real Scrypt proofs, checked by your own Doodleverse node. This build uses disposable test coins. The live network has not launched.</p></section>
+<p id="network-description">Real Scrypt proofs, checked by your own Doodleverse node. Check the connected network below before mining.</p></section>
 <div class="garden" aria-hidden="true"><div class="stars">✧ · ✧ · ✧</div><div class="mushroom"><div class="cap">✦</div><div class="stem"></div></div><div class="soil"></div></div>
 <section class="panel"><h2>Your mining patch</h2><p id="network" role="status">Checking your node…</p>
-<form id="mining-form"><label for="address">Doodleverse receiving address</label><input id="address" name="address" autocomplete="off" spellcheck="false" maxlength="35" placeholder="Address from your Doodleverse Core test wallet" required>
-<p class="hint">A receiving address is enough to mine. Coins go directly to that address. Use its matching wallet to spend them after 30 confirmations.</p>
+<form id="mining-form"><label for="address">Doodleverse receiving address</label><input id="address" name="address" autocomplete="off" spellcheck="false" maxlength="35" placeholder="Address from your native Doodleverse wallet" required>
+<p class="hint">A receiving address is enough to mine. Coins go directly to that address. <a href="./scrypt-wallet.html">Create or restore your native wallet</a> to receive rewards and spend them after 30 confirmations.</p>
 <div class="settings"><div><label for="algorithm">Algorithm</label><select id="algorithm"><option value="scrypt">Scrypt 1024/1/1</option></select></div><div><label for="intensity">GPU intensity</label><select id="intensity"><option value="eco">Eco — 64 nonces per batch</option><option value="balanced">Balanced — 128 nonces per batch</option></select></div></div>
 <label class="toggle"><input type="checkbox" id="keep-mining" role="switch"><span>Keep mining and submit found blocks automatically</span></label>
 <p class="hint">Starts only when you press MINE NOW or run the mine command. Pauses when this tab is hidden; start again to resume. Scrypt is the chain’s fixed algorithm.</p>
 <div class="actions"><button id="mine" type="submit" disabled>MINE NOW</button><button id="stop" type="button" disabled>Stop</button><button id="check-gpu" type="button">Check GPU</button><button id="refresh" type="button">Check node</button></div></form>
 <p id="mining-status" role="status" aria-live="polite">Mining is stopped.</p><div class="readouts"><span><strong id="hashrate">0</strong> hashes / second</span><span><strong id="accepted">0</strong> blocks accepted this session</span></div></section>
-<details class="panel"><summary>Connect your own node</summary><p>Run the separate Doodleverse Core test node, then start the Keeper on the same computer with its local RPC address and cookie-file settings. The node’s control port stays on the computer; the browser receives mining jobs only.</p>
-<p>The Home Assistant Keeper can show this page, but this release does not install Core on Home Assistant. Use the computer’s Keeper for this test build.</p>
-<p><a href="https://github.com/moswald14/doodletick/tree/feature/dvc-scrypt/doodleverse-core" target="_blank" rel="noreferrer noopener">Node setup and source</a></p>
+<details class="panel"><summary>Connect your own node</summary><p>The Windows miner and Home Assistant app include a Doodleverse node. Connect at least one peer on the same network before mining. The node’s control port stays on the computer; wallet keys stay in your browser.</p>
+<p>Home Assistant runs its bundled node when enabled in the app options. The portable Windows miner includes its own node. Both keep wallet signing in your browser.</p>
+<p><a href="https://github.com/moswald14/doodletick/tree/main/doodleverse-core" target="_blank" rel="noreferrer noopener">Node setup and source</a></p>
 <p>The previous DVC ledger remains separate. Ethereum, PEPE and Pepecoin addresses and balances do not transfer to this chain.</p></details>
 <details class="panel" open><summary>GITTIT::GODDIT — input, output and errors</summary>
 <form id="command-form" class="command-form"><label for="command-input">Command</label><div class="command-row"><input id="command-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="80" placeholder="Type help for commands" aria-describedby="command-help"><button id="command-run" type="submit">Run</button></div><p id="command-help" class="hint">Press Enter or Run to submit. Use the receiving-address field above for your address.</p></form>
 <pre id="console" role="log" aria-label="Command input, output and errors" aria-live="polite" tabindex="0">Ready. No mining has started.</pre></details>
-<footer>21 million maximum planned supply · 1 million disclosed founder allocation · 20 million mineable.<br>Test-network founder keys are public fixtures. Never use them for funds.</footer>
+<footer>21 million maximum supply · 1 million disclosed founder allocation · 20 million mineable.<br>Block one includes the pinned founder allocation alongside the ordinary miner reward. Rewards mature after 30 blocks.<br>Beta network; no guaranteed value or mining return.</footer>
 </main></body></html>

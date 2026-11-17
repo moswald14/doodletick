@@ -1,3 +1,35 @@
+# Validation — Doodle Tick 0.13b
+
+## Native Scrypt mining and site wallet · 2026-11-17
+
+This section records completed development checks and separates them from the final release build and installation. The native Scrypt chain is separate from the legacy SHA-based Keeper ledger documented later. No live mainnet issuance, distributed launch, market value or independent security audit is established here.
+
+### Completed checks
+
+- [x] **Final combined application suite:** **853/853 Keeper and Home Assistant tests passed**, with zero failures or skips, in **22.60 seconds**. This covers the integrated source at the recorded run; a later Windows-launcher correction still needs its owned follow-up check and is not certified by that earlier suite.
+- [x] **Reproducible crypto and contract checks:** both browser crypto bundles reproduced byte-for-byte. Recipient bundle SHA-256: `f57c4eb5406a5d1259aa613eae06bcc5108ba507a7d73aced8eb9031223e4fd4`; native-wallet bundle: `8e531ba45829a92e1e7d689e310552461fe1e9aa0c4a569f5e3aa0152cdc34f0`. The preserved contract suite passed **10/10** offline tests in **206 seconds**; this is not a live contract deployment.
+- [x] **Actual Chrome GPU → native Core:** the site's Scrypt miner submitted **17 accepted blocks** on a disposable local regtest chain. **Stop** ended mining and the observed chain height remained stable. These were test blocks, not the owner's live balance. A subsequent receipt-handling cancellation race was fixed and covered by a focused regression; the browser observation does not substitute for a fresh final-artifact run.
+- [x] **30 browser-wallet tests:** native address/network validation, encrypted backup creation and restoration, wrong-password rejection, local previous-transaction authentication, exact amount/fee/change review, signing, lock/cancellation behavior and explicit payment confirmation passed using disposable keys.
+- [x] **19 wallet-backend tests:** public UTXO indexing, balance/maturity checks, reorganization/restart handling, bounded inputs, transaction validation and protected HTTP behavior passed. These tests do not use a server-side spending key.
+- [x] **Actual Core accepted two-way site-wallet payments:** `doodleverse-core/tests/site-wallet-functional.mjs` created and restored encrypted browser-key backups, sent **7 test DVC** to a second native wallet, then sent **1 test DVC** back. Both independently calculated fees were **226,000 atoms**. Core accepted the browser module's real signatures; values and change were checked through the full Keeper HTTP interface.
+- [x] **Valid large-block regression:** Core accepted a **220,249-byte block** containing a **10,004-output coinbase** and a **120,006-byte OP_RETURN script**. The wallet indexed its reward, waited for maturity, authenticated the complete previous transaction, signed and spent it. This prevents unrelated valid script/output sizes from permanently blocking wallet balances or spends.
+- [x] **Recovery and rejection checks:** the native fixture verified the 30-confirmation maturity boundary, mempool spent-output exclusion, idempotent pending/confirmed submission retries, identifier tampering and double-spend rejection, active-chain rollback/restoration and persistent index restart. Missing mutation headers and a foreign Origin returned HTTP 403. All keys, wallets and node data belonged to disposable tests.
+- [x] **Public founder recipient:** the owner privately created and backed up the native main-network wallet, then exported a public enrollment record. Its address/signature were verified without reading a password or private key. The checked-in public record is not a payment or coin issuance and cannot restore spending access.
+
+The native execution results above used the earlier verified Windows Core build recorded in [Core validation](../doodleverse-core/VALIDATION.md). The current source has since changed its founder pin and first-block checks. Its fork patch SHA-256 is **`641c07ba26a034e6d778a6264ab0a3ddab2690e7620829d6357ee009ad406101`**. Earlier executable tests do not certify a binary built from that changed patch.
+
+### Final build and deployment receipts still required
+
+- [ ] Build and test that exact current Core patch in CI, including consensus/functional checks and the required Windows and Home Assistant architecture artifacts. Record the successful build URL and immutable artifact checksums, then run the native compatibility checks against those artifacts.
+- [ ] Complete the later Windows-launcher correction's owned checks and generated-runtime/package verification for the final release artifacts. The 853-test application receipt above does not certify later edits or the native build.
+- [ ] Verify the packaged Windows runtime and perform the backed-up **same-app** Home Assistant update. Confirm version, original Keeper identity, node network/health, HTTPS UI, restart persistence and update settings. Record actual peer/deployment observations separately before claiming a distributed launch.
+
+### Historical validation follows
+
+The reports below retain the evidence and pending statements of their own source cuts. They do not override the completed native site-wallet and GPU-to-Core checks above, and they do not establish the current build or installation.
+
+---
+
 # Validation — Doodle Tick 0.12b
 
 ## MozCorp shared services and Telephone repairs · 2026-11-17

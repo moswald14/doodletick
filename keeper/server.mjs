@@ -11,14 +11,19 @@ import { createDvcHttpHandler } from './dvc-http.mjs';
 import { KEEPER_TIME_FORMAT, validTimeNonce } from './public/keeper-clock.mjs';
 import { createShelfIdleStore } from './shelf-idle-store.mjs';
 import { createShelfIdleHttpHandler } from './shelf-idle-http.mjs';
-import { createScryptBridge, scryptBridgeFromEnvironment } from './dvc-scrypt-node.mjs';
+import { createScryptBridge, coreConfigurationFromEnvironment } from './dvc-scrypt-node.mjs';
 import { createScryptHttpHandler } from './dvc-scrypt-http.mjs';
+import { createScryptWalletBackend } from './dvc-scrypt-wallet.mjs';
+import { createScryptWalletHttpHandler } from './dvc-scrypt-wallet-http.mjs';
 import { createMozCorpWorld } from './mozcorp-world.mjs';
 import { createMozCorpWorldHttpHandler } from './mozcorp-world-http.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 export async function createKeeperServer({ dataDir = path.join(root, '.doodletick'), lockDir = dataDir, port = 4317, vpnOptions, gardenOptions, privateRoomOptions, mozcorpOptions, scryptOptions } = {}) {
-  const handleScrypt = createScryptHttpHandler({ bridge: scryptOptions ? createScryptBridge(scryptOptions) : scryptBridgeFromEnvironment() });
+  const coreConnection = scryptOptions || coreConfigurationFromEnvironment();
+  const handleScrypt = createScryptHttpHandler({ bridge: createScryptBridge(coreConnection) });
+  const nativeWallet = createScryptWalletBackend({ ...coreConnection, dataDir: path.join(dataDir, 'native-dvc-index', coreConnection.network || 'regtest') });
+  const handleNativeWallet = createScryptWalletHttpHandler({ wallet: nativeWallet });
   await mkdir(dataDir, { recursive: true });
   // A managed Linux service keeps its lock in systemd's temporary runtime
   // directory. Its private identity and receipt ledger remain in dataDir.
@@ -76,7 +81,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
   for(const file of ['mozcorp-ui.mjs','mozcorp-cloud.mjs','mozcorp-upgrades.mjs','mozcorp.css','creative-score-player.mjs'])allowedFiles.add(file);
   for (const file of ['shelfdefense.html', 'shelfdefense.css', 'shelfdefense-art.js', 'shelfdefense-waves.js', 'shelfdefense-audio.js', 'shelfdefense-game.js', 'shelfdefense-app.js', 'shelfdefense-wave-lab.js']) allowedFiles.add(file);
   for (const file of ['shelf-idle.html', 'shelf-idle.css', 'shelf-idle-card.js', 'shelf-idle-client.mjs', 'shelf-idle.mjs']) allowedFiles.add(file);
-  for (const file of ['scrypt.html', 'scrypt.css', 'scrypt-ui.mjs', 'dvc-scrypt-miner.mjs']) allowedFiles.add(file);
+  for (const file of ['scrypt.html', 'scrypt.css', 'scrypt-ui.mjs', 'dvc-scrypt-miner.mjs', 'scrypt-wallet.html', 'scrypt-wallet.css', 'scrypt-wallet-ui.mjs', 'scrypt-wallet-core.mjs', 'scrypt-wallet-crypto.mjs', 'scrypt-wallet-crypto-notices.txt']) allowedFiles.add(file);
   const server = http.createServer(async (req, res) => {
     const address = server.address();
     const hostnames = [`127.0.0.1:${address.port}`, `localhost:${address.port}`];
@@ -92,10 +97,11 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
       if (await handleMozCorpWorld(req,res,url)) return;
       if (await handlePrivateRooms(req,res,url)) return;
       if (await handleShelfIdle(req,res,url)) return;
+      if (await handleNativeWallet(req,res,url)) return;
       if (await handleScrypt(req,res,url)) return;
       if (await handleDvc(req, res, url)) return;
       if (await vpn.handleLocal(req, res, url)) return;
-      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.12b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt(), nativeCoin: { available: !dvcUnavailable, error: dvcUnavailable ? 'DVC_STORAGE' : null } });
+      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.13b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt(), nativeCoin: { available: !dvcUnavailable, error: dvcUnavailable ? 'DVC_STORAGE' : null } });
       if (req.method === 'GET' && url.pathname === '/api/time') {
         const receivedAt = Date.now(), nonce = url.searchParams.get('nonce');
         if (!validTimeNonce(nonce) || url.searchParams.getAll('nonce').length !== 1) return send(400, { error: 'A fresh clock challenge is required.' });
@@ -125,12 +131,12 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
       return send(200, await readFile(path.join(root, 'public', file), 'utf8'), types[path.extname(file)]);
     } catch (e) { return send(e instanceof SyntaxError ? 400 : 500, { error: e instanceof SyntaxError ? 'Invalid JSON.' : 'The local witness could not complete this request.' }); }
   });
-  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); }).catch(async e => { await mozcorp.close?.().catch(() => {}); await shelfIdle.close().catch(() => {}); await vpn.close(); await dvc?.close(); await garden.idle(); await lock.close(); await unlink(lockPath); throw e; });
+  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); }).catch(async e => { await nativeWallet.close(); await mozcorp.close?.().catch(() => {}); await shelfIdle.close().catch(() => {}); await vpn.close(); await dvc?.close(); await garden.idle(); await lock.close(); await unlink(lockPath); throw e; });
   const close = async () => {
     await vpn.close(); await new Promise(resolve => server.close(resolve)); await queue; await privateRooms.idle();
     let shelfCloseError;
     try { await shelfIdle.close(); await mozcorp.close?.(); } catch (error) { shelfCloseError = error; }
-    await garden.idle(); await dvc?.close(); await lock.close(); await unlink(lockPath);
+    await garden.idle(); await dvc?.close(); await nativeWallet.close(); await lock.close(); await unlink(lockPath);
     if (shelfCloseError) throw shelfCloseError;
   };
   return { server, close, vpn, dvc, port: server.address().port };

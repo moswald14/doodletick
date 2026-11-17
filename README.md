@@ -1,10 +1,28 @@
-# Doodle Tick · 0.12b
+# Doodle Tick · 0.13b
 
-**0.12b brings MozCorp’s cloud savepoints, fictional HOPE-LON feed and upgrade desk into Keeper.** Open **MozCorp → Keeper cloud** or **Upgrade desk**. Shared records live with this Keeper and survive restarts. AI drafts are optional and use a server-side key with explicit instruction-only consent. See [the MozCorp guide](keeper/MOZCORP.md).
+**0.13b adds a Pepecoin-derived Scrypt blockchain, a native browser wallet and a portable Windows GPU miner.** Open **Doodleverse Coin** to mine to a receiving address, or **Your wallet · Receive & send** to create an encrypted wallet and review a payment. Home Assistant includes its own validating node; your computer does the GPU work.
 
 A creator arcade inspired by the loops of a telephone cord: an hourly color clock, Dot Wave sound mushrooms, an encrypted vault and direct peer connections. Run a Keeper on your computer or Home Assistant.
 
 [![Add Doodle Tick to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fmoswald14%2Fdoodletick)
+
+## Native Scrypt mining and payments
+
+Doodleverse Core uses its own network, genesis and **Scrypt 1024/1/1** proof of work. Its maximum supply is **21,000,000 DVC: 1,000,000 for the publicly disclosed founder recipient and 20,000,000 mineable**. The [signed native founder record](doodleverse-core/founder-recipient.json) identifies `DrMNk6EFRQ8zbLS8MAktyt2PwxyYThW1tp`; the allocation is a required output of the first mined block, not a balance created by importing that record. Mined rewards need **30 confirmations** before spending. Read the [Core rules and setup](doodleverse-core/README.md).
+
+Create or restore a native wallet on the connected network, download its encrypted backup and keep its password. Your signing key stays in the browser; Home Assistant and Core do not hold it. The backup is separate from your creator vault and Home Assistant backup. Changing browsers, profiles or site addresses requires deliberately restoring that encrypted wallet. Ethereum/Coinbase `0x` addresses, PEPE and Pepecoin balances do not work on this chain.
+
+Mining needs only a native receiving address. Choose **Eco** or **Balanced**, then press the red **MINE NOW** button. **Keep mining** submits found blocks and requests fresh work until stopped; hiding the tab pauses work and requires a new start. Intensity changes GPU batch size, not the chain's algorithm. Chrome needs working hardware WebGPU; there is no automatic CPU miner. Mining is competitive and has no guaranteed rewards, earnings or market value.
+
+To pay someone, unlock **Your wallet**, enter a same-network native address and amount, then choose **Review payment**. Review the recipient, network fee, total and returned change before **Sign and send this payment**. The minimum payment is 0.01 DVC; the wallet checks previous transaction amounts locally and signs only the reviewed payment. A submitted transaction may remain pending until another block is mined. A single node's acceptance is not final settlement.
+
+The Windows package includes Core, Keeper and its runtime; use [the Windows miner instructions](doodleverse-core/windows/README.md). Home Assistant defaults to the main network with its Core wallet disabled and control port kept private. Configure reachable peers on the same published chain; no inherited Pepecoin seed network or global relay is supplied. An isolated node is not a distributed network.
+
+This is experimental beta software. Disposable Core tests have covered GPU block acceptance, wallet transfers, backup restoration and chain reorganizations. Those tests do not establish a live launch, a distributed network or real earnings. Source review is not an independent security audit; launch and installation results must be reported separately. Existing creator vaults, garden balances and **Legacy DVC history** remain separate and are not converted.
+
+## MozCorp shared services
+
+**0.12b brought MozCorp’s cloud savepoints, fictional HOPE-LON feed and upgrade desk into Keeper.** Open **MozCorp → Keeper cloud** or **Upgrade desk**. Shared records live with this Keeper and survive restarts. AI drafts are optional and use a server-side key with explicit instruction-only consent. See [the MozCorp guide](keeper/MOZCORP.md).
 
 ## Shelf Defense
 
@@ -48,7 +66,9 @@ Sleep sounds can continue between app views and in a background tab. Keep the pa
 
 The clock now checks signed, fresh responses from this Keeper, shows synchronization status and uncertainty, and projects time using the browser's elapsed-time clock. Private garden requests require fresh Keeper time. Automatic day/night appearance follows the same projected time while retaining the device's time zone and your chosen hours. A Keeper signature identifies the clock source; it does not prove Internet UTC accuracy or change DVC consensus. Read [time and Sleep garden details](keeper/TIME-AND-SLEEP.md) and the [validation status](keeper/VALIDATION.md).
 
-## Mine to an address
+## Legacy DVC history: mine to an address
+
+The following 0.6.x notes describe the earlier Keeper ledger, accessible through **Legacy DVC history**. Its `0x` destinations, SHA algorithms and six-block maturity do not apply to the 0.13b native Scrypt chain above. Historical balances and signatures remain in their original format; no bridge or conversion is provided.
 
 **0.6.2b lets you mine using a Mining reward address alone.** Enter the full nonzero `0x` address, choose your algorithm and intensity, then press **MINE NOW**. Mining makes no wallet connection or signing request. **Mining address balances** shows that destination's available funds, immature rewards and pending outgoing payments separately from the wallet used for sending.
 
@@ -72,7 +92,7 @@ turning repeat off, leaving the page, changing the reward address or an error en
 reopening never resumes it. The mushroom's session counter records accepted
 blocks, not extra rewards or a separate garden coin balance.
 
-## Native Doodleverse Coin
+## Legacy native Doodleverse Coin
 
 **0.6b introduced an independent, experimental Doodleverse blockchain.** Open **Doodleverse Coin**, enter a mining reward address, choose SHA-256 or SHA-256d and press the red **MINE NOW** button. Each round searches for one block with a visible Stop control and a 60-second limit; 0.6.1b adds opt-in Keep mining. A valid block earns native DVC; rewards mature after six further blocks. The fixed maximum is **21,000,000 DVC: 1,000,000 disclosed founder coins and 20,000,000 mineable coins**.
 
@@ -109,15 +129,15 @@ Read the [Doodleverse direction and developer invitation](DOODLEVERSE.md). Human
 - Each player can choose the separate public-wallet DGT garden mode from 0.2b. Every public transaction requires wallet confirmation and network fees.
 - Three small games, a world workshop, licensed peer file sharing, an encrypted creator vault and automatic red night mode remain available.
 
-Private Doodle Coins, public DGT gardens and DVC certificates are separate. There is no conversion, redemption or promised market value. Spirograph comparison checks signed keys, not legal identity or authorship. Creative Commons handling preserves supplied attribution and validates declared uses inside the app; it cannot stop copying outside it.
+Private Doodle Coins, public DGT gardens, legacy DVC, native Scrypt DVC and DVC certificates are separate. There is no conversion, redemption or promised market value. Spirograph comparison checks signed keys, not legal identity or authorship. Creative Commons handling preserves supplied attribution and validates declared uses inside the app; it cannot stop copying outside it.
 
 **Connection changes:** room codes and private garden access work through the same Keeper. Separate Keepers use signed manual peer invitations for games/files. The old remote VPN bridges are removed; data held by another Keeper has not moved. Open that Keeper through its own trusted interface to access its garden. Recreate old pairing codes. A room's player host and browsers serving files must stay open.
 
 ## Install in Home Assistant
 
-Use Home Assistant OS on 64-bit ARM or AMD64. Add `https://github.com/moswald14/doodletick` under **Settings → Apps → Install app → Repositories**, install **Doodle Tick Keeper**, and open its Web UI. Enable **Start on boot**, **Watchdog** and **Auto update** after verifying setup. The first source build can take several minutes. Cold backups stop the app briefly for a consistent snapshot.
+Use Home Assistant OS on 64-bit ARM or AMD64. Add `https://github.com/moswald14/doodletick` under **Settings → Apps → Install app → Repositories**, install **Doodle Tick Keeper**, and open its Web UI. For an existing repository installation, create a backup and update the same app; do not uninstall it. Enable **Start on boot**, **Watchdog** and **Auto update** after verifying setup. The first source build, including Core, can take time. Cold backups stop the app briefly for a consistent snapshot.
 
-Open Home Assistant over trusted **HTTPS** for vault signatures and GPU work. Home Assistant Cloud remote HTTPS is one supported option; keep Home Assistant sign-in enabled. The app needs no Tailscale login, router DMZ, published browser port or network-administration capability. See the [Home Assistant guide](doodletick/DOCS.md).
+Open Home Assistant over trusted **HTTPS** for wallet signatures and GPU work. Home Assistant Cloud remote HTTPS is one supported option; keep Home Assistant sign-in enabled. The app needs no Tailscale login, router DMZ, published browser port or network-administration capability. Its optional TCP 38474 mapping is only for native blockchain peers and is disabled on the host by default; RPC is never published. See the [Home Assistant guide](doodletick/DOCS.md).
 
 This is an app/add-on repository. [HACS does not distribute add-ons](https://www.hacs.dev/docs/faq/addons/); a dashboard companion would be separate.
 
@@ -127,9 +147,11 @@ Keep the original installation and backup. Repository apps have a different iden
 
 ## Desktop and Raspberry Pi OS
 
-Download a complete desktop or Pi asset from [Releases](https://github.com/moswald14/doodletick/releases). Desktop requires Node.js 22 or newer. Extract the desktop ZIP, run `node server.mjs` inside `doodletick-keeper`, and open **http://127.0.0.1:4317**. No npm dependencies are required to run the app. For a source checkout, run it from `keeper/`.
+For mining on Windows, use the complete **Windows GPU miner** asset from [Releases](https://github.com/moswald14/doodletick/releases), extract it and run **Start-Doodleverse.cmd**. It includes the native node and runtime; see [its guide](doodleverse-core/windows/README.md). Keep the launcher and mining tab open. No mining begins until you press **MINE NOW**.
 
-The separate Pi tarball includes checksums and the [Pi OS setup guide](keeper/pi/START-HERE.md). It does not install Tailscale. Pi OS service installation remains a separate hardware verification task from the Home Assistant app.
+The separate Keeper desktop ZIP needs Node.js 24 or newer: run `node server.mjs` inside `doodletick-keeper` and open **http://127.0.0.1:4317**. No npm dependencies are required to run Keeper. For a source checkout, run it from `keeper/`. This general desktop package does not start a native Core node; use the complete Windows miner or configure a matching local node separately.
+
+The separate Pi tarball includes checksums and the [Pi OS setup guide](keeper/pi/START-HERE.md). It installs Keeper without Tailscale or a bundled native Core service. The Home Assistant app supplies Core separately. Pi OS service installation remains a separate hardware verification task from the Home Assistant app.
 
 ## Build with us
 

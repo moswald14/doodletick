@@ -18,6 +18,33 @@ dvc_require() {
   done
 }
 
+dvc_copy_keeper_source() {
+  # Copy the canonical public runtime, never an operator's local wallet/data
+  # directory. The packaged fixture imports ../../keeper from build-support/tests.
+  python3 - "$DVC_REPO_ROOT/keeper" "$DVC_STAGE_DIR/source/keeper" <<'PY'
+from pathlib import Path, PurePosixPath
+import shutil
+import sys
+
+source = Path(sys.argv[1]).resolve()
+destination = Path(sys.argv[2])
+inventory = source / 'pi/runtime-files.txt'
+names = inventory.read_text(encoding='utf-8').splitlines()
+if not names or len(names) > 2000 or len(set(names)) != len(names):
+    raise RuntimeError('Invalid canonical Keeper runtime inventory.')
+for name in names + ['pi/runtime-files.txt']:
+    relative = PurePosixPath(name)
+    if not name or relative.is_absolute() or '\\' in name or ':' in name or any(part in ('', '.', '..') for part in name.split('/')):
+        raise RuntimeError('Unsafe canonical Keeper source path.')
+    original = source / name
+    if not original.is_file() or original.is_symlink() or original.resolve() != original:
+        raise RuntimeError('Missing or linked canonical Keeper runtime source: ' + name)
+    target = destination / name
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(original, target)
+PY
+}
+
 dvc_prepare() {
   DVC_PLATFORM="$1"
   DVC_PATCH="$DVC_CORE_DIR/patches/doodleverse.patch"
@@ -25,6 +52,7 @@ dvc_prepare() {
   [[ -s "$DVC_PATCH" ]] || dvc_fail "Missing nonempty consensus patch: $DVC_PATCH"
   [[ -f "$DVC_CORE_DIR/tests/functional.py" ]] || dvc_fail 'Missing isolated regtest functional tests.'
   [[ -f "$DVC_CORE_DIR/tests/wallet-recovery.py" ]] || dvc_fail 'Missing isolated wallet recovery tests.'
+  [[ -f "$DVC_CORE_DIR/tests/site-wallet-functional.mjs" ]] || dvc_fail 'Missing isolated browser-wallet functional tests.'
   dvc_require git python3 make autoconf automake libtoolize pkg-config tar gzip sha256sum
   python3 -c 'import sys; assert sys.version_info >= (3, 10), "Python 3.10 or newer is required"'
   DVC_JOBS="${DVC_JOBS:-2}"
@@ -65,10 +93,16 @@ dvc_prepare() {
   cp "$DVC_PATCH" "$DVC_STAGE_DIR/patches/doodleverse.patch"
   mkdir -p "$DVC_STAGE_DIR/source/build-support"
   cp -R "$DVC_CORE_DIR/scripts" "$DVC_CORE_DIR/tests" "$DVC_STAGE_DIR/source/build-support/"
-  mkdir -p "$DVC_STAGE_DIR/source/keeper"
-  cp "$DVC_REPO_ROOT/keeper/dvc-scrypt-node.mjs" "$DVC_REPO_ROOT/keeper/dvc-scrypt-protocol.mjs" "$DVC_STAGE_DIR/source/keeper/"
+  dvc_copy_keeper_source
   cp "$DVC_REPO_ROOT/.github/workflows/doodleverse-core.yml" "$DVC_STAGE_DIR/source/build-support/"
-  printf '%s\n' 'Experimental test-chain build. No production founder allocation is configured.' > "$DVC_STAGE_DIR/EXPERIMENTAL.txt"
+  printf '%s\n' \
+    'Run from the extracted package root with Node.js 24 or newer:' \
+    'node source/build-support/tests/site-wallet-functional.mjs --daemon bin/pepecoind --cli bin/pepecoin-cli' \
+    'On Windows, append .exe to both binary paths. All funded checks use temporary regtest data that the fixture removes.' > "$DVC_STAGE_DIR/source/build-support/README-site-wallet.txt"
+  printf '%s\n' \
+    'Doodleverse Core beta: mainnet-capable, with the founder recipient pinned in the included chain manifest and consensus patch.' \
+    'This build has no independent security certification. Passing checks do not establish production readiness.' \
+    'See validation/ for the checks executed on this platform. The build manifest retains productionReady=false.' > "$DVC_STAGE_DIR/EXPERIMENTAL.txt"
   printf '%s\n' "Build workspace: $DVC_WORK_DIR" "Upstream: $DVC_UPSTREAM_COMMIT" "Patched tree: $DVC_PATCHED_TREE"
 }
 
@@ -131,7 +165,9 @@ dvc_build_linux() {
   dvc_prepare linux-x86_64
   [[ "$(uname -m)" == x86_64 ]] || dvc_fail 'This script produces the Linux x86_64 build only.'
   dvc_require gcc g++ ccache ldd dpkg-query node
+  node -e 'if (Number(process.versions.node.split(".")[0]) < 24) throw new Error("The native site-wallet checks require Node.js 24 or newer.")'
   dvc_record_tools
+  node --version >> "$DVC_STAGE_DIR/validation/build-tools.txt"
   ccache --version >> "$DVC_STAGE_DIR/validation/build-tools.txt"
   dpkg-query -W -f='${Package}\t${Version}\n' libssl-dev libssl3 libevent-dev libdb5.3++-dev libboost-system-dev libboost-filesystem-dev libboost-chrono-dev libboost-program-options-dev libboost-test-dev libboost-thread-dev > "$DVC_STAGE_DIR/validation/system-libraries.txt"
   (
@@ -164,7 +200,10 @@ dvc_build_linux() {
   ldd "$DVC_STAGE_DIR/bin/pepecoin-cli" >> "$DVC_STAGE_DIR/validation/runtime-libraries.txt"
   python3 -B "$DVC_CORE_DIR/tests/functional.py" --daemon "$DVC_STAGE_DIR/bin/pepecoind" --cli "$DVC_STAGE_DIR/bin/pepecoin-cli" 2>&1 | tee "$DVC_STAGE_DIR/validation/functional-tests.txt"
   python3 -B "$DVC_CORE_DIR/tests/wallet-recovery.py" --daemon "$DVC_STAGE_DIR/bin/pepecoind" --cli "$DVC_STAGE_DIR/bin/pepecoin-cli" 2>&1 | tee "$DVC_STAGE_DIR/validation/wallet-recovery-tests.txt"
-  dvc_package 'Doodleverse consensus suite, Scrypt vectors, isolated local regtest functional checks and encrypted-wallet backup/recovery checks passed on Linux; the inherited Pepecoin full suite was not run.'
+  # Run from the packaged source layout so missing runtime imports also fail the
+  # release gate. The fixture uses only disposable regtest nodes and browser keys.
+  node "$DVC_STAGE_DIR/source/build-support/tests/site-wallet-functional.mjs" --daemon "$DVC_STAGE_DIR/bin/pepecoind" --cli "$DVC_STAGE_DIR/bin/pepecoin-cli" 2>&1 | tee "$DVC_STAGE_DIR/validation/site-wallet-tests.txt"
+  dvc_package 'Doodleverse consensus suite, Scrypt vectors, isolated local regtest functional checks, encrypted-wallet backup/recovery checks and browser-wallet signing/payment/reorg checks passed on Linux; the inherited Pepecoin full suite was not run.'
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

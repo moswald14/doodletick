@@ -22,20 +22,23 @@ index 34c7811d6f6fca41a7903050a59ee28ea404e512..0f6052cbe00ab67c306946286677105d
  AC_CONFIG_AUX_DIR([build-aux])
 diff --git a/contrib/doodleverse/README.md b/contrib/doodleverse/README.md
 new file mode 100644
-index 0000000000000000000000000000000000000000..d856336a5aac85bc9909c9ed7629714181d6cbf5
+index 0000000000000000000000000000000000000000..520354729aa572504030d182c10b8ab24bd0cc43
 --- /dev/null
 +++ b/contrib/doodleverse/README.md
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,65 @@
 +<!-- SPDX-License-Identifier: GPL-3.0-only -->
 +
 +# Doodleverse Core development fork
 +
 +This is an experimental independent Scrypt blockchain derived from Pepecoin
 +Core v1.1.0, pinned to commit
-+`4fb5a0cd930c0df82c88292e973a7b7cfa06c4e8`. It is development software for
-+disposable test networks. Mainnet startup is disabled until a real native DVC
-+founder receiving address is reviewed and pinned in consensus. The historical
-+Ethereum-style `0x` address is not a native DVC destination.
++`4fb5a0cd930c0df82c88292e973a7b7cfa06c4e8`. It is experimental development
++software. The native founder receiving address is pinned in consensus from
++the signed [public enrollment](founder-recipient.json):
++`DrMNk6EFRQ8zbLS8MAktyt2PwxyYThW1tp`. The historical Ethereum-style `0x`
++address is not a native DVC destination. Mainnet startup remains guarded against
++an empty founder script; enabling the chain does not establish market value,
++exchange availability, or an independently audited network.
 +
 +## Licensing
 +
@@ -58,16 +61,28 @@ index 0000000000000000000000000000000000000000..d856336a5aac85bc9909c9ed76297141
 +
 +[chain-manifest.json](chain-manifest.json) records the protocol revision,
 +genesis headers and hashes, Scrypt proofs, ports, network identifiers, address
-+prefixes, supply limits and founder destination status. `mainnet_ready` is
-+deliberately `false`. Testnet and regtest use a disclosed public test key for
-+the founder allocation; anyone can spend those test coins. They are not a
-+mainnet allocation or a claim of ownership.
++prefixes, supply limits, the founder destination and the enrollment file's
++SHA256. `mainnet_ready` means the native destination is pinned. Testnet and
++regtest use a disclosed public test key for the founder allocation; anyone can
++spend those test coins. They are not a mainnet allocation or a claim of ownership.
 +
 +Run `python3 contrib/doodleverse/genesis.py --verify` from the source root to
 +check the pinned genesis Scrypt proofs. Each genesis has a zero-value
 +unspendable output. The exact founder allocation belongs to block 1 and is
 +subject to normal coinbase maturity and chain rollback. Direct Scrypt mining
 +is supported; AuxPoW is disabled.
++
++Block 1 must contain exactly one output of 1,000,000 DVC to the pinned founder
++script. Its normal mining reward may use a separate output to that same address.
++The total coinbase value is still limited to the scheduled allocation, ordinary
++subsidy and validated fees. Merging the allocation with the miner reward,
++splitting it, redirecting it, or duplicating it fails the allocation rule.
++
++Main-chain templates require a connected peer. At height zero only, the pinned
++genesis may produce a template even after its timestamp has aged past the normal
++initial-download cutoff. This exception does not apply during import/reindex,
++when a later header is known, or after the first block. It does not change the
++global initial-download state or allow peerless main-chain mining.
 +
 +After compiling, run the `doodleverse_tests` and `scrypt_tests` Boost suites.
 +The new suite checks supply, allocation rejection, maturity, fee limits,
@@ -78,10 +93,10 @@ index 0000000000000000000000000000000000000000..d856336a5aac85bc9909c9ed76297141
 +network test passed.
 diff --git a/contrib/doodleverse/chain-manifest.json b/contrib/doodleverse/chain-manifest.json
 new file mode 100644
-index 0000000000000000000000000000000000000000..cedf1e1d69e4abefee2cfa131c3cda4164dd7641
+index 0000000000000000000000000000000000000000..9778cfc451e931e56710df3547ebfcbc06cc495a
 --- /dev/null
 +++ b/contrib/doodleverse/chain-manifest.json
-@@ -0,0 +1,93 @@
+@@ -0,0 +1,96 @@
 +{
 +  "name": "Doodleverse Core",
 +  "currency": "DVC",
@@ -90,7 +105,7 @@ index 0000000000000000000000000000000000000000..cedf1e1d69e4abefee2cfa131c3cda41
 +    "tag": "v1.1.0",
 +    "commit": "4fb5a0cd930c0df82c88292e973a7b7cfa06c4e8"
 +  },
-+  "mainnet_ready": false,
++  "mainnet_ready": true,
 +  "algorithm": "scrypt-1024-1-1",
 +  "auxpow_enabled": false,
 +  "block_version": 1146486788,
@@ -125,9 +140,12 @@ index 0000000000000000000000000000000000000000..cedf1e1d69e4abefee2cfa131c3cda41
 +      "private_key_prefix": 159,
 +      "ext_public_prefix": "02d0d0b1",
 +      "ext_private_prefix": "02d0d0b2",
-+      "founder_script": null,
-+      "founder_address": null,
-+      "founder_is_public_test_fixture": false
++      "founder_script": "76a914eff02da0f09c559243ffe295d6c2fd9acc61cea888ac",
++      "founder_address": "DrMNk6EFRQ8zbLS8MAktyt2PwxyYThW1tp",
++      "founder_is_public_test_fixture": false,
++      "founder_public_key": "0291875d7ad94429ea2802e18812e36476a35b299677ed984512d72e7a178e9861",
++      "founder_recipient_record": "founder-recipient.json",
++      "founder_recipient_record_sha256": "74881a2d080d9514fc107e2fb680284a0917e5b2dbc8399f28cdb7ae04e72ba0"
 +    },
 +    "test": {
 +      "network": "test",
@@ -174,6 +192,25 @@ index 0000000000000000000000000000000000000000..cedf1e1d69e4abefee2cfa131c3cda41
 +      "founder_is_public_test_fixture": true
 +    }
 +  }
++}
+diff --git a/contrib/doodleverse/founder-recipient.json b/contrib/doodleverse/founder-recipient.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..8a4866148470bc65507237a2ab0d7a9a3bbccebe
+--- /dev/null
++++ b/contrib/doodleverse/founder-recipient.json
+@@ -0,0 +1,13 @@
++{
++  "format": "doodleverse-native-founder-recipient-v1",
++  "domain": "Doodleverse Core native founder enrollment",
++  "network": "main",
++  "genesis": "0307d627595365a02cbcfd7c2614be41b1f38989ac550f5499343226f1d2d9bb",
++  "address": "DrMNk6EFRQ8zbLS8MAktyt2PwxyYThW1tp",
++  "publicKey": "0291875d7ad94429ea2802e18812e36476a35b299677ed984512d72e7a178e9861",
++  "founderAtoms": "100000000000000",
++  "maximumSupplyAtoms": "2100000000000000",
++  "purpose": "Approve this native address for the disclosed Doodleverse founder allocation. This is a message, not a transaction.",
++  "digest": "057e359411ce090fe6ae9f850e7511a4195ef3371b3187ec21ed88b476b76c73",
++  "signature": "0xebfce10b66ff7846e4f6cad4dfdd302064639abea2085b6e765ae554836a0fcd2678c384d23750f4bb1e05bb629f7e5b2a6431b206edb2cda142b79532a486fe1b"
 +}
 diff --git a/contrib/doodleverse/genesis.py b/contrib/doodleverse/genesis.py
 new file mode 100644
@@ -441,10 +478,10 @@ index e7cd29773137f5c175a51f79eba2bfc3795bbf5c..c85a920e78008df4c1714857699c0e0f
              // Daemonize
              if (daemon(1, 0)) { // don't chdir (1), do close FDs (0)
 diff --git a/src/chainparams.cpp b/src/chainparams.cpp
-index aabbbe368642f6b90d6ac83f188dc291b3673775..1750e32875dae601d24a86208912c9c943ed7611 100644
+index aabbbe368642f6b90d6ac83f188dc291b3673775..1fd287877aad8b34b3a513c6a857128134840cef 100644
 --- a/src/chainparams.cpp
 +++ b/src/chainparams.cpp
-@@ -1,433 +1,186 @@
+@@ -1,433 +1,189 @@
  // Copyright (c) 2010 Satoshi Nakamoto
  // Copyright (c) 2009-2016 The Bitcoin Core developers
  // Copyright (c) 2022 The Dogecoin Core developers
@@ -734,10 +771,13 @@ index aabbbe368642f6b90d6ac83f188dc291b3673775..1750e32875dae601d24a86208912c9c9
 +        nDefaultPort = 38474;
 +        nPruneAfterHeight = 100000;
 +        SetPrefixes(31, 50, 159, 0xb1, 0xb2);
-+        // MAINNET LAUNCH GUARD: do not replace with a fixture or an Ethereum
-+        // address. Pin a reviewed script from the user's new native DVC wallet.
-+        // AppInitParameterInteraction refuses startup while this is empty.
-+        consensus.founderScriptPubKey.clear();
++        // Native founder enrollment: DrMNk6EFRQ8zbLS8MAktyt2PwxyYThW1tp.
++        // The signed public record is contrib/doodleverse/founder-recipient.json
++        // (SHA256 74881a2d080d9514fc107e2fb680284a0917e5b2dbc8399f28cdb7ae04e72ba0).
++        // AppInitParameterInteraction still refuses startup if this is empty.
++        const std::vector<unsigned char> founderScript = ParseHex(
++            "76a914eff02da0f09c559243ffe295d6c2fd9acc61cea888ac");
++        consensus.founderScriptPubKey = CScript(founderScript.begin(), founderScript.end());
 +        SetGenesis(1794873600, 63487, 0x1f00ffff,
 +            "0307d627595365a02cbcfd7c2614be41b1f38989ac550f5499343226f1d2d9bb",
 +            "172a09dd94b9bbc94d3d1f7611015c8785c1dbe86e3823694c80622d2eb6458f");
@@ -1075,7 +1115,7 @@ index 7721994dbf9c567f48e476134fabede887939455..a64740412b37d074c73794c86ed36631
  #endif //HAVE_CONFIG_H
  
 diff --git a/src/consensus/params.h b/src/consensus/params.h
-index 317fa34d40385a29b62b3c139fea2ccee7c19583..19512f5df98d2e068a092aacbd31a46845b12933 100644
+index 317fa34d40385a29b62b3c139fea2ccee7c19583..d867838da7f9919b906291bc51fb26e0d8ee0163 100644
 --- a/src/consensus/params.h
 +++ b/src/consensus/params.h
 @@ -8,6 +8,7 @@
@@ -1090,7 +1130,7 @@ index 317fa34d40385a29b62b3c139fea2ccee7c19583..19512f5df98d2e068a092aacbd31a468
  struct Params {
      uint256 hashGenesisBlock;
      int nSubsidyHalvingInterval;
-+    /** Pinned founder destination; empty on mainnet until an actual DVC address is approved. */
++    /** Approved native founder destination; mainnet startup rejects an empty script. */
 +    CScript founderScriptPubKey;
      /** Used to check majorities for block version upgrade */
      int nMajorityEnforceBlockUpgrade;
@@ -1122,25 +1162,58 @@ index 9c87229f214fee39f14a211344244d33a7587456..d1f665bfacfe0b44286fed511a904704
  
      // also see: InitParameterInteraction()
 diff --git a/src/miner.cpp b/src/miner.cpp
-index fa7c90f729b6b345b55295d32ad93e0d5f690456..6b0ffcf8ea237322dc0dade082fb18e0d16d6dfc 100644
+index fa7c90f729b6b345b55295d32ad93e0d5f690456..0938be3157c7757556e48ebebfb9046224bf3a34 100644
 --- a/src/miner.cpp
 +++ b/src/miner.cpp
-@@ -195,6 +195,13 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
+@@ -48,6 +48,17 @@ uint64_t nLastBlockTx = 0;
+ uint64_t nLastBlockSize = 0;
+ uint64_t nLastBlockWeight = 0;
+ 
++bool IsDoodleverseGenesisBootstrap(const CBlockIndex* activeTip, const CBlockIndex* bestHeader,
++                                  const Consensus::Params& params, bool importing, bool reindex)
++{
++    if (importing || reindex || !activeTip || activeTip->nHeight != 0 ||
++        activeTip->GetBlockHash() != params.hashGenesisBlock)
++        return false;
++    // A known header above genesis means there is a chain to download first.
++    return !bestHeader || (bestHeader->nHeight == 0 &&
++                          bestHeader->GetBlockHash() == params.hashGenesisBlock);
++}
++
+ class ScoreCompare
+ {
+ public:
+@@ -195,6 +206,11 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
      coinbaseTx.vout[0].scriptPubKey = scriptPubKeyIn;
      coinbaseTx.vout[0].nValue = nFees + GetPepecoinBlockSubsidy(nHeight, consensus, pindexPrev->GetBlockHash(
  ));
 +    if (nHeight == 1) {
 +        if (consensus.founderScriptPubKey.empty())
 +            throw std::runtime_error("Doodleverse founder destination has not been pinned");
-+        if (scriptPubKeyIn == consensus.founderScriptPubKey)
-+            throw std::runtime_error("Block 1 miner reward must use a separate destination from the exact founder allocation");
 +        coinbaseTx.vout.emplace_back(DVC_FOUNDER_ALLOCATION, consensus.founderScriptPubKey);
 +    }
      coinbaseTx.vin[0].scriptSig = CScript() << nHeight << OP_0;
      pblock->vtx[0] = MakeTransactionRef(std::move(coinbaseTx));
      pblocktemplate->vchCoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, consensus);
+diff --git a/src/miner.h b/src/miner.h
+index f2a9982b80e9399ef82b1216ddb7a4e08b5f18dc..5d4541582b9ee886c3e9b499cf355039ba103820 100644
+--- a/src/miner.h
++++ b/src/miner.h
+@@ -23,6 +23,12 @@ class CWallet;
+ 
+ namespace Consensus { struct Params; };
+ 
++/** Permit the first template on a pinned zero-height chain even when its
++ * genesis timestamp is old. This does not waive peers or change global IBD.
++ * The caller must hold cs_main when passing live chain indexes. */
++bool IsDoodleverseGenesisBootstrap(const CBlockIndex* activeTip, const CBlockIndex* bestHeader,
++                                  const Consensus::Params& params, bool importing, bool reindex);
++
+ static const bool DEFAULT_PRINTPRIORITY = false;
+ 
+ struct CBlockTemplate
 diff --git a/src/pepecoin.cpp b/src/pepecoin.cpp
-index 0d233ea871a7080660921414ce4c87d3afc8822e..f22a4d6eb3f38db2338f7599792948c9b67ad7bb 100644
+index 0d233ea871a7080660921414ce4c87d3afc8822e..2f9ba22171bbe57f6d48538c5848eff39f307e49 100644
 --- a/src/pepecoin.cpp
 +++ b/src/pepecoin.cpp
 @@ -2,8 +2,7 @@
@@ -1250,14 +1323,14 @@ index 0d233ea871a7080660921414ce4c87d3afc8822e..f22a4d6eb3f38db2338f7599792948c9
 +        return false;
 +    unsigned matches = 0;
 +    for (const CTxOut& output : coinbase.vout) {
-+        if (output.scriptPubKey == params.founderScriptPubKey) {
++        if (output.scriptPubKey == params.founderScriptPubKey &&
++            output.nValue == DVC_FOUNDER_ALLOCATION) {
 +            ++matches;
-+            if (output.nValue != DVC_FOUNDER_ALLOCATION)
-+                return false;
 +        }
 +    }
-+    // Exactly one matching output prevents splitting, duplicate zero outputs,
-+    // extra miner fees at the founder script, and redirection of the allocation.
++    // Require one exact allocation, without preventing the founder from also
++    // earning the ordinary miner reward in a separate output. ConnectBlock's
++    // total reward check caps every additional output, including this script.
 +    return matches == 1;
 +}
  
@@ -1339,7 +1412,7 @@ index f89b07e83533b13320094a3d21c3bfadbb087ba4..ad97104fa1c5b21d969bf29dbf77cb0a
      }
  }
 diff --git a/src/rpc/mining.cpp b/src/rpc/mining.cpp
-index f8272d846e8939c5cbf1479fdbbf6e49c04ba05f..ab836ba45b9832750004b20d93377908d770585a 100644
+index f8272d846e8939c5cbf1479fdbbf6e49c04ba05f..4352d330c62cc1cb845fdaf8e307efc0de3f79be 100644
 --- a/src/rpc/mining.cpp
 +++ b/src/rpc/mining.cpp
 @@ -98,6 +98,8 @@ UniValue getnetworkhashps(const JSONRPCRequest& request)
@@ -1351,7 +1424,7 @@ index f8272d846e8939c5cbf1479fdbbf6e49c04ba05f..ab836ba45b9832750004b20d93377908
      // Pepecoin: Never mine witness tx
      const bool fMineWitnessTx = false;
      static const int nInnerLoopCount = 0x10000;
-@@ -502,11 +504,11 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
+@@ -502,11 +504,16 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
      if(!g_connman)
          throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
  
@@ -1362,12 +1435,17 @@ index f8272d846e8939c5cbf1479fdbbf6e49c04ba05f..ab836ba45b9832750004b20d93377908
  
 -    if (IsInitialBlockDownload())
 -        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Pepecoin is downloading blocks...");
-+    if (IsInitialBlockDownload() && !Params().MineBlocksOnDemand())
++    // A new independent network may start more than nMaxTipAge after its
++    // pinned genesis. Allow its first template, retaining the peer check above
++    // and refusing this exception once any later chain/header is known.
++    const bool genesisBootstrap = IsDoodleverseGenesisBootstrap(
++        chainActive.Tip(), pindexBestHeader, Params().GetConsensus(0), fImporting.load(), fReindex);
++    if (IsInitialBlockDownload() && !Params().MineBlocksOnDemand() && !genesisBootstrap)
 +        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Doodleverse is downloading blocks...");
  
      static unsigned int nTransactionsUpdatedLast;
  
-@@ -714,7 +716,18 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
+@@ -714,7 +721,18 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
      result.pushKV("previousblockhash", pblock->hashPrevBlock.GetHex());
      result.pushKV("transactions", transactions);
      result.pushKV("coinbaseaux", aux);
@@ -1387,7 +1465,7 @@ index f8272d846e8939c5cbf1479fdbbf6e49c04ba05f..ab836ba45b9832750004b20d93377908
      result.pushKV("longpollid", chainActive.Tip()->GetBlockHash().GetHex() + i64tostr(nTransactionsUpdatedLast));
      result.pushKV("target", hashTarget.GetHex());
      result.pushKV("mintime", (int64_t)pindexPrev->GetMedianTimePast()+1);
-@@ -988,23 +1001,7 @@ static std::vector<std::unique_ptr<CBlockTemplate>> vNewBlockTemplate;
+@@ -988,23 +1006,7 @@ static std::vector<std::unique_ptr<CBlockTemplate>> vNewBlockTemplate;
  
  void AuxMiningCheck()
  {
@@ -1414,22 +1492,26 @@ index f8272d846e8939c5cbf1479fdbbf6e49c04ba05f..ab836ba45b9832750004b20d93377908
  static UniValue AuxMiningCreateBlock(const CScript& scriptPubKey)
 diff --git a/src/test/doodleverse_tests.cpp b/src/test/doodleverse_tests.cpp
 new file mode 100644
-index 0000000000000000000000000000000000000000..b6adc5b0b647e60a9f554abe8f317468a371bf11
+index 0000000000000000000000000000000000000000..674260a31d1f86b8096378aa2f708091ed53fbd5
 --- /dev/null
 +++ b/src/test/doodleverse_tests.cpp
-@@ -0,0 +1,242 @@
+@@ -0,0 +1,351 @@
 +// Copyright (c) 2026 The Doodleverse developers
 +// SPDX-License-Identifier: GPL-3.0-only
 +// See the GPLv3 text in the Doodle Tick repository's root LICENSE and in
 +// the accompanying distribution. Upstream MIT notices remain unchanged.
 +
 +#include "arith_uint256.h"
++#include "base58.h"
++#include "chain.h"
 +#include "chainparams.h"
 +#include "consensus/merkle.h"
 +#include "consensus/validation.h"
 +#include "miner.h"
 +#include "pepecoin.h"
 +#include "pow.h"
++#include "pubkey.h"
++#include "script/standard.h"
 +#include "test/test_bitcoin.h"
 +#include "utilstrencodings.h"
 +#include "validation.h"
@@ -1536,10 +1618,78 @@ index 0000000000000000000000000000000000000000..b6adc5b0b647e60a9f554abe8f317468
 +                        Params(names[j]).Base58Prefix(CChainParams::PUBKEY_ADDRESS));
 +        }
 +    }
-+    BOOST_CHECK(Params(CBaseChainParams::MAIN).GetConsensus(0).founderScriptPubKey.empty());
++    BOOST_CHECK_EQUAL(HexStr(Params(CBaseChainParams::MAIN).GetConsensus(0).founderScriptPubKey),
++        "76a914eff02da0f09c559243ffe295d6c2fd9acc61cea888ac");
 +    BOOST_CHECK_EQUAL(HexStr(Params().GetConsensus(0).founderScriptPubKey),
 +        "76a914751e76e8199196d454941c45d1b3a323f1433bd688ac");
 +    BOOST_CHECK(!pcoinsTip->HaveCoins(Params().GenesisBlock().vtx[0]->GetHash()));
++}
++
++BOOST_AUTO_TEST_CASE(main_founder_matches_signed_public_enrollment)
++{
++    const CChainParams& network = Params(CBaseChainParams::MAIN);
++    const Consensus::Params& params = network.GetConsensus(0);
++    const CPubKey pubkey(ParseHex("0291875d7ad94429ea2802e18812e36476a35b299677ed984512d72e7a178e9861"));
++    BOOST_REQUIRE(pubkey.IsFullyValid());
++    const CKeyID keyID = pubkey.GetID();
++    BOOST_CHECK(params.founderScriptPubKey == GetScriptForDestination(keyID));
++    std::vector<unsigned char> payload = network.Base58Prefix(CChainParams::PUBKEY_ADDRESS);
++    payload.insert(payload.end(), keyID.begin(), keyID.end());
++    BOOST_CHECK_EQUAL(EncodeBase58Check(payload), "DrMNk6EFRQ8zbLS8MAktyt2PwxyYThW1tp");
++    BOOST_CHECK(params.founderScriptPubKey != Params().GetConsensus(0).founderScriptPubKey);
++
++    // Exercise the main-chain payment predicate without mining a main block,
++    // creating keys, or switching the fixture's disposable regtest chain.
++    CMutableTransaction tx;
++    tx.vin.resize(1);
++    tx.vout.emplace_back(50 * COIN, CScript() << OP_TRUE);
++    tx.vout.emplace_back(DVC_FOUNDER_ALLOCATION, params.founderScriptPubKey);
++    BOOST_CHECK(CheckDoodleverseFounderCoinbase(CTransaction(tx), 1, params));
++    CMutableTransaction sameAddress(tx);
++    sameAddress.vout[0].scriptPubKey = params.founderScriptPubKey;
++    BOOST_CHECK(CheckDoodleverseFounderCoinbase(CTransaction(sameAddress), 1, params));
++    CMutableTransaction onlyFounder(tx);
++    onlyFounder.vout.erase(onlyFounder.vout.begin());
++    BOOST_CHECK(CheckDoodleverseFounderCoinbase(CTransaction(onlyFounder), 1, params));
++    CMutableTransaction redirected(tx);
++    redirected.vout[1].scriptPubKey = Params().GetConsensus(0).founderScriptPubKey;
++    BOOST_CHECK(!CheckDoodleverseFounderCoinbase(CTransaction(redirected), 1, params));
++    CMutableTransaction wrongValue(tx);
++    --wrongValue.vout[1].nValue;
++    BOOST_CHECK(!CheckDoodleverseFounderCoinbase(CTransaction(wrongValue), 1, params));
++    wrongValue.vout[1].nValue += 2;
++    BOOST_CHECK(!CheckDoodleverseFounderCoinbase(CTransaction(wrongValue), 1, params));
++    CMutableTransaction duplicate(tx);
++    duplicate.vout.emplace_back(DVC_FOUNDER_ALLOCATION, params.founderScriptPubKey);
++    BOOST_CHECK(!CheckDoodleverseFounderCoinbase(CTransaction(duplicate), 1, params));
++    Consensus::Params unpinned(params);
++    unpinned.founderScriptPubKey.clear();
++    BOOST_CHECK(!CheckDoodleverseFounderCoinbase(CTransaction(tx), 1, unpinned));
++}
++
++BOOST_AUTO_TEST_CASE(genesis_template_exception_is_bounded)
++{
++    const CChainParams& network = Params(CBaseChainParams::MAIN);
++    const Consensus::Params& params = network.GetConsensus(0);
++    const uint256 genesisHash = network.GenesisBlock().GetHash();
++    const uint256 otherHash = Params().GenesisBlock().GetHash();
++    CBlockIndex genesis(network.GenesisBlock());
++    genesis.phashBlock = &genesisHash;
++    CBlockIndex later(genesis);
++    later.nHeight = 1;
++    later.phashBlock = &otherHash;
++    CBlockIndex foreign(genesis);
++    foreign.phashBlock = &otherHash;
++    BOOST_CHECK(IsDoodleverseGenesisBootstrap(&genesis, &genesis, params, false, false));
++    BOOST_CHECK(IsDoodleverseGenesisBootstrap(&genesis, nullptr, params, false, false));
++    BOOST_CHECK(!IsDoodleverseGenesisBootstrap(nullptr, &genesis, params, false, false));
++    BOOST_CHECK(!IsDoodleverseGenesisBootstrap(&genesis, &genesis, params, true, false));
++    BOOST_CHECK(!IsDoodleverseGenesisBootstrap(&genesis, &genesis, params, false, true));
++    BOOST_CHECK(!IsDoodleverseGenesisBootstrap(&genesis, &later, params, false, false));
++    BOOST_CHECK(!IsDoodleverseGenesisBootstrap(&later, &later, params, false, false));
++    BOOST_CHECK(!IsDoodleverseGenesisBootstrap(&foreign, &foreign, params, false, false));
++    BOOST_CHECK(!IsDoodleverseGenesisBootstrap(&genesis, &foreign, params, false, false));
++    BOOST_CHECK(!network.MineBlocksOnDemand());
 +}
 +
 +BOOST_AUTO_TEST_CASE(founder_coinbase_full_validation)
@@ -1554,7 +1704,7 @@ index 0000000000000000000000000000000000000000..b6adc5b0b647e60a9f554abe8f317468
 +        CMutableTransaction tx(*block.vtx[0]);
 +        if (mutation == 0) tx.vout.erase(tx.vout.begin() + 1); // omitted
 +        if (mutation == 1) tx.vout[1].scriptPubKey = CScript() << OP_FALSE; // redirected
-+        if (mutation == 2) tx.vout.emplace_back(0, tx.vout[1].scriptPubKey); // duplicate
++        if (mutation == 2) tx.vout.emplace_back(DVC_FOUNDER_ALLOCATION, tx.vout[1].scriptPubKey); // duplicate allocation
 +        if (mutation == 3) --tx.vout[1].nValue; // founder underpaid
 +        if (mutation == 4) ++tx.vout[1].nValue; // founder overpaid
 +        if (mutation == 5) { // split allocation, still invalid
@@ -1571,6 +1721,11 @@ index 0000000000000000000000000000000000000000..b6adc5b0b647e60a9f554abe8f317468
 +    tx.vout[0].nValue = 0;
 +    SetCoinbase(underclaim, tx);
 +    BOOST_CHECK_EQUAL(Rejection(underclaim), "");
++    CBlock founderOnly = correct;
++    CMutableTransaction onlyFounder(*founderOnly.vtx[0]);
++    onlyFounder.vout.erase(onlyFounder.vout.begin());
++    SetCoinbase(founderOnly, onlyFounder);
++    BOOST_CHECK_EQUAL(Rejection(founderOnly), "");
 +    Accept(correct);
 +    CBlock second = Candidate();
 +    BOOST_REQUIRE_EQUAL(second.vtx[0]->vout.size(), 1U);
@@ -1578,6 +1733,38 @@ index 0000000000000000000000000000000000000000..b6adc5b0b647e60a9f554abe8f317468
 +    repeat.vout.emplace_back(DVC_FOUNDER_ALLOCATION, Params().GetConsensus(0).founderScriptPubKey);
 +    SetCoinbase(second, repeat);
 +    BOOST_CHECK_EQUAL(Rejection(second), "bad-cb-amount");
++}
++
++BOOST_AUTO_TEST_CASE(founder_can_mine_ordinary_reward_to_same_address)
++{
++    const CScript& founder = Params().GetConsensus(0).founderScriptPubKey;
++    CBlock block = Candidate(founder);
++    BOOST_REQUIRE_EQUAL(block.vtx[0]->vout.size(), 2U);
++    BOOST_CHECK(block.vtx[0]->vout[0].scriptPubKey == founder);
++    BOOST_CHECK_EQUAL(block.vtx[0]->vout[0].nValue, 50 * COIN);
++    BOOST_CHECK(block.vtx[0]->vout[1].scriptPubKey == founder);
++    BOOST_CHECK_EQUAL(block.vtx[0]->vout[1].nValue, DVC_FOUNDER_ALLOCATION);
++    BOOST_CHECK_EQUAL(Rejection(block), "");
++
++    CBlock excess = block;
++    CMutableTransaction extraReward(*excess.vtx[0]);
++    ++extraReward.vout[0].nValue;
++    SetCoinbase(excess, extraReward);
++    BOOST_CHECK_EQUAL(Rejection(excess), "bad-cb-amount");
++    CBlock merged = block;
++    CMutableTransaction mergedReward(*merged.vtx[0]);
++    mergedReward.vout[1].nValue += mergedReward.vout[0].nValue;
++    mergedReward.vout.erase(mergedReward.vout.begin());
++    SetCoinbase(merged, mergedReward);
++    BOOST_CHECK_EQUAL(Rejection(merged), "bad-dvc-founder");
++
++    // This fixture is regtest; no main-network work is searched or submitted.
++    Accept(block);
++    const CCoins* coins = pcoinsTip->AccessCoins(block.vtx[0]->GetHash());
++    BOOST_REQUIRE(coins != nullptr);
++    BOOST_REQUIRE_EQUAL(coins->vout.size(), 2U);
++    BOOST_CHECK_EQUAL(coins->vout[0].nValue + coins->vout[1].nValue,
++                      DVC_FOUNDER_ALLOCATION + 50 * COIN);
 +}
 +
 +BOOST_AUTO_TEST_CASE(direct_scrypt_only_and_chain_id)

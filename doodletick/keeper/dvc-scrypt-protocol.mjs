@@ -3,7 +3,7 @@
 import { createHash, scryptSync, randomBytes } from 'node:crypto';
 
 export const SCRYPT_NETWORKS = Object.freeze({
-  main: Object.freeze({ genesis: '0307d627595365a02cbcfd7c2614be41b1f38989ac550f5499343226f1d2d9bb', p2pkh: 31, p2sh: 50, founder: null, enabled: false }),
+  main: Object.freeze({ genesis: '0307d627595365a02cbcfd7c2614be41b1f38989ac550f5499343226f1d2d9bb', p2pkh: 31, p2sh: 50, founder: '76a914eff02da0f09c559243ffe295d6c2fd9acc61cea888ac', enabled: true }),
   test: Object.freeze({ genesis: '99e61f98fedac138dfb311d88779023b60aa9601f87d1c35d94e9a837f75ce05', p2pkh: 65, p2sh: 127, founder: '76a914751e76e8199196d454941c45d1b3a323f1433bd688ac', enabled: true }),
   regtest: Object.freeze({ genesis: 'e410039c6dc7111cf8b680962a2fc7fdafec5878f96dce4e79043d754417a44e', p2pkh: 112, p2sh: 123, founder: '76a914751e76e8199196d454941c45d1b3a323f1433bd688ac', enabled: true }),
 });
@@ -74,8 +74,7 @@ export function createScryptWork(template, address, network, extraNonce = random
   const outputs = [[template.dvcminerreward, script]];
   const founder = template.dvcfoundation;
   if (template.height === 1) {
-    if (founder?.required !== true || founder.value !== 1000000 * 100000000 || founder.scriptPubKey !== SCRYPT_NETWORKS[network].founder) fail('Founder output differs from the pinned test-network allocation.');
-    if (script.toString('hex') === founder.scriptPubKey) fail('Use a different address for the block-one miner reward.');
+    if (founder?.required !== true || founder.value !== 1000000 * 100000000 || founder.scriptPubKey !== SCRYPT_NETWORKS[network].founder) fail('Founder output differs from the pinned allocation.');
     if (template.coinbasevalue !== template.dvcminerreward + founder.value) fail('Founder reward sum is invalid.');
     outputs.push([founder.value, bytes(founder.scriptPubKey)]);
   } else if (founder !== undefined || template.coinbasevalue !== template.dvcminerreward) fail('Unexpected founder reward.');

@@ -1,0 +1,53 @@
+name: Build Doodleverse Home Assistant nodes
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, feature/dvc-scrypt]
+    paths: ['doodletick/**', 'doodleverse-core/home-assistant/**', '.github/workflows/doodleverse-ha.yml']
+  pull_request:
+    paths: ['doodletick/**', 'doodleverse-core/home-assistant/**', '.github/workflows/doodleverse-ha.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doodleverse-ha-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  image:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    steps:
+      - name: Check out the exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build and run native consensus checks
+        run: docker build --progress=plain --build-arg BUILD_ARCH=${{ matrix.arch }} -t doodleverse-ha:check ./doodletick
+      - name: Verify node startup, restart and data isolation
+        run: |
+          docker run --rm --network none --mount type=bind,src="$PWD/doodleverse-core/home-assistant",target=/checks,readonly --entrypoint node doodleverse-ha:check /checks/container-check.mjs
+      - name: Preserve the checked image with its source and licenses
+        run: docker save doodleverse-ha:check | gzip -n > doodleverse-home-assistant-${{ matrix.arch }}.tar.gz
+      - name: Hash the image archive
+        run: sha256sum doodleverse-home-assistant-${{ matrix.arch }}.tar.gz > SHA256SUMS-${{ matrix.arch }}
+      - name: Keep the tested image
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: doodleverse-home-assistant-${{ matrix.arch }}
+          path: |
+            doodleverse-home-assistant-${{ matrix.arch }}.tar.gz
+            SHA256SUMS-${{ matrix.arch }}
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0

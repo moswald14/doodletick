@@ -1,3 +1,13 @@
+# 0.13b — Native Scrypt coin and browser wallet
+
+Adds the Pepecoin-derived Doodleverse Core node, native Scrypt GPU mining and encrypted browser-wallet payments. The chain caps issuance at 21,000,000 DVC: 1,000,000 for the publicly recorded founder recipient and 20,000,000 mineable. Mined rewards need 30 confirmations. The founder record alone does not create a balance.
+
+Open **Doodleverse Coin**, enter a same-network native address and press **MINE NOW**. **Keep mining** repeats accepted work until stopped; page hiding stops GPU work. Eco and Balanced set GPU intensity while the network algorithm stays Scrypt 1024/1/1. **Your wallet · Receive & send** provides encrypted backups, local signing and explicit recipient/amount/fee review. Ethereum/Coinbase addresses, Pepecoin funds, legacy DVC and garden coins are separate.
+
+The bundled Core node defaults to the main network and has its wallet disabled. RPC is bound to loopback and never published. Only optional TCP 38474 blockchain peer traffic can be mapped to the host, and that mapping is off by default. Configure reachable peers using the same published chain. The browser's computer performs GPU mining; Home Assistant runs validation and storage. The separate Windows portable package supplies its own node and runtime.
+
+Update the existing repository app with a backup; do not uninstall it or replace its Keeper data. Native wallet backups remain separate in each browser, and older creator identities and signed formats are preserved. This beta has native regtest mining/payment/reorganization checks and source review, not an independent security audit. No distributed launch, live issuance, market value or earnings is established by those tests. See [setup and limits](DOCS.md) and [the release notes](../keeper/RELEASES.md).
+
 # 0.12b — MozCorp shared services
 
 MozCorp cloud savepoints, the fictional HOPE-LON feed and the upgrade proposal desk now run in this Keeper and persist with its app data. Savepoints support export/import, guarded restoration and explicit removal. The feed starts paused and accepts only fictional personas and solved game cases; personal desks remain separate.

@@ -129,7 +129,7 @@ test('an address-only job leads to an id-and-nonce-only submission with no walle
       assert.equal(call.options.method, 'POST'); assert.equal(call.options.headers['Content-Type'], 'application/json');
       assert.equal(call.options.headers['X-Keeper-Request'], '1'); assert.equal(call.options.cache, 'no-store'); assert.ok(call.options.signal instanceof AbortSignal);
     }
-    assert.equal(f.field('accepted').textContent, '1'); assert.match(f.field('mining-status').textContent, /Test block 2 accepted/);
+    assert.equal(f.field('accepted').textContent, '1'); assert.match(f.field('mining-status').textContent, /Block 2 accepted/);
     assert.match(f.field('console').textContent, /50\.00000000 test DVC/);
     await f.advance(10000); assert.equal(f.jobs.length, 1); assert.equal(f.miners.length, 1);
   } finally { await f.cleanup(); }
@@ -149,6 +149,26 @@ test('Keep mining starts only after MINE NOW and gets a fresh job after an accep
     assert.equal(f.calls.filter(call => call.path === 'submit').length, 1); assert.equal(f.jobs.length, 2);
     assert.equal(f.field('accepted').textContent, '1'); assert.match(f.field('mining-status').textContent, /Stopped by you/);
   } finally { await f.cleanup(); }
+});
+
+test('Stop preserves the receipt of a block already submitted and never starts another job', async () => {
+  const f = fixture(), receipt = deferred();
+  try {
+    await f.ready(); f.repeat(true);
+    f.hookServer(call => call.path === 'submit' ? receipt.promise : undefined);
+    f.submit(); await f.until(() => f.miners.length === 1); f.finish(found());
+    await f.until(() => f.calls.some(call => call.path === 'submit'));
+    const submission = f.calls.find(call => call.path === 'submit');
+    f.click('stop');
+    assert.equal(f.miners[0].options.signal.aborted, true);
+    assert.equal(submission.options.signal.aborted, false, 'the bounded receipt remains readable after GPU cancellation');
+    receipt.resolve(json({ accepted: true, hash: 'ab'.repeat(32), height: 2, address: ADDRESS, rewardAtoms: 5000000000, maturity: 30, network: 'regtest' }));
+    await f.until(() => !f.field('mine').disabled); await f.advance(10000);
+    assert.equal(f.field('accepted').textContent, '1');
+    assert.match(f.field('mining-status').textContent, /Mining stopped.*block 2 accepted/);
+    assert.match(f.field('network').textContent, /block 2/);
+    assert.equal(f.jobs.length, 1); assert.equal(f.miners.length, 1);
+  } finally { receipt.resolve(json({})); await f.cleanup(); }
 });
 
 for (const action of ['Stop', 'hidden tab', 'page exit', 'Keep mining off']) test(`${action} cancels GPU work and rejects its late result without restarting`, async () => {

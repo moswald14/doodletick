@@ -1,0 +1,13 @@
+{
+  "format": "doodleverse-native-founder-recipient-v1",
+  "domain": "Doodleverse Core native founder enrollment",
+  "network": "main",
+  "genesis": "0307d627595365a02cbcfd7c2614be41b1f38989ac550f5499343226f1d2d9bb",
+  "address": "DrMNk6EFRQ8zbLS8MAktyt2PwxyYThW1tp",
+  "publicKey": "0291875d7ad94429ea2802e18812e36476a35b299677ed984512d72e7a178e9861",
+  "founderAtoms": "100000000000000",
+  "maximumSupplyAtoms": "2100000000000000",
+  "purpose": "Approve this native address for the disclosed Doodleverse founder allocation. This is a message, not a transaction.",
+  "digest": "057e359411ce090fe6ae9f850e7511a4195ef3371b3187ec21ed88b476b76c73",
+  "signature": "0xebfce10b66ff7846e4f6cad4dfdd302064639abea2085b6e765ae554836a0fcd2678c384d23750f4bb1e05bb629f7e5b2a6431b206edb2cda142b79532a486fe1b"
+}

@@ -6,7 +6,7 @@
     "tag": "v1.1.0",
     "commit": "4fb5a0cd930c0df82c88292e973a7b7cfa06c4e8"
   },
-  "mainnet_ready": false,
+  "mainnet_ready": true,
   "algorithm": "scrypt-1024-1-1",
   "auxpow_enabled": false,
   "block_version": 1146486788,
@@ -41,9 +41,12 @@
       "private_key_prefix": 159,
       "ext_public_prefix": "02d0d0b1",
       "ext_private_prefix": "02d0d0b2",
-      "founder_script": null,
-      "founder_address": null,
-      "founder_is_public_test_fixture": false
+      "founder_script": "76a914eff02da0f09c559243ffe295d6c2fd9acc61cea888ac",
+      "founder_address": "DrMNk6EFRQ8zbLS8MAktyt2PwxyYThW1tp",
+      "founder_is_public_test_fixture": false,
+      "founder_public_key": "0291875d7ad94429ea2802e18812e36476a35b299677ed984512d72e7a178e9861",
+      "founder_recipient_record": "founder-recipient.json",
+      "founder_recipient_record_sha256": "74881a2d080d9514fc107e2fb680284a0917e5b2dbc8399f28cdb7ae04e72ba0"
     },
     "test": {
       "network": "test",

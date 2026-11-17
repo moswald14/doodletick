@@ -1,9 +1,23 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import { mineScryptGpu } from './dvc-scrypt-miner.mjs';
 const $ = id => document.getElementById(id);
-let connected = false, controller = null, checkingNode = false, count = 0;
+let connected = false, controller = null, checkingNode = false, count = 0, nodeStatus = null;
 const lines = [];
 const COMMANDS = new Set(['help', 'status', 'check node', 'check gpu', 'mine', 'stop', 'keep on', 'keep off', 'intensity eco', 'intensity balanced', 'clear']);
+// Wallet links transfer a public receiving address only. They never start work.
+if (typeof location !== 'undefined') {
+  const match = location.hash.match(/^#address=([1-9A-HJ-NP-Za-km-z]{26,35})$/);
+  if (match) $('address').value = match[1];
+}
+const coinName = () => nodeStatus?.network === 'main' ? 'DVC' : 'test DVC';
+function showNode() {
+  if (!nodeStatus?.connected) return;
+  $('network').textContent = `${nodeStatus.network} · block ${nodeStatus.height} · ${nodeStatus.peers} peer(s) · ${coinName()}`;
+  $('network-tag').textContent = nodeStatus.network === 'main' ? 'DVC MAIN NETWORK · BETA' : 'SCRYPT TEST NETWORK';
+  $('network-description').textContent = nodeStatus.network === 'main'
+    ? 'Mine native Doodleverse coins and send matured rewards from your encrypted wallet. This new network is experimental; connected nodes determine its accepted history.'
+    : 'This node uses disposable test coins. Test rewards and wallets stay separate from the main Doodleverse network.';
+}
 function log(kind, message) {
   const text = String(message).replace(/[\u0000-\u0008\u000b-\u001f\u007f\u202a-\u202e\u2066-\u2069]/g, '').slice(0, 1024);
   lines.push(`${new Date().toLocaleTimeString()} ${kind} ${text}`);
@@ -27,9 +41,9 @@ async function refresh() {
   if (controller || checkingNode) return;
   checkingNode = true; controls();
   try {
-    const status = await api('status'); connected = status.connected;
-    $('network').textContent = connected ? `${status.network} · block ${status.height} · ${status.peers} peer(s) · test coins only` : status.message;
-    log('GODDIT', connected ? 'Pinned Doodleverse test node connected.' : status.message);
+    const status = await api('status'); connected = status.connected; nodeStatus = status;
+    if (connected) showNode(); else $('network').textContent = status.message;
+    log('GODDIT', connected ? 'Pinned Doodleverse node connected.' : status.message);
   } catch (error) { connected = false; $('network').textContent = error.message; log('ERROR', error.message); }
   checkingNode = false; controls();
 }
@@ -62,7 +76,7 @@ async function run(checkOnly) {
       if (checkOnly) job = { header: '00'.repeat(80), target: '7f' + 'ff'.repeat(31) };
       else job = await api('job', { address }, current.signal);
       if (current.signal.aborted) break;
-      $('mining-status').textContent = checkOnly ? 'Checking Scrypt on your GPU…' : `Mining test block ${job.height}…`;
+      $('mining-status').textContent = checkOnly ? 'Checking Scrypt on your GPU…' : `Mining ${coinName()} block ${job.height}…`;
       const result = await mineScryptGpu({ header: Uint8Array.from(job.header.match(/../g), byte => parseInt(byte, 16)), target: job.target,
         signal: current.signal, isVisible: () => !document.hidden, intensity, maxSeconds: 60, ...(checkOnly ? { maxCandidates: intensity === 'eco' ? 64 : 128 } : {}),
         onProgress: progress => { $('hashrate').textContent = Math.round(progress.attempts / Math.max(.001, progress.elapsedMs / 1000)).toLocaleString(); } });
@@ -76,7 +90,10 @@ async function run(checkOnly) {
       if (!result.attempts) throw Error('The GPU round ended before any mining work was completed.');
       if (result.status === 'found') {
         let accepted;
-        try { accepted = await api('submit', { id: job.id, nonce: result.nonce }, current.signal); }
+        // Once a valid block is sent, stopping GPU work cannot revoke its node
+        // acceptance. Keep the bounded receipt request alive so Stop never hides
+        // an already accepted reward; no further job starts after cancellation.
+        try { accepted = await api('submit', { id: job.id, nonce: result.nonce }); }
         catch (error) {
           if (error.status === 409 && $('keep-mining').checked && !current.signal.aborted) {
             log('GODDIT', 'Chain changed before acceptance; getting fresh work.');
@@ -85,8 +102,12 @@ async function run(checkOnly) {
           throw error;
         }
         count++; $('accepted').textContent = String(count);
-        $('mining-status').textContent = `Test block ${accepted.height} accepted. Reward matures after ${accepted.maturity} confirmations.`;
-        log('GODDIT', `Node accepted block ${accepted.hash}; reward ${(accepted.rewardAtoms / 1e8).toFixed(8)} test DVC to ${accepted.address}.`);
+        if (nodeStatus) {
+          nodeStatus.height = accepted.height;
+          showNode();
+        }
+        $('mining-status').textContent = `${current.signal.aborted ? 'Mining stopped. Last submitted b' : 'B'}lock ${accepted.height} accepted. Reward matures after ${accepted.maturity} confirmations.`;
+        log('GODDIT', `Node accepted block ${accepted.hash}; reward ${(accepted.rewardAtoms / 1e8).toFixed(8)} ${coinName()} to ${accepted.address}.`);
       } else { $('mining-status').textContent = 'Round finished without a block.'; log('GODDIT', `Round finished: ${result.attempts} hashes.`); }
       if (!$('keep-mining').checked) break;
       await delay(current.signal, 2500);

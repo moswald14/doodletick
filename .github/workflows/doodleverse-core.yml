@@ -6,17 +6,21 @@ on:
     branches: [main, feature/dvc-scrypt]
     paths:
       - 'doodleverse-core/**'
+      - 'keeper/**'
+      - 'crypto-vendor/**'
       - '.github/workflows/doodleverse-core.yml'
   pull_request:
     paths:
       - 'doodleverse-core/**'
+      - 'keeper/**'
+      - 'crypto-vendor/**'
       - '.github/workflows/doodleverse-core.yml'
 
 permissions:
   contents: read
 
 concurrency:
-  group: doodleverse-core-${{ github.ref }}
+  group: doodleverse-core-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 defaults:
@@ -55,10 +59,10 @@ jobs:
           restore-keys: |
             ${{ steps.cache_identity.outputs.scope }}-${{ hashFiles('doodleverse-core/patches/doodleverse.patch', 'doodleverse-core/scripts/build-linux.sh') }}-
             ${{ steps.cache_identity.outputs.scope }}-
-      - name: Set up the Keeper bridge test runtime
+      - name: Set up the Keeper wallet test runtime
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24'
+          node-version: '24.22.3'
           package-manager-cache: false
       - name: Build fixed source and test disposable regtest
         id: build

@@ -1,0 +1,15 @@
+{
+  "version": "24.22.3",
+  "platform": "win-x64",
+  "archive": "node-v24.22.3-win-x64.zip",
+  "sha256": "e612af99f626ab415ea225af6bce5c971feb448cb5cae250bb1c3fa50c5f7d9f",
+  "url": "https://nodejs.org/dist/v24.22.3/node-v24.22.3-win-x64.zip",
+  "checksums": "https://nodejs.org/dist/v24.22.3/SHASUMS256.txt",
+  "signature": "https://nodejs.org/dist/v24.22.3/SHASUMS256.txt.sig",
+  "checksumsSha256": "06d17307d84ec057dd2783863f12cb228c9273f9424b330532e4e3699f5d47c9",
+  "signatureSha256": "d17729e51168e542e3b0349d6cad2db272c76e3ab16c8aa1b7fca172d69d7855",
+  "signingKeySha256": "5115095e2f8010c75da052ecb1cfb3af630e084f0f8daa93a863557b01b0f90a",
+  "signingKeyFingerprint": "5BE8A3F6C8A5C01D106C0AD820B1A390B168D356",
+  "signingKey": "https://github.com/nodejs/release-keys/blob/main/keys/5BE8A3F6C8A5C01D106C0AD820B1A390B168D356.asc",
+  "source": "https://nodejs.org/dist/v24.22.3/node-v24.22.3.tar.gz"
+}

@@ -9,6 +9,7 @@ import http from 'node:http';
 import { SCRYPT_NETWORKS, addressScript, createScryptWork, solveScryptCandidate, targetFromBits, compactSize, sha256d } from '../dvc-scrypt-protocol.mjs';
 import { createCoreRpc, createScryptBridge, scryptBridgeFromEnvironment } from '../dvc-scrypt-node.mjs';
 import { createScryptHttpHandler } from '../dvc-scrypt-http.mjs';
+import { verifyFounderRecipientRecord } from '../public/scrypt-wallet-core.mjs';
 
 const hash = bytes => createHash('sha256').update(createHash('sha256').update(bytes).digest()).digest();
 function encodeAddress(prefix, payload = Buffer.alloc(20, 17)) {
@@ -67,6 +68,14 @@ test('receiving addresses require checksum and exact new-chain network prefix', 
   assert.throws(() => createScryptWork(base(), address, 'main'));
 });
 
+test('mainnet founder pin matches the signed public native recipient record', async () => {
+  const raw = await readFile(new URL('../../doodleverse-core/founder-recipient.json', import.meta.url), 'utf8');
+  const record = verifyFounderRecipientRecord(raw);
+  assert.equal(record.scriptPubKey, SCRYPT_NETWORKS.main.founder);
+  assert.equal(addressScript(record.address, 'main').toString('hex'), SCRYPT_NETWORKS.main.founder);
+  assert.notEqual(SCRYPT_NETWORKS.main.founder, SCRYPT_NETWORKS.regtest.founder);
+});
+
 test('coinbase wire amounts, BIP34 height, merkle bytes and header fields are serialized for Core', () => {
   const t = { ...base(), height: 1, coinbasevalue: 100005000000000, dvcfoundation: { required: true, value: 100000000000000, scriptPubKey: founder } };
   const work = createScryptWork(t, address, 'regtest', Buffer.alloc(12, 7));
@@ -93,7 +102,11 @@ test('template rules, reward sums, target encodings and transaction commitments 
     { transactions: [{ data: '00', txid: '00'.repeat(32) }] } ]) assert.throws(() => createScryptWork({ ...base(), ...change }, address, 'regtest'));
   const first = { ...base(), height: 1, coinbasevalue: 100005000000000, dvcfoundation: { required: true, value: 100000000000000, scriptPubKey: founder } };
   for (const change of [{ value: 1 }, { required: false }, { scriptPubKey: '51' }]) assert.throws(() => createScryptWork({ ...first, dvcfoundation: { ...first.dvcfoundation, ...change } }, address, 'regtest'));
-  assert.throws(() => createScryptWork(first, 'nFXpqKGstGktjrogxmR28tu6ccJCfGSTEk', 'regtest'));
+  // A founder who also mines receives a separate ordinary mining output; the
+  // fixed allocation is still one exact 1m output, without burning miner funds.
+  const sameRecipient = createScryptWork(first, 'nFXpqKGstGktjrogxmR28tu6ccJCfGSTEk', 'regtest');
+  assert.equal(sameRecipient.reward, 5000000000);
+  assert.equal(sameRecipient.body.toString('hex').split(founder).length - 1, 2);
   assert.equal(compactSize(253).toString('hex'), 'fdfd00'); assert.equal(compactSize(65536).toString('hex'), 'fe00000100');
 });
 
@@ -117,13 +130,13 @@ test('foreign genesis, stale/rejected work and incomplete confirmation replies c
   }
 });
 
-test('job capacity and expiration are bounded and default bridge never enables mainnet', async () => {
+test('job capacity and expiration are bounded and mainnet requires a matching node', async () => {
   let time = 1000; const { rpc } = fixture(), bridge = createScryptBridge({ rpc, now: () => time, maxJobs: 1 });
   const job = await bridge.job(address); await assert.rejects(bridge.job(address), /limit/);
   time += 120001; await assert.rejects(bridge.submit(job.id, 0), /expired/);
   await bridge.job(address);
   assert.equal((await createScryptBridge().status()).connected, false);
-  assert.throws(() => createScryptBridge({ rpc, network: 'main' }));
+  await assert.rejects(createScryptBridge({ rpc, network: 'main' }).status(), /pinned/);
   await assert.rejects(scryptBridgeFromEnvironment({ DVC_CORE_RPC_URL: 'http://evil.example' }).status(), /settings/);
 });
 
@@ -153,4 +166,17 @@ test('HTTP job surface requires request protection and exact bounded fields', as
   assert.equal((await post(JSON.stringify({ address, rpc: 'dumpwallet' }), { 'X-Keeper-Request': '1' })).status, 400);
   const response = await post(JSON.stringify({ address }), { 'X-Keeper-Request': '1' }); assert.equal(response.status, 200);
   const job = await response.json(); assert.equal(job.header.length, 160); assert.equal(job.address, address); assert.equal(job.network, 'regtest');
+});
+
+test('Core errors preserve numeric retry codes without disclosing raw RPC messages', async t => {
+  const temp = await mkdtemp(path.join(os.tmpdir(), 'dvc-rpc-error-')); t.after(() => rm(temp, { recursive: true, force: true }));
+  const cookieFile = path.join(temp, '.cookie'); await writeFile(cookieFile, '__cookie__:' + 'b'.repeat(64));
+  let code = -5;
+  const rpc = createCoreRpc({ url: 'http://127.0.0.1:18473/', cookieFile, fetcher: async () => new Response(JSON.stringify({ id: 1, result: null, error: { code, message: 'private internal detail' } }), { status: 500 }) });
+  for (code of [-5, -25, -26, -27]) {
+    await assert.rejects(rpc('getrawtransaction', ['00'.repeat(32)]), error => error.rpcCode === code && !error.message.includes('private internal detail'));
+  }
+  code = 'untrusted';
+  await assert.rejects(rpc('getrawtransaction', ['00'.repeat(32)]), error => !Object.hasOwn(error, 'rpcCode') && /unavailable/.test(error.message));
+  for (const method of ['sendtoaddress', 'signrawtransaction', 'importprivkey', 'walletpassphrase', 'stop']) await assert.rejects(rpc(method), /not exposed/);
 });

@@ -1,3 +1,17 @@
+## 0.13b — Native Scrypt coin, wallet and Windows miner
+
+Adds a separate Pepecoin-derived Doodleverse Core chain with Scrypt 1024/1/1 proof of work, a fixed 21,000,000 DVC maximum, a publicly disclosed 1,000,000 DVC founder allocation and 20,000,000 mineable DVC. The native founder address is recorded in the public signed enrollment record. The allocation belongs in the first mined block; importing that record does not issue funds. Coinbase rewards mature after 30 confirmations. Ethereum, PEPE, Pepecoin, legacy Keeper DVC and garden balances remain separate.
+
+The new **Doodleverse Coin** page accepts a native receiving address without connecting or unlocking a wallet. Its red **MINE NOW** button, **Keep mining**, **Stop**, Eco/Balanced GPU intensity and GITTIT::GODDIT console run browser WebGPU Scrypt work against the connected Core node. Found blocks are verified before acceptance. Hiding the page stops GPU work; reopening never resumes it automatically. No CPU miner starts as a fallback.
+
+**Your wallet · Receive & send** creates or restores a native wallet encrypted in this browser using AES-GCM and PBKDF2. Keys and passwords stay local. Download a separate encrypted wallet backup and retain its password; the creator vault and Home Assistant backup do not replace it. Payments authenticate previous transaction values locally, use exact amounts, show recipient/change/fee review, and sign only after explicit confirmation. The minimum payment is 0.01 DVC. Submission can remain pending and is not an assurance of final settlement.
+
+The portable Windows GPU miner bundles Core, Keeper, Node.js, corresponding source and notices, with explicit Start/Stop launchers and persistent data outside the extracted package. The Home Assistant app bundles a wallet-disabled node, defaults to the main network, preserves existing Keeper data, and keeps RPC on loopback. Optional TCP 38474 peer mapping is off on the host by default. Operators must connect matching reachable peers; no public seed network is claimed.
+
+Disposable native Core checks covered browser GPU block acceptance, two-way wallet transfers, encrypted-backup restoration, maturity, duplicate retry, double-spend rejection and chain reorganization/restart. A consensus-sized block containing a long unrelated script and over 10,000 coinbase outputs was indexed and its reward spent successfully. These are test results, not evidence of live issuance or a distributed launch. Source review is not an independent security audit. There is no guaranteed value, earnings or redemption. Live deployment and release receipts are separate from this change list.
+
+Existing creator identities, signed legacy formats, garden ledgers, Telephone/Studio projects, Shelf Defense, MozCorp services and prior founder archives are preserved. Back up the same installed app before updating; export browser wallets and projects separately. See the [Home Assistant guide](../doodletick/DOCS.md), [Core source and rules](../doodleverse-core/README.md) and [Windows instructions](../doodleverse-core/windows/README.md).
+
 ## 0.12b — MozCorp shared services
 
 MozCorp cloud savepoints, the fictional HOPE-LON feed and the upgrade proposal desk now run in this Keeper and persist with its app data. Savepoints support export/import, guarded restoration and explicit removal. The feed starts paused and accepts only fictional personas and solved game cases; personal desks remain separate.

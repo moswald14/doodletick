@@ -1,8 +1,24 @@
-# Doodle Tick Keeper · 0.12b
+# Doodle Tick Keeper · 0.13b
 
-**0.12b brings MozCorp’s cloud savepoints, fictional HOPE-LON feed and upgrade desk into Keeper.** Open **MozCorp → Keeper cloud** or **Upgrade desk**. Shared records live with this Keeper and survive restarts. AI drafts are optional and use a server-side key with explicit instruction-only consent. See [the MozCorp guide](../keeper/MOZCORP.md).
+**0.13b adds a native Scrypt blockchain, encrypted browser wallet and address-only GPU mining.** Open **Doodleverse Coin**, check the connected network, enter a native receiving address and press the red **MINE NOW** button. **Keep mining** repeats work until stopped; hiding the page stops GPU work. Eco and Balanced change GPU intensity while the chain's algorithm remains Scrypt 1024/1/1. Your browser computer needs hardware WebGPU; the Home Assistant node validates blocks and does not mine on its CPU.
 
-**Shelf Defense** now opens from Keeper's sidebar. The original three-shelf battle game and the shared **Idle shelves** cookie bakery run inside the existing authenticated Web UI. Idle progress is stored in this app's data and included in its cold backups; browser battle saves remain separate. No additional integration, port, helper or API key is required. See [Shelf Defense](../keeper/SHELF-DEFENSE.md).
+Choose **Your wallet · Receive & send** to create or restore a native wallet. Download its encrypted backup and keep the password separately. Mining needs only its public address, even while locked. Payments require unlocking, reviewing the recipient, amount, fee and change, and explicitly pressing **Sign and send this payment**. The signing key stays in this browser. Home Assistant backups do not contain that browser wallet.
+
+This Pepecoin-derived network has its own genesis and addresses, a **21,000,000 DVC** maximum, a publicly recorded **1,000,000 founder allocation** and **20,000,000 mineable DVC**. The first mined block includes the founder allocation plus the miner's normal 50 DVC subsidy. Rewards need **30 confirmations** before spending. Ethereum/Coinbase `0x` addresses, PEPE, Pepecoin, private garden coins and the earlier Keeper DVC ledger remain separate; no balance conversion is supplied. See [the native chain rules](../doodleverse-core/README.md).
+
+The app bundles a wallet-disabled Core node and defaults to the main network. RPC stays authenticated on loopback and is never exposed. The optional **TCP 38474** blockchain-peer host mapping is disabled by default; configure reachable peers using this exact published chain. Home Assistant Cloud HTTPS serves the web interface, not blockchain peer traffic. No inherited Pepecoin seed network or global relay is supplied. The [Windows GPU miner package](../doodleverse-core/windows/README.md) provides a matching node and runtime for Windows.
+
+Install through the [Doodle Tick repository](https://github.com/moswald14/doodletick), then open its Web UI over trusted HTTPS. For an update, back up and update the **same installed repository app**. Keep its Keeper identity and data, then enable **Start on boot**, **Watchdog** and **Auto update** after checking the new version. This is a Home Assistant app/add-on, not a HACS integration. Read [setup, peers and backups](DOCS.md) and [HTTPS.md](HTTPS.md).
+
+Native chain data stays in `/data/doodleverse-core`; Keeper records and the public wallet index stay under `/data/keeper`. Cold backups preserve server data. Creator-vault, native-wallet and project backups are separate browser exports. A local app and repository app have different storage: use the [offline migration guide](MIGRATION.md) and retain backups when moving between them.
+
+This is experimental beta software. Disposable Core tests have covered GPU block acceptance, wallet payments, encrypted-backup restoration and reorganizations. They do not establish a distributed launch, real earnings or the current installation's health. Source review is not an independent security audit. There is no guaranteed value, exchange listing or redemption.
+
+## The creator arcade stays with you
+
+**0.12b brought MozCorp’s cloud savepoints, fictional HOPE-LON feed and upgrade desk into Keeper.** Open **MozCorp → Keeper cloud** or **Upgrade desk**. Shared records live with this Keeper and survive restarts. AI drafts are optional and use a server-side key with explicit instruction-only consent. See [the MozCorp guide](../keeper/MOZCORP.md).
+
+**Shelf Defense** opens from Keeper's sidebar. The original three-shelf battle game and the shared **Idle shelves** cookie bakery run inside the existing authenticated Web UI. Idle progress is stored in this app's data and included in its cold backups; browser battle saves remain separate. The games need no API key. See [Shelf Defense](../keeper/SHELF-DEFENSE.md).
 
 MozCorp private rooms use a separately supplied, verified bundle. Install it from the app’s MozCorp page after this update. The public app does not include private station pages or site credentials.
 
@@ -14,15 +30,13 @@ The **Sleep garden** combines locally generated wind and mushroom sounds. Press 
 
 Signed Keeper samples now drive the clock display and fresh private-garden request timestamps, with visible stale/uncertainty status. They identify this Keeper as the source, not an independently verified UTC clock. See [time and Sleep garden](../keeper/TIME-AND-SLEEP.md) for controls and limits.
 
-Enter a full nonzero **Mining reward address** on the Coin page, choose SHA-256/SHA-256d and GPU intensity, then press **MINE NOW**. Mining needs no wallet connection or signature. The destination's available funds, immature rewards and pending outgoing payments appear under **Mining address balances**, separately from **Wallet for sending**. A connected account can fill an empty mining field or be copied with **Use connected wallet address**. Editing the destination cancels work and repeat mode; sending still requires the controlling wallet's signature.
+## Earlier coin history
 
-Supply and consensus stay fixed at 21 million coins: one million disclosed founder coins and 20 million mineable coins. No data migration is added. Native DVC remains separate from Ethereum tokens, private garden coins and the original founder certificates. See [native rules and limitations](../keeper/NATIVE-DVC.md).
+**Legacy DVC history** preserves the earlier 0.6.x Keeper ledger and signed records. Its Coin page used full nonzero `0x` mining addresses, SHA-256/SHA-256d, separate **Mining address balances** and **Wallet for sending**. Those rules and addresses do not apply to the 0.13b native Scrypt chain.
 
-Install through the [Doodle Tick repository](https://github.com/moswald14/doodletick), then open its Web UI over trusted HTTPS. Enable Start on boot, Watchdog and Auto update. This is a Home Assistant app/add-on, not a HACS integration. Read [DOCS.md](DOCS.md) and [HTTPS.md](HTTPS.md).
+The older ledger also used a 21-million limit with one million disclosed founder coins and 20 million mineable, but it is a different network and history. Its data remains under `/data/keeper/dvc`, without conversion into Core balances. See [the historical rules](../keeper/NATIVE-DVC.md).
 
-Native-chain history is saved inside this app's `/data/keeper/dvc` directory. Cold backups include it. Existing witness, receipts, garden and vault formats are preserved. A separate repository installation does not migrate a local app automatically; use the [offline migration guide](MIGRATION.md) and keep backups.
-
-For native peer sync, unlock your creator vault, exchange signed connection codes and compare the spirograph. Each Keeper independently verifies blocks and payments. Both browser Coin pages must remain visible and directly reachable; no public Internet relay, seed node, router port or VPN is configured. Home Assistant's authentication remains in place.
+Legacy browser peer sync used creator-vault connection codes, spirograph comparison and directly reachable browser Coin pages. Current Core blockchain peers use the separate node connection described above. Game and file pairing still use their browser connections. Home Assistant authentication and existing witness, receipts, garden and vault formats are preserved.
 
 The Weather & music panel, original founder records, arcade and file sharing remain available. Optional public DGT gardens use their own wallet transactions and network fees; they do not convert into DVC. There is no exchange listing, redemption or promised coin value.
 

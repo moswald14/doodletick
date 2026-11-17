@@ -14,6 +14,7 @@ import tempfile
 import time
 
 GENESIS = 'e410039c6dc7111cf8b680962a2fc7fdafec5878f96dce4e79043d754417a44e'
+MAIN_GENESIS = '0307d627595365a02cbcfd7c2614be41b1f38989ac550f5499343226f1d2d9bb'
 FOUNDER_SCRIPT = '76a914751e76e8199196d454941c45d1b3a323f1433bd688ac'
 COIN = 100000000
 
@@ -96,19 +97,29 @@ def block_from_template(template, payout_script, *, extra=0, wrong_founder=False
 
 
 class Node:
-    def __init__(self, daemon, directory):
+    def __init__(self, daemon, directory, *, network='regtest'):
+        assert network in ('regtest', 'main')
         self.daemon, self.directory = daemon, directory
+        self.network = network
+        self.cookie_path = directory / ('regtest/.cookie' if network == 'regtest' else '.cookie')
         directory.mkdir()
         self.rpc_port, self.p2p_port = free_port(), free_port()
         while self.p2p_port == self.rpc_port:
             self.p2p_port = free_port()
         self.process = None
+        self.log = None
 
     def start(self):
         self.log = open(self.directory / 'test-output.txt', 'ab')
-        command = [self.daemon, '-regtest', '-server=1', '-listen=1', '-dnsseed=0', '-discover=0', '-upnp=0',
-                   '-bind=127.0.0.1', '-rpcbind=127.0.0.1', '-rpcallowip=127.0.0.1', '-txindex=1',
+        command = [self.daemon, '-server=1', '-dnsseed=0', '-discover=0', '-upnp=0', '-listenonion=0',
+                   '-rpcbind=127.0.0.1', '-rpcallowip=127.0.0.1', '-txindex=1',
                    '-datadir=' + str(self.directory), '-port=' + str(self.p2p_port), '-rpcport=' + str(self.rpc_port)]
+        if self.network == 'regtest':
+            command.extend(['-regtest', '-listen=1', '-bind=127.0.0.1'])
+        else:
+            # Read-only identity probe: no main-chain wallet, P2P listener,
+            # outbound peer thread, address discovery, or block generation.
+            command.extend(['-listen=0', '-connect=0', '-maxconnections=0', '-disablewallet=1', '-dns=0'])
         self.process = subprocess.Popen(command, stdout=self.log, stderr=self.log, **hidden_process_options())
         try:
             wait_for(lambda: self.rpc('getblockchaininfo'))
@@ -119,7 +130,7 @@ class Node:
     def rpc(self, method, *params):
         if self.process.poll() is not None:
             raise RuntimeError('Node exited early')
-        cookie = (self.directory / 'regtest' / '.cookie').read_bytes().strip()
+        cookie = self.cookie_path.read_bytes().strip()
         connection = http.client.HTTPConnection('127.0.0.1', self.rpc_port, timeout=10)
         try:
             connection.request('POST', '/', json.dumps({'jsonrpc': '1.0', 'id': 1, 'method': method, 'params': params}),
@@ -132,16 +143,43 @@ class Node:
         return result['result']
 
     def stop(self):
-        if self.process is None:
-            return
-        if self.process.poll() is None:
+        if self.process is not None and self.process.poll() is None:
             try:
                 self.rpc('stop')
                 self.process.wait(timeout=20)
             except Exception:
                 self.process.terminate()
                 self.process.wait(timeout=10)
-        self.log.close()
+        if self.log is not None:
+            self.log.close()
+
+
+def probe_mainnet(daemon, directory):
+    """Start only a fresh, wallet-disabled main identity probe. Never mine."""
+    node = Node(daemon, directory, network='main')
+    try:
+        node.start()
+        info = node.rpc('getblockchaininfo')
+        assert info['chain'] == 'main' and info['blocks'] == 0
+        assert node.rpc('getblockhash', 0) == MAIN_GENESIS
+        assert node.rpc('getconnectioncount') == 0
+        with socket.socket() as probe:
+            probe.settimeout(0.5)
+            assert probe.connect_ex(('127.0.0.1', node.p2p_port)) != 0, 'Main probe opened a P2P listener'
+        assert 'DoodleverseCore' in node.rpc('getnetworkinfo')['subversion']
+        assert node.rpc('gettxoutsetinfo')['total_amount'] == 0
+        for method, params, code in [('getwalletinfo', (), -32601),
+                                     ('getblocktemplate', ({'rules': ['segwit']},), -9)]:
+            try:
+                node.rpc(method, *params)
+            except RuntimeError as error:
+                assert json.loads(str(error))['code'] == code, str(error)
+            else:
+                raise AssertionError('Main identity probe unexpectedly permitted ' + method)
+        assert node.rpc('getblockcount') == 0
+        assert not list(directory.rglob('wallet.dat'))
+    finally:
+        node.stop()
 
 
 def main():
@@ -157,13 +195,7 @@ def main():
         assert root.parent == temporary_parent and root.name.startswith('dvc-regtest-')
         first, second = Node(daemon, root / 'one'), Node(daemon, root / 'two')
         try:
-            # Production startup must fail before opening a spendable unpinned chain.
-            main_dir = root / 'main-guard'
-            main_dir.mkdir()
-            guard = subprocess.run([daemon, '-datadir=' + str(main_dir), '-listen=0', '-dnsseed=0', '-printtoconsole=1'],
-                                   capture_output=True, timeout=20, **hidden_process_options())
-            assert guard.returncode != 0, 'Mainnet started without an approved founder script'
-            assert 'founder' in (guard.stdout + guard.stderr).decode(errors='replace').lower()
+            probe_mainnet(daemon, root / 'main-identity')
             first.start()
             second.start()
             assert first.rpc('getblockhash', 0) == second.rpc('getblockhash', 0) == GENESIS
@@ -221,7 +253,8 @@ def main():
             assert first.rpc('getbestblockhash') == winning and first.rpc('getbalance') == balance
             assert first.rpc('gettransaction', payment)['confirmations'] >= 1
             print(json.dumps({'passed': True, 'network': 'disposable regtest', 'height': first.rpc('getblockcount'),
-                              'checks': ['mainnet guard', 'isolated genesis', 'two peers', 'Scrypt proof', 'founder output',
+                              'checks': ['main identity without wallet or coins', 'main mining requires peers',
+                                         'isolated genesis', 'two peers', 'Scrypt proof', 'founder output',
                                          'overpayment rejection', 'founder redirection rejection', 'maturity', 'CLI',
                                          'Keeper mining bridge', 'transfer', 'reorganization', 'restart persistence']}))
         finally:

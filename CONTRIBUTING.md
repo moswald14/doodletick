@@ -1,6 +1,6 @@
 # Contributing to Doodle Tick
 
-Doodle Tick is an experimental creator vault, private arcade and shared mushroom garden. Small, reviewable contributions are welcome. Start with an existing issue or describe the intended behavior before making a large change. The maintainer is [@moswald14](https://github.com/moswald14).
+Doodle Tick is an experimental creator vault, private arcade, shared mushroom garden and native Doodleverse Coin client. Small, reviewable contributions are welcome. Start with an existing issue or describe the intended behavior before making a large change. The maintainer is [@moswald14](https://github.com/moswald14).
 
 ## Run and check a change
 
@@ -25,11 +25,21 @@ npm run check
 npm test
 ```
 
-Home Assistant-specific code lives in `doodletick/main.mjs`, `gateway.mjs`, `migration.mjs` and `public/`. See [the architecture guide](ARCHITECTURE.md) for the storage and network boundaries.
+Home Assistant-specific code lives in `doodletick/main.mjs`, `gateway.mjs`, `migration.mjs`, `core-options.mjs`, `core-process.mjs` and `public/`. See [the architecture guide](ARCHITECTURE.md) for the storage and network boundaries.
 
 Run checks appropriate to your change. A documentation correction does not need a new unit test. A change to signing, payments, recovery or retry behavior needs a regression test that exercises the failure it prevents. A UI change needs a browser check; a container or networking change needs the corresponding environment check. State what was not tested.
 
-Build numbered downloads from the repository root with `python scripts/package-release.py --version 0.12b`. Artifacts are created exclusively in `dist/0.12b/`; a repeated build refuses to overwrite them. Public-chain bytecode ships with its complete corresponding Solidity/compiler input source. Never use real keys or a paid network to run verification tests.
+Build numbered Keeper downloads from the repository root with `python scripts/package-release.py --version 0.13b`. Artifacts are created exclusively in `dist/0.13b/`; a repeated build refuses to overwrite them. Public-chain bytecode ships with its complete corresponding Solidity/compiler input source. The native Core and portable Windows packages have their own [build instructions](doodleverse-core/README.md); keep the pinned upstream source, patch, runtime provenance and license notices with each distribution. Never use real keys or a paid network to run verification tests.
+
+## Native coin changes
+
+The 0.13b Scrypt chain is separate from the legacy Keeper ledger and Ethereum contracts. Preserve its published genesis, native address prefixes, founder recipient, 21-million maximum supply, 20-million mining reserve and 30-block reward maturity. A product version change does not authorize a consensus change. Regtest and testnet founder keys are public fixtures and must never be used for live funds.
+
+Use disposable **regtest** nodes for transaction, reorganization and mining tests. Verify both sides of the boundary: Core must accept the browser's signed transaction or GPU block, and malformed amounts, wrong networks, duplicate spends and stale work must be rejected. Simulated acceptance alone is insufficient evidence of Core compatibility. Keep the desktop control interface on loopback with cookie authentication, and keep the Home Assistant node wallet disabled. The only optional host port is blockchain peer traffic; do not expose RPC or the browser service.
+
+Native wallet changes must preserve encrypted backup compatibility and local-only signing. No password or plaintext private key belongs in a request, log, fixture or saved browser record. Use the vendored cryptographic libraries rather than new elliptic-curve code. Check both reproducible crypto bundles with `node crypto-vendor/build.mjs --check` and `node crypto-vendor/build-scrypt-wallet.mjs --check`. Keep complete corresponding dependency source and notices with their generated bundles.
+
+Testnet transfers, a source review and a successful local GPU check do not establish mainnet launch, independent security review, profitability or a distributed peer network. Report each outcome separately. The Windows portable runtime, Home Assistant container and browser wallet each need checks in their actual environment; a successful Windows test does not verify an ARM64 installation.
 
 The **Jazz room** is a separate same-tab page at `public/jazz.html`. Keep its script, style and worklet dependencies as same-origin assets with relative URLs so both desktop and authenticated Home Assistant ingress work under the existing policy. List runtime additions in `keeper/pi/runtime-files.txt` before regeneration. Browser checks must cover Play, pause/resume, Stop/restart, background continuation and **Back to Keeper** stopping playback. The standalone Doodle Jazz file and an integrated Keeper page use different loading paths; do not substitute a successful standalone check for an ingress check.
 
