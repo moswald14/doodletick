@@ -1,3 +1,19 @@
+# Validation — Doodle Tick 0.11b
+
+## Shelf Defense and shared idle shelves · 2026-11-17
+
+This update builds on public 0.10b commit `6bd119753b26591625b738f2d5f41eef02604fb5`. It adds the original ShelfDEFENSE battle game and a Keeper-hosted ShelfDEFENSE Idle game. Existing vault, witness, garden, DVC and private MozCorp bundle formats are unchanged.
+
+- **701/701 combined Keeper and Home Assistant tests passed**, with zero failures or skips, in 18.17 seconds. The tests use disposable data, identities and local servers.
+- The new battle checks cover combat, shelves, upgrade skills, enemies, waveform attacks, audio lifecycle, paused restoration and malformed save preservation. The idle checks cover rules, saved progress, bounded catch-up, clock rollback, concurrent actions, stale revisions, replay receipts, request limits, damaged saves and failed disk flushes.
+- The Home Assistant integration checks launch the actual generated runtime behind its ingress gateway. Both pages and their relative assets load under the existing CSP. Validated mutation headers reach the idle handler; missing headers are rejected. Reloading the server preserves the idle game and witness identity. Corrupt idle storage returns a recovery error without replacing the file or stopping Keeper.
+- Actual Chrome testing placed a Pencil Patrol defender, started wave one, paused all shelves and restored the same wave, coins and health after reload. The attack lab opened with editable waveform controls. The idle page baked fifteen cookies, hired a helper, restored it after reload and continued producing cookies while the battle page was open. Both pages followed the existing Red night appearance choice.
+- Separate bounded AI review identified and corrected missing/null game-envelope recovery and Linux directory durability after atomic rename. A simulated post-rename directory-flush failure is not acknowledged, leaves the game unavailable, and retains its replay receipt after restart so a retry cannot credit twice.
+
+This records pre-release source verification. Public downloads and installation in the existing Home Assistant app are checked separately after publication. Browser game saves are separate from server backups; the shared idle save is included in the app backup. Physical speaker output, a complete twenty-wave browser playthrough, overnight production and multiple physical devices were not tested. No owner vault, API key, mining operation or wallet transaction was used. These checks are not an independent security audit.
+
+---
+
 # Validation — Doodle Tick 0.10b
 
 ## Combined MozCorp, Phrase lab and Telephone update · 2026-11-17

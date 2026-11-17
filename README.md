@@ -1,8 +1,14 @@
-# Doodle Tick · 0.10b
+# Doodle Tick · 0.11b
 
 A creator arcade inspired by the loops of a telephone cord: an hourly color clock, Dot Wave sound mushrooms, an encrypted vault and direct peer connections. Run a Keeper on your computer or Home Assistant.
 
 [![Add Doodle Tick to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fmoswald14%2Fdoodletick)
+
+## Shelf Defense
+
+**0.11b adds Shelf Defense to the Keeper sidebar.** Play the original three-shelf tower-defense game with five defenders, skill trees, bosses and editable waveform attacks. Switch to **Idle shelves** for a shared cookie bakery with helpers, upgrades and Story Stars.
+
+Tower-defense saves stay in this browser and reopen paused. Idle cookies are saved by this Keeper, shared by its users, and continue while it runs; restart catch-up is capped at 24 hours. Game cookies and battle coins have no connection to DVC, garden balances or the creator vault. No OpenAI account or key is needed. Read [Shelf Defense](keeper/SHELF-DEFENSE.md).
 
 ## Private MozCorp rooms
 

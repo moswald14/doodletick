@@ -1,3 +1,11 @@
+## 0.11b — Shelf Defense
+
+Adds Shelf Defense to Keeper: the original three-shelf tower-defense game, five defenders and skill trees, bosses, and the editable waveform attack lab. Same-tab navigation returns to Keeper or opens the idle edition. Browser battle saves retain their format and reopen paused.
+
+Adds Idle shelves: one shared cookie bakery stored by Keeper, with five helpers, three shelves, upgrades, achievements and Story Stars. Mutations are serialized and protected against duplicate retries. Production continues while Keeper runs; stopped-server catch-up is capped at 24 hours without replaying backward clock intervals. Unread saves remain available for recovery.
+
+Game counters are separate from DVC, garden balances and creator vaults. Home Assistant uses its existing ingress and app data backup, with no new ports, permissions or helper integrations. The installed private MozCorp bundle and existing identity formats are preserved.
+
 ## 0.10b
 
 Adds an isolated private MozCorp station room and a pinned local bundle installer. The private source is installed separately; existing vault, garden, coin and identity formats remain unchanged.
