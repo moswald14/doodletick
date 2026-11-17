@@ -1,3 +1,9 @@
+## 0.12b — MozCorp shared services
+
+MozCorp cloud savepoints, the fictional HOPE-LON feed and the upgrade proposal desk now run in this Keeper and persist with its app data. Savepoints support export/import, guarded restoration and explicit removal. The feed starts paused and accepts only fictional personas and solved game cases; personal desks remain separate.
+
+Upgrade proposals can be written locally or explicitly requested from OpenAI after optional server-side configuration and instruction-only consent. Versions, review decisions and release references persist here; approval never executes or deploys code. Existing private-site data needs an explicit export/import. Telephone fixes retain the complete Animal Telephone workspace in projects, preserve exact held source, carry feed session guards correctly and restore cloud snapshots into a separate checked room. Existing Shelf Defense, Phrase lab, Credits 14, Blooper Reel 15, Studio scores and signed formats are retained.
+
 ## 0.11b — Shelf Defense
 
 Adds Shelf Defense to Keeper: the original three-shelf tower-defense game, five defenders and skill trees, bosses, and the editable waveform attack lab. Same-tab navigation returns to Keeper or opens the idle edition. Browser battle saves retain their format and reopen paused.

@@ -1,5 +1,5 @@
 name: Doodle Tick Keeper
-version: "0.11b"
+version: "0.12b"
 slug: doodletick
 description: Creator vault, native DVC mining and payments, garden and direct peer arcade
 url: https://github.com/moswald14/doodletick
@@ -26,5 +26,10 @@ map:
     read_only: true
 options:
   hostname: doodletick-ha
+  mozcorp_ai_enabled: false
+  mozcorp_openai_model: gpt-5-mini
 schema:
   hostname: "match(^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$)"
+  mozcorp_ai_enabled: bool
+  mozcorp_openai_model: "match(^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,79}$)"
+  mozcorp_openai_api_key: "password?"

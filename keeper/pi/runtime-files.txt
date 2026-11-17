@@ -138,3 +138,9 @@ public/shelf-idle.css
 public/shelf-idle-card.js
 public/shelf-idle-client.mjs
 public/shelf-idle.mjs
+mozcorp-world.mjs
+mozcorp-world-validation.mjs
+mozcorp-world-provider.mjs
+mozcorp-world-http.mjs
+public/mozcorp-cloud.mjs
+public/mozcorp-upgrades.mjs

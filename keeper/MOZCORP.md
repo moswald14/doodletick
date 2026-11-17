@@ -1,4 +1,4 @@
-# MozCorp private rooms · 0.10b
+# MozCorp private rooms · 0.12b
 
 ## Install your rooms
 
@@ -24,6 +24,16 @@ Credits list the fictional cast and active machine crew. Blooper Reel uses only 
 
 The cards persist as literal outputs, separate from the source, protected master and final story. They never enter story feedback or change the Studio soundtrack.
 
+## Shared savepoints and HOPE-LON
+
+Shared savepoints live in this Keeper's server storage and are available to people authorized to open its Home Assistant app. They follow the original pre-story snapshot boundary: the final story is excluded. Use **Save world** and a portable project export for the complete narrative, protected master and attached Studio score.
+
+The service holds up to 24 savepoints, each at most 120,000 UTF-8 bytes. At capacity it refuses another save instead of removing an old one. Export a backup before deleting records. Restoring opens a candidate room first; a failed restore preserves the active room.
+
+Existing records on the original private site do not appear automatically. Export them there and explicitly import the matching savepoint data into this Keeper. Exporting or importing a savepoint is separate from an encrypted vault backup.
+
+HOPE-LON keeps its fictional feed and solved-case records in the same Keeper service storage. It starts paused. It does not copy accounts or records from the original site and does not add social posts, likes or membership services.
+
 ## Keep desk boundaries intact
 
 EVERYWHEN transfers only its approved fictional scene and creative icon cue. Sensations, notes, weather, receipts, full receipt hashes and synthetic RAM buffers stay outside that transfer. The cue travels through a one-use in-memory handoff; using its preview in the hopper remains an explicit action.
@@ -36,7 +46,23 @@ Only the native Mozmoji dictionary and Voo Don't preferences persist through Kee
 
 **News Grabber** fetches headlines only after an explicit action. Keeper makes a bounded request to a fixed Google News RSS endpoint, then returns headline text and source links. A headline is source material, not verified evidence. Remote executable news scripts are not loaded into the rooms.
 
-Use **Open original private site** for services belonging to that site, including private cloud savepoints, online HOPE-LON services and remote upgrades. The local integration does not silently write to those services or copy their authentication into Keeper.
+Use **Open original private site** to open its separately hosted copy. Keeper's local service records are separate; they do not silently update that site's records or reuse its authentication.
+
+## Upgrade proposals in Keeper
+
+Open the upgrade proposal desk to choose an area, identify the base release and write an instruction. **Manual proposal** works without an AI provider key. Enter a title, summary, individual changes and reasons, privacy impact, review checks, rollback plan and risk level, then save the proposal for review.
+
+When AI is configured, save **Allow external AI proposal requests** before choosing **AI proposal**. Each request also needs a fresh instruction-only consent. Only the selected area, the instruction you enter and the base release reference are sent to the provider. Manual proposal fields, world saves, private desk notes, files and vault contents are excluded. Missing configuration is shown explicitly; the manual workflow remains available.
+
+For Home Assistant, set `mozcorp_ai_enabled`, `mozcorp_openai_model` and the password field `mozcorp_openai_api_key` in the app configuration, then restart the app. Desktop Keeper reads `OPENAI_API_KEY` and `OPENAI_MODEL` when it starts. Keys remain on the server; do not put them in an instruction. Configuration alone makes no AI request: the saved preference and consent for an individual request are still required.
+
+Saved proposals retain their instruction and structured details for every version. Review the current version, then approve or decline it. **Revise proposal** creates another version and returns it to review; an earlier approval does not approve the new version. Stale writes are refused, so refresh after another user changes the desk. Your unsaved form stays available when a request fails.
+
+After a separately completed release, use **Record completed deployment** with its release reference. A recorded deployment can later receive a completed rollback reference. These actions save review records; the desk does not install or restore code. Deleting a proposal removes its saved instructions and versions after confirmation, while metadata-only audit events remain.
+
+**Export proposals** downloads a versioned JSON copy of the instructions, proposal versions and audit records. Provider credentials are excluded. The export is unencrypted and intended for review and backup; this desk has no proposal-import action.
+
+Proposal instructions, versions and audit records persist in this Keeper's service storage, shared by its authorized app users. They are separate from the encrypted creator vault and portable world projects. Use the existing Keeper backup procedure for the server's service records.
 
 ## Contributor boundaries
 

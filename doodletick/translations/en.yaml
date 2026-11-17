@@ -1,0 +1,13 @@
+configuration:
+  hostname:
+    name: Keeper name
+    description: The name for this Keeper.
+  mozcorp_ai_enabled:
+    name: Enable AI upgrade drafts
+    description: Allow the upgrade desk to offer OpenAI drafts. Each request still needs your explicit choice. Restart the app after changing these settings.
+  mozcorp_openai_model:
+    name: AI model
+    description: The OpenAI model used for upgrade drafts. Manual proposals work without an AI service.
+  mozcorp_openai_api_key:
+    name: OpenAI API key
+    description: Optional server-side key for paid AI upgrade drafts. Keep it private. Leave this empty to use the local manual desk. Restart the app after changing it.
