@@ -7,6 +7,7 @@ import { createDvcPeerUI } from './dvc-peer-ui.mjs';
 import { createClockWheel } from './clock-wheel.mjs';
 import { createWeatherUI } from './weather-ui.mjs';
 import { createBackgroundMusicUI } from './background-music-ui.mjs';
+import { createTelephoneKeeper } from './telephone-keeper.mjs';
 import { createSleepUI } from './sleep-ui.mjs';
 import { createKeeperClock } from './keeper-clock.mjs';
 import { createVpnUI } from './vpn-ui.mjs';
@@ -74,14 +75,15 @@ const backgroundMusicUI = createBackgroundMusicUI($('keeper-music'), { onBeforeP
   $('atmosphere-music-status').textContent = state.phase === 'playing' ? (state.muted || state.volume === 0 ? 'Music muted' : 'Music playing') : state.phase === 'starting' ? 'Starting music…' : 'Music paused';
 } });
 function showView(view) {
-  if (!['arcade', 'garden', 'sleep', 'coin', 'vault', 'files', 'verify', 'about'].includes(view)) view = 'arcade';
-  for (const section of ['arcade', 'garden', 'sleep', 'coin', 'vault', 'files', 'verify', 'about']) $('view-' + section).hidden = view !== section;
+  if (!['arcade', 'telephone', 'garden', 'sleep', 'coin', 'vault', 'files', 'verify', 'about'].includes(view)) view = 'arcade';
+  for (const section of ['arcade', 'telephone', 'garden', 'sleep', 'coin', 'vault', 'files', 'verify', 'about']) $('view-' + section).hidden = view !== section;
   for (const button of document.querySelectorAll('[data-view]')) { button.classList.toggle('active', button.dataset.view === view); button.setAttribute('aria-current', button.dataset.view === view ? 'page' : 'false'); }
-  $('page-name').textContent = { garden: 'MUSHROOM GARDEN', sleep: 'SLEEP GARDEN', coin: 'DOODLEVERSE COIN', arcade: 'THE DOODLEVERSE', vault: 'MY VAULT', files: 'FILES & PEERS', verify: 'CHECK A RECEIPT', about: 'THE IDEA' }[view];
+  $('page-name').textContent = { telephone: 'TELEPHONE WORLD', garden: 'MUSHROOM GARDEN', sleep: 'SLEEP GARDEN', coin: 'DOODLEVERSE COIN', arcade: 'THE DOODLEVERSE', vault: 'MY VAULT', files: 'FILES & PEERS', verify: 'CHECK A RECEIPT', about: 'THE IDEA' }[view];
   arcadeUI?.setVisible(view === 'arcade');
   mushroomUI.setVisible(view === 'garden');
   updateCoinVisibility(view === 'coin');
-  history.replaceState(null, '', '#' + view);
+  history.replaceState(null, '', location.search + '#' + view);
+  window.dispatchEvent(new CustomEvent('keeper-viewchange', {detail:view}));
 }
 const fileUI = createFilesUI({ toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); } });
 arcadeUI = createArcadeUI({ toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); }, onPackStored: () => fileUI.refresh() });
@@ -443,3 +445,28 @@ startClockPolling();
 showView(location.hash.slice(1) || 'arcade');
 window.addEventListener('hashchange', () => showView(location.hash.slice(1)));
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.mjs', { type: 'module' }).catch(() => {});
+
+const telephoneUI = createTelephoneKeeper($('view-telephone'), {
+  navigate: showView,
+  async stageDraft(project) {
+    if (!vault) { toast('Unlock your vault, then return to Telephone World and copy the story.'); showView('vault'); return; }
+    if (busy) throw new Error('Wait for the current vault operation to finish.');
+    const body = window.DoodleBridge.text(project);
+    if (body.length > MAX_TEXT) throw new Error('This story is larger than a vault entry. Export the project and split the text into entries.');
+    if (($('entry-body').value || $('entry-title').value) && !confirm('Replace the current unsealed draft with this Telephone story? Export or seal your current draft first if you want to keep it.')) return;
+    const serial = generation; busy = true;
+    try {
+      await flushDraft(); if (!vault || serial !== generation) throw new Error('The vault locked. Unlock it and copy the story again.');
+      const previous = structuredClone(vault.draft);
+      vault.draft = {title:project.title.slice(0,140), body, kind:project.sourceMode === 'fiction' ? 'Story' : 'Note', revisionOf:null};
+      markDirty(); renderDraft();
+      try { await persist(); } catch(error) { if(vault && serial === generation){vault.draft=previous;renderDraft();} throw error; }
+      if (!vault || serial !== generation) throw new Error('The vault locked before the draft finished saving.');
+      showView('vault'); toast('Telephone story copied to your encrypted draft. Review it, then seal it when you choose.');
+    } finally { busy=false; }
+  },
+  async stageWorld(pack) {
+    if (!confirm('Open this generated map in the workshop? Save or export any current workshop edits before replacing them.')) return;
+    showView('arcade'); await arcadeUI.importTelephoneWorld(pack);
+  }
+});

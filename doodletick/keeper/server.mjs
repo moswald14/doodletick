@@ -40,7 +40,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
   } catch (e) { await vpn?.close(); await garden?.idle(); await dvc?.close(); await lock.close(); await unlink(lockPath); throw e; }
   const unavailable = () => { throw Object.assign(new Error('DVC history needs recovery.'), { code: 'DVC_STORAGE' }); };
   const handleDvc = createDvcHttpHandler({ node: dvc || Object.fromEntries(['status', 'account', 'createJob', 'submitBlock', 'submitTransfer', 'getSegment', 'locate', 'locators', 'ingestSegment', 'getMempool'].map(name => [name, unavailable])), mutationLimit: 120 });
-  const types = { '.txt': 'text/plain; charset=utf-8', '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json' };
+  const types = { '.txt': 'text/plain; charset=utf-8', '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json' };
   const allowedFiles = new Set(['clock-wheel.mjs', 'index.html', 'app.mjs', 'core.mjs', 'style.css', 'logo.svg', 'files.css', 'files-ui.mjs', 'licenses.mjs', 'archive.mjs', 'file-store.mjs', 'peers.mjs', 'manifest.webmanifest', 'sw.mjs', 'theme.mjs', 'theme.css']);
   for (const file of ['spirograph.mjs', 'spirograph-auth.mjs', 'vpn-description.mjs', 'vpn-transport.mjs', 'vpn-ui.mjs', 'arcade.css', 'arcade-ui.mjs', 'arcade-canvas.mjs', 'arcade-room.mjs', 'arcade-store.mjs', 'arcade-link.mjs', 'game-engine.mjs', 'workshop.mjs']) allowedFiles.add(file);
   for (const file of ['mushroom-core.mjs', 'mushroom-ui.mjs', 'mushroom-art.mjs', 'mushroom.css', 'mushroom-mining.mjs', 'mushroom-miner.mjs', 'dot-effects-dsp.mjs', 'dot-amp-tone.mjs', 'dot-studio-dsp.mjs', 'dot-collision-audio.mjs', 'dot-wave-export.mjs', 'dot-mushroom-dsp.mjs', 'dot-mushroom-motion.mjs']) allowedFiles.add(file);
@@ -50,6 +50,8 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
   for (const file of ['weather.mjs', 'weather-ui.mjs', 'weather.css', 'background-music.mjs', 'background-music-ui.mjs', 'background-music.css']) allowedFiles.add(file);
   for (const file of ['dvc-core.mjs', 'dvc-miner.mjs', 'dvc-wallet.mjs', 'dvc-ui.mjs', 'dvc-sync.mjs', 'dvc-peer-ui.mjs', 'dvc.css', 'dvc-console.mjs', 'dvc-console.css']) allowedFiles.add(file);
   for (const file of ['keeper-clock.mjs', 'sleep-ui.mjs', 'sleep-audio.mjs', 'sleep-mix.mjs', 'sleep-worker.mjs', 'sleep.css']) allowedFiles.add(file);
+  for (const file of ['jazz.html', 'jazz.css', 'jazz-core.mjs', 'jazz-player.mjs', 'jazz-worklet.mjs']) allowedFiles.add(file);
+  for (const file of ['doodle-bridge.js', 'telephone.html', 'telephone.css', 'telephone-1.js', 'telephone-2.js', 'telephone-session.js', 'telephone-integration.css', 'telephone-rhyme.html', 'telephone-rhyme.css', 'telephone-rhyme-1.js', 'telephone-keeper.mjs', 'telephone-keeper.css', 'studio.html', 'studio-app.js', 'studio-worker.js', 'studio.css', 'studio-classic.html', 'studio-notices.txt']) allowedFiles.add(file);
   const server = http.createServer(async (req, res) => {
     const address = server.address();
     const hostnames = [`127.0.0.1:${address.port}`, `localhost:${address.port}`];
@@ -64,7 +66,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
       const url = new URL(req.url, 'http://' + req.headers.host);
       if (await handleDvc(req, res, url)) return;
       if (await vpn.handleLocal(req, res, url)) return;
-      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.7b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt(), nativeCoin: { available: !dvcUnavailable, error: dvcUnavailable ? 'DVC_STORAGE' : null } });
+      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.9.3b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt(), nativeCoin: { available: !dvcUnavailable, error: dvcUnavailable ? 'DVC_STORAGE' : null } });
       if (req.method === 'GET' && url.pathname === '/api/time') {
         const receivedAt = Date.now(), nonce = url.searchParams.get('nonce');
         if (!validTimeNonce(nonce) || url.searchParams.getAll('nonce').length !== 1) return send(400, { error: 'A fresh clock challenge is required.' });
@@ -86,6 +88,8 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
         const job = queue.then(issue); queue = job.catch(() => {});
         return send(200, await job);
       }
+      if (url.pathname === '/telephone.html') res.setHeader('Content-Security-Policy', res.getHeader('Content-Security-Policy').replace("connect-src 'self'", "connect-src 'self' https://api.gdeltproject.org"));
+      if (url.pathname === '/telephone-rhyme.html') res.setHeader('Content-Security-Policy', res.getHeader('Content-Security-Policy').replace("frame-ancestors 'none'", "frame-ancestors 'self'"));
       if (req.method !== 'GET') return send(405, { error: 'Method not supported.' });
       const file = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
       if (!allowedFiles.has(file)) return send(404, { error: 'Not found.' });

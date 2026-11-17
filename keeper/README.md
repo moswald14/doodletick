@@ -1,6 +1,10 @@
-# Doodle Tick Keeper 0.7b
+# Doodle Tick Keeper 0.9.3b
 
 Doodle Tick is an experimental creator vault, social arcade, file library and shared mushroom garden. Spirographs help people compare signed creator keys when pairing. Your writing and files remain in your browser; Keepers provide signed receipts, a local directory and a shared garden scorekeeper.
+
+The 0.9.3b update connects **Telephone World**, **Dot Studio** and Keeper. Save a narrative session, attach an editable Studio soundtrack, then copy its text to an encrypted vault draft or open a fictional map in the workshop. The shared creative shelf and `.telephone.json` exports are unencrypted, separate from the vault. See [Telephone World](TELEPHONE-WORLD.md).
+
+The 0.8b source update adds a **Jazz room** with an original local piano, bass and drum trio. Open the sidebar link and press **Play jazz**; no vault, wallet or streaming account is required. It opens in the same tab, and **Back to Keeper** leaves the player and stops its audio. See [the jazz guide](JAZZ.md) for background listening, controls and saved preferences. See [VALIDATION.md](VALIDATION.md) for source checks and limits, and the published release for downloads.
 
 The 0.7b update adds a **Sleep garden** for locally synthesized wind and mushroom voices, plus signed Keeper clock synchronization. See [time and Sleep garden](TIME-AND-SLEEP.md) for controls, source trust and interruption limits. Existing vault, garden and native-chain formats remain unchanged.
 
@@ -29,6 +33,12 @@ Use the same browser and address for the same saved vault: `localhost` and `127.
 - **Doodleverse:** practice with bots, join a private four-player room, or build a world. Games include Stardust Dash, Color Conquest and Four to Orbit. The room's host must remain online. See [the game guide](NETWORK.md).
 - **Files & peers:** add a file and choose its content license, then explicitly enable sharing. Pair with another member and compare every group of the spirograph verification code. Received files can be re-shared with their original credits. Keep a holder online and unlocked when others need a copy.
 - **Check a receipt:** verify signed writing or garden receipts. Arcade replays are checked in Doodleverse. A historical receipt is not proof of a current balance, independent time, original authorship or legal ownership.
+
+## Jazz room
+
+Open **Jazz room** in the sidebar, then press **Play jazz**. **Velvet swing**, **Blue hour** and **Bossa garden** provide swing, twelve-bar blues and bossa settings. The synthesized trio keeps composing new phrases and accompaniment; it does not stream recordings.
+
+Use Pause/Resume, Stop, New set, master and instrument levels, mute, tempo, swing, room reverb and dim mode. Preferences stay in this browser outside the vault, while opening or reloading always waits for Play. Jazz can continue with another window in front while the jazz page remains open and your device stays awake. **Back to Keeper**, closing the page, device sleep or a browser interruption can stop it. The Keeper server does not supply unattended audio playback on Home Assistant hardware. Read [JAZZ.md](JAZZ.md).
 
 ## Sleep garden
 

@@ -7,6 +7,6 @@ COPY keeper/ ./keeper/
 COPY gateway.mjs main.mjs migration.mjs ./
 COPY public/ ./public/
 LABEL io.hass.name="Doodle Tick Keeper" io.hass.description="Private Doodleverse Keeper" \
-      io.hass.type="addon" io.hass.version="0.7b" io.hass.arch="${BUILD_ARCH}"
+      io.hass.type="addon" io.hass.version="0.9.3b" io.hass.arch="${BUILD_ARCH}"
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s CMD node -e "fetch('http://127.0.0.1:8099/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 CMD ["node", "main.mjs"]

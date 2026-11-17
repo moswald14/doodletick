@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Rhyme Bomb — CPU Snack</title>
+  <link rel="stylesheet" href="./telephone-rhyme.css">
+</head>
+<body>
+  <main>
+    <p class="eyebrow">💣🎵 RHYME BOMB // CPU SNACK</p>
+    <h1>Words in.<br>Goat out.</h1>
+    <p class="subtitle">A deliberately ridiculous, visibly bounded word-and-melody machine.</p>
+
+    <section class="panel" aria-label="Rhyme Bomb controls">
+      <label for="words">INPUT: WORDS <span id="count">0/64</span></label>
+      <div class="input-row">
+        <input id="words" maxlength="64" value="moon over town" autocomplete="off" spellcheck="false" aria-describedby="contract">
+        <button id="detonate" type="button">💣 DETONATE</button>
+      </div>
+      <div class="controls">
+        <button id="stop" type="button" disabled>⏹ STOP</button>
+        <button id="reset" type="button">↺ RESET</button>
+      </div>
+      <p class="contract" id="contract">MAX PASSES = 8 · MAX INPUT = 64 CHARACTERS · NO NETWORK · NO STORAGE · NO FILE ACCESS · NO AUTORUN · STOP ALWAYS WORKS</p>
+    </section>
+
+    <div class="status"><span>PIPELINE</span><span id="state" aria-live="polite">IDLE</span></div>
+    <ol id="log" aria-live="polite"></ol>
+    <div id="halt" class="halt">␀ &nbsp; WAITING FOR A VERY SMALL, VERY SILLY DETONATION</div>
+    <footer>Music is synthesized locally only while a run is active. <strong>␀</strong> is a visual HALT marker, never a real null byte.</footer>
+  </main>
+
+  <script src="./telephone-rhyme-1.js"></script>
+</body>
+</html>

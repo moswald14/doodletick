@@ -36,7 +36,8 @@ export function createIngressServer({ keeperPort, control, ingressIP = '172.30.3
       const headers = { host: `127.0.0.1:${keeperPort}` };
       for (const name of ['content-type', 'authorization']) if (req.headers[name]) headers[name] = req.headers[name];
       const upstream = http.request({ hostname: '127.0.0.1', port: keeperPort, path: req.url, method: req.method, headers }, response => {
-        res.writeHead(response.statusCode, { 'Content-Type': response.headers['content-type'] || 'application/octet-stream', ...security });
+        const pageSecurity = req.url.split('?')[0] === '/telephone.html' ? { ...security, 'Content-Security-Policy': security['Content-Security-Policy'].replace("connect-src 'self'", "connect-src 'self' https://api.gdeltproject.org") } : security;
+        res.writeHead(response.statusCode, { 'Content-Type': response.headers['content-type'] || 'application/octet-stream', ...pageSecurity });
         response.pipe(res);
         response.on('error', () => res.destroy());
       });

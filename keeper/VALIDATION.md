@@ -1,3 +1,67 @@
+# Validation — Doodle Tick 0.9.3b
+
+## Combined Telephone World, Studio and Jazz · 2026-11-17
+
+The combined release includes the corrected Telephone integration and the separately reviewed Jazz phrasing update in one source tree. Existing vault, witness, garden and native DVC formats remain unchanged.
+
+| Check | Observed evidence |
+| --- | --- |
+| Complete combined Keeper and Home Assistant suite | **532/532 passed**, zero failures or skips, in 26.00 seconds on the final 0.9.3b source. This includes the Telephone state/import regressions and seven new Jazz phrasing checks. Tests used disposable data and local servers. |
+| Data preservation review | Separate actual-script reproductions passed **5/5** for broken/oversized drawings, edits during loading/saving, and malformed module levels. The final import validates typed state and decodes every drawing before modifying the open story. |
+| Source and packaging inputs | **347 public source files and 108 matching generated runtime files** passed repository checks. Canonical Jazz code and tests retain the reviewed musical changes; the Home Assistant runtime was regenerated after integration and the 0.9.3b label change. |
+| Studio and browser evidence | The component checks and actual Chrome workflows below cover story save/reopen, editable soundtracks, portable project import, workshop staging and disposable encrypted drafts. Jazz was also exercised through a disposable authenticated-ingress-style route with Play, bossa, Stop and return navigation. |
+
+The final data-loss fixes were checked against the actual scripts with controlled delayed storage and image decoding. Physical speaker output, overnight playback, multiple real devices and live news availability remain unverified. GitHub publication, public download checksums and actual Home Assistant installation are subsequent release operations, recorded separately. No real wallet signature, mining operation or owner vault was used for verification. These checks are not an independent security audit.
+
+Telephone projects and portable exports remain unencrypted browser data. They are separate from encrypted vault drafts and from Home Assistant app backups. Use project export for portable copies.
+
+The component and historical source-cut evidence follows.
+
+---
+
+# Validation — Telephone World integration follow-up
+
+2026-11-17. Corrected local development source based on Keeper 0.9.1b and Studio 2.3. The Doodle Keeper chat owns the next combined numbered release, Jazz update and Home Assistant installation. Existing versioned draft archives are not replaced.
+
+| Check | Fresh evidence |
+| --- | --- |
+| Complete Keeper and Home Assistant suite | **525/525 passed**, zero failures or skips; 27.66 seconds in the final run. Disposable local servers and identities only. |
+| Telephone integration | **16/16 passed**: portable exact-source records, strict imported controls/state, all source-hold modes, failed/oversized drawing atomicity, edit-during-read/decode/generation/save races, pending-read/worker Stop cancellation, playable map validation and desktop/authenticated-ingress assets. |
+| Separate Keeper review reproductions | **5/5 passed** without modifying the peer's harness: malformed/oversized PNGs, edits during decode, edits during save, malformed module levels followed by Save. |
+| Studio | **30 core checks, 7 Telephone/worker checks and 1 actual-interface harness passed**. Includes finite stereo rendering, saved sampled audio, portable scores, Undo, source hold, no autoplay and all 49 recovered sounds. |
+| Source/runtime consistency | Repository check passed: 346 source files and 108 matching generated Home Assistant runtime files. New scripts/workers remain same-origin; news permission is restricted to the Telephone page. |
+| Chrome workflow | Saved and reopened a Telephone story, generated/attached/played/stopped a Studio score, opened a playable workshop map, copied a story to an encrypted disposable vault draft, canceled occupied-draft replacement, preserved held-source whitespace, and imported a portable example into a clean app address. |
+
+Final data-loss corrections were tested against the actual delivered adapter/session scripts, including the independent peer harness. Browser controls became unavailable before a further browser pass on those last corrections. The browser export button reported a portable download; automation could not retrieve its saved path. JSON round trips and an actual portable-file import were independently verified.
+
+Physical Home Assistant installation, separate-network devices, long unattended listening and GDELT availability were not tested in this chat. No real wallet, live mining, user keys, vaults or garden ledgers were used. These checks are not an independent security audit.
+
+The creative project shelf is plaintext in this browser and origin. Copying to a vault draft uses the existing encryption path; sealing and witnessing remain explicit. Source mode, preserved master, generated story and Studio score stay separate. Private typing drills, match profiles and encryption passphrases do not enter narrative snapshots.
+
+Historical release evidence follows unchanged.
+
+---
+
+# Validation — Doodle Tick 0.8b
+
+## Doodle Jazz room · 2026-11-16
+
+The integrated room preserves the standalone trio and controls, while replacing its inline/data-URL loading with external same-origin modules. Desktop and Home Assistant keep their existing script, worker and authenticated-ingress policies.
+
+| Check | Observed evidence |
+| --- | --- |
+| Complete application suite | **509/509 passed**, zero failures or skips. Includes the existing identity, garden, chain, clock, backup and audio checks plus five jazz checks. |
+| Jazz composition and audio | Three styles composed changing, bounded phrases over 1,024 bars each. Actual stereo renders were finite, bounded below clipping, sample-timed, and became silent when instrument levels were muted. A separate original-engine run composed a simulated 24 hours; this is not a day-long listening test. |
+| Serving and access | All five assets loaded with correct content types through desktop and the generated Home Assistant gateway. Both retained script-src 'self' and worker-src 'self'. Spoofed direct ingress access remained blocked. No private-state files were exposed and public witness/receipt status was unchanged by asset requests. |
+| Browser preview | The real Keeper sidebar opened Jazz room. Play produced a nonzero output meter and advancing bars. A Home Assistant-style ingress prefix loaded the generated player, imports and worklet correctly; bossa changes and pause/resume worked. Back to Keeper returns in the same tab and page exit releases jazz audio. |
+| Review and packaging inputs | A separate package review found no blocking source issue. Canonical/generated runtime checks passed: 90 matching generated files, 308 public source files at the reviewed source cut. The five jazz assets are in the server allowlist, desktop offline cache and Pi/runtime inventories. |
+
+These are source and local-browser observations. Physical speaker output, mobile screen-lock playback and overnight uptime remain unverified. Live Home Assistant installation and immutable archive publication are release/deployment steps recorded separately. No live vault, private key, garden ledger or backup was used in testing. Jazz requires no vault, wallet, microphone, minting or mining.
+
+The historical reports below retain their original source-cut evidence and pending wording.
+
+---
+
 # Validation — Doodle Tick 0.7b
 
 ## Keeper time and Sleep garden · 2026-11-16

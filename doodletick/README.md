@@ -1,6 +1,8 @@
-# Doodle Tick Keeper · 0.7b
+# Doodle Tick Keeper · 0.9.3b
 
 Creator arcade, hourly color clock, encrypted vault, mushroom garden and native Doodleverse Coin for Home Assistant OS (aarch64 and amd64).
+
+Open **Telephone World** in the sidebar to create a narrative, give it an editable soundtrack in the included **Dot Studio**, and carry it into Keeper as a vault draft or a playable fictional world. Creative projects and exports are unencrypted browser copies; the vault remains separate. **Jazz room** adds a local piano, bass and drum trio with connected chords, repeating phrases and swing. Sound starts only when you press Play and uses this browser’s speakers or headphones. See the [Telephone guide](../keeper/TELEPHONE-WORLD.md) and [Jazz guide](../keeper/JAZZ.md).
 
 The **Sleep garden** combines locally generated wind and mushroom sounds. Press **Start sleep sounds** for the eight-hour, low-volume preset with a final-minute fade. Starter mushrooms work without a vault; owned recipes are read only for listening. Sound may continue in a hidden tab and through vault locking once rendered, but the page and computer must remain active. There is no autoplay, new coin reward or uninterrupted-playback promise.
 

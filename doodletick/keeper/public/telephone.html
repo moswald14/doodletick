@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#090b0f">
+  <title>Dot to Forget to Blink — Bullshit Telephone World 2</title>
+  <meta name="description" content="Bullshit Telephone World 2: an all-machine game of language, empathy, Kitchen Animals, backwards tragedy, Boss Scramble Breakpoint, and extremely questionable buttons.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='13' fill='%23090b0f'/%3E%3Cpath d='M17 13h9v15h12V13h9v15h7L32 53 10 28h7z' fill='%23ffec43'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./telephone.css">
+<link rel="stylesheet" href="./telephone-integration.css"></head>
+<body>
+<section class="dv-toolbar" aria-label="Doodleverse creative project">
+<div class="dv-top"><a href="./#telephone">← Doodle Keeper</a><strong>☎ TELEPHONE WORLD / DOODLEVERSE</strong><a id="dv-studio" href="./studio.html#telephone">Open Dot Studio ↗</a></div>
+<div class="dv-row"><label>SESSION NAME<input id="dv-title" maxlength="80" value="My telephone world"></label><label>SAVED WORLDS<select id="dv-projects"><option value="">Saved telephone worlds…</option></select></label><button id="dv-load">Open</button><button id="dv-save">Save session</button><button id="dv-new">New</button><button id="dv-export">Export project</button><button id="dv-import">Import project</button><input id="dv-file" type="file" accept=".json,.telephone.json" hidden></div>
+<div class="dv-row"><button id="dv-play">▶ Soundtrack</button><button id="dv-stop">■ Stop music</button><button id="dv-vault">Keep story in vault ↗</button><button id="dv-world">Make a Keeper world ↗</button><span>Narrative, master copy, character, poem, drawings + editable Studio score</span></div>
+<p id="dv-status" role="status">Opening your creative workspace…</p>
+</section>
+  <main class="shell">
+    <header>
+      <div class="brand"><div class="bolt">●</div><div><h1>DOT TO FORGET TO BLINK</h1><div class="sub">THE ALL-MACHINE GAME // BULLSHIT TELEPHONE WORLD 2 // REV. 2.0</div></div></div>
+      <div class="status"><i></i> BAD IDEAS ONLINE</div>
+    </header>
+
+    <details class="panel" id="rhymeBombLab" style="margin-bottom:16px" open>
+      <summary class="panel-head" style="cursor:pointer;color:var(--pink);font-weight:900">💣🎵 RHYME BOMB // UNRHYME||WHY MUSIC LAB</summary>
+      <div style="padding:10px 15px;color:var(--muted)">Words → ridiculous rhymes → goat remix → ␀. Press DETONATE to play. STOP or Escape ends the run.</div>
+      <iframe title="Rhyme Bomb music and word transformation lab" sandbox="allow-scripts" style="display:block;width:100%;height:1050px;border:0" src="./telephone-rhyme.html"></iframe>
+    </details>
+    <section class="grid">
+      <aside class="panel">
+        <div class="panel-head"><h2>Input Hopper</h2><span class="screws">⊙ ⊙</span></div>
+        <div class="controls">
+          <div>
+            <label for="seed">Feed the machine some bullshit</label>
+            <textarea id="seed">a kid invents a machine that can make anything, but it has one stupid rule</textarea>
+          </div>
+          <div><label for="sourceHandling">Source handling</label><select id="sourceHandling"><option value="fiction">FICTION // playful machines may remix</option><option value="personal">PERSONAL / PAST // HOLD SOURCE</option><option value="observer">ONE OBSERVER // listen, no consensus</option><option value="talky">TALKY TALK KNOW GEN // one observer speaks back</option></select><div class="muted" style="font-size:.7rem;line-height:1.4;margin-top:6px">PERSONAL / PAST, ONE OBSERVER, and TALKY TALK KNOW GEN hold exact source text and skip story, character, canon, telephone, and Hivemind mutations. Switch back to FICTION when you want the machines to play.</div></div>
+          <div>
+            <label>Quick garbage</label>
+            <div class="presets">
+              <button class="chip" data-seed="a rubber duck is elected pope of a dying shopping mall">holy duck</button>
+              <button class="chip" data-seed="someone discovers time travel inside a broken vending machine">time crime</button>
+              <button class="chip" data-seed="a cat becomes CEO because everyone mistakes its paw prints for a signature">corporate cat</button>
+              <button class="chip" data-seed="the there that there'd">the there that there’d</button>
+              <button class="chip" data-seed="SNEAK ATTACK">SNEAK ATTACK</button>
+              <button class="chip" data-seed="DOUBLE TROUBLE">DOUBLE TROUBLE</button>
+              <button class="chip" data-seed="CRUNCH BAR">CRUNCH BAR</button>
+              <button class="chip" data-seed="WHOOPSIE DOODLE">WHOOPSIE DOODLE</button>
+              <button class="chip" data-seed="␀␀">NUL NUL // ␀␀</button>
+              <button class="chip" data-seed="DELETE CAREFUL">DELETE CAREFUL</button>
+              <button class="chip" data-seed="im a cryptr">im a cryptr</button>
+              <button class="chip" data-seed="tryina anyway">tryina anyway</button>
+              <button class="chip" data-seed="you're one with know">you're one with know</button>
+              <button class="chip" data-seed="should be anyway">should be anyway</button>
+              <button class="chip" data-seed="tru true">tru true</button>
+              <button class="chip" data-seed="hippo hippo ␀␀ on the moon future">hippo hippo ␀␀ on the moon future</button>
+              <button class="chip" data-seed="&lt;∴̺̏⸸4̕0ͥD̶̮A͏̂Y̯|̼ͦ⌬И̯͋I̡ͬḠ̶HT&gt;">DAY|NIGHT // corrupted signal</button>
+            </div>
+          </div>
+          <div class="minirow">
+            <div><label for="tone">Flavor</label><select id="tone"><option>unhinged</option><option>cute but wrong</option><option>dead serious</option><option>cosmic bureaucratic</option><option>Saturday cartoon</option></select></div>
+            <div><label for="calls">Telephone calls</label><input id="calls" type="number" min="1" max="100" value="7"></div>
+          </div>
+          <div><label for="characterLens">Character lens</label><select id="characterLens"><option value="open">OPEN // generated identity left unspecified</option><option value="gurl">GURL ONLY // she/her characters</option><option value="manual">IDENTITY MANUAL // blank = ␀ / unspecified</option></select><div class="muted" style="font-size:.7rem;line-height:1.4;margin-top:6px">Sets the generated character lens. It never rewrites the words you supplied or guesses anyone’s body or past.</div></div>
+          <div id="manualIdentityFields" hidden><label for="manualName">Manual character details // only what you enter</label><div class="minirow"><input id="manualName" type="text" placeholder="Name / blank = ␀"><input id="manualPronouns" type="text" placeholder="Pronouns / blank = ␀"></div><input id="manualRole" type="text" placeholder="Role / blank = ␀" style="margin-top:8px"></div>
+          <div class="meterbox">
+            <div class="meter-label"><span>GLOBAL DAMAGE</span><span id="damageVal">72%</span></div>
+            <input id="damage" type="range" min="0" max="100" value="72">
+          </div>
+          <div class="minirow">
+            <div><label for="brains">Hive brains</label><input id="brains" type="number" min="3" max="12" value="7"></div>
+            <div><label for="gens">Hive generations</label><input id="gens" type="number" min="1" max="12" value="4"></div>
+          </div>
+          <div><label for="consensus">Hive consensus</label><select id="consensus"><option value="interesting">most interesting survives</option><option value="majority">majority hallucination</option><option value="chaos">least sane wins</option></select></div>
+          <div class="thinkbox">
+            <div class="thinktop"><span>🧠 THINK ECONOMY</span><span class="treasury"><span id="wallet">$0</span> // <span id="fuel">0</span> FUEL</span></div>
+            <div class="bounty"><strong id="bountyName">LOADING BOUNTY…</strong><br><span id="bountyHint">The machine is deciding what kind of thought it wants.</span> <span id="bountyPay"></span></div>
+            <textarea id="thoughtInput" class="thought-input" placeholder="actually think about the story here…"></textarea>
+            <button id="thinkGo" class="thinkbtn">💡 THINK HARDER → APPRAISE IT</button>
+            <div id="thoughtScore" class="thought-score">GOOD THOUGHTS earn fake money, Hivemind fuel, and loot. Re-arguing consumes 1 fuel.</div>
+            <div id="lootRack" class="loot-rack" aria-label="Loot inventory"></div>
+          </div>
+          <div class="fatebox">
+            <div class="fatetop"><span>💘 FATE ENGINE // REVERSE RESEARCH</span><span class="fatecount" id="fateCount">0 / 100</span></div>
+            <p class="fatecopy">The machine studies how you talk to it, backwards. Seed hopper + THINK + command language become style evidence. Four-Way meanings never become diagnosis or fact. At 100, exactly ONE matchable Kitchen Animal clocks in.</p>
+            <div class="fate-track" aria-label="Fate research progress"><div class="fate-bar" id="fateBar"></div></div>
+            <button id="researchMe" class="researchbtn">🍪 RESEARCH ME BACKWARDS +1</button>
+            <div class="fate-milestones">
+              <div id="fateLens" class="fate-chip">20 // PUNCTUATION LENS</div>
+              <div id="fateRhythm" class="fate-chip">45 // RHYTHM MICROSCOPE</div>
+              <div id="fateMirror" class="fate-chip">70 // EMPATHY MIRROR</div>
+            </div>
+            <div id="fateReadout" class="fate-readout">NO PROFILE YET // talk to the machine, then keep digging.</div>
+            <div id="animalMatch" class="animal-match" aria-live="polite"></div>
+          </div>
+          <button id="go" class="master">FUCK ALL THIS BULLSHIT TOGETHER</button>
+          <button id="randomRandom" class="randombtn">🎲 RANDOM RANDOM</button>
+          <button id="totalUpgrade" class="totalbtn">⚡ TOTAL UPGRADE ⚡</button>
+          <button id="hiveGo" class="hivebtn">🧠 RE-ARGUE BEFORE STORY</button>
+          <button id="reiterateGo" class="reiteratebtn">↻ REITERATE BULLSHIT TELEPHONE WORLD</button>
+          <div id="reiterateStatus" class="reiterate-status"><strong>STORY EXIT FIREWALL</strong> // final story never becomes feedback input.</div>
+          <button id="panic" class="panic">EMERGENCY MAKE IT WORSE</button>
+        </div>
+      </aside>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Patch Bay // Signal Chain</h2><span class="muted">click switches to bypass</span></div>
+        <div class="chain-wrap"><div class="chain" id="chain"></div></div>
+      </section>
+    </section>
+
+    <section class="stage">
+      <section class="panel">
+        <div class="panel-head"><h2>What Came Out</h2><span id="runid" class="muted">RUN // waiting</span></div>
+        <div class="output">
+          <div class="output-grid">
+            <article class="card"><div class="eyebrow">Word Gen</div><h3 id="wordOut">—</h3><p id="wordMeta">Pull the big yellow lever.</p></article>
+            <article class="card"><div class="eyebrow">Character Gen</div><h3 id="nameOut">—</h3><p id="characterOut">No unfortunate person has been manufactured yet.</p></article>
+            <article class="card wide"><div class="eyebrow">Four-Way Interpreter // Literal · Subjective · Symbolic · Back</div><div class="fourway"><div class="fourrail" style="--rail:#ffe12c"><strong>LITERAL // WHAT THE WORDS SAY</strong><span id="fourLiteral">Waiting for words.</span></div><div class="fourrail" style="--rail:#ff3e9d"><strong>SUBJECTIVE // FROM INSIDE THE SPEAKER</strong><span id="fourSubjective">Waiting for a point of view.</span></div><div class="fourrail" style="--rail:#a572ff"><strong>SYMBOLIC // POSSIBLE METAPHOR</strong><span id="fourSymbolic">Waiting for symbols.</span></div><div class="fourrail" style="--rail:#27e2ff"><strong>BACK // UNMAKE THE ASSUMPTION</strong><span id="fourBack">Waiting to walk it backwards.</span></div></div><div class="fourlaw"><b>DATE-SAFE LANGUAGE LAW //</b> RAW belongs to the speaker. Interpretation belongs to the listener. Shared meaning needs GOT-IT. LITERAL describes a claim; it does not verify the claim. UNKNOWN stays UNKNOWN.</div></article>
+            <article class="card wide"><div class="eyebrow">Poem Gen</div><p class="poem" id="poemOut">The machine is humming quietly.</p></article>
+            <article class="card wide"><div class="eyebrow">FINAL STORY // EXIT</div><p id="storyOut">Nothing has escaped yet.</p></article>
+            <article class="card"><div class="eyebrow">Emoji Translator</div><p id="emojiOut">📞 💤</p></article>
+            <article class="card"><div class="eyebrow">ASCII Factory</div><p class="poem" id="asciiOut">[ machine offline ]</p></article>
+            <article class="card wide"><div class="eyebrow">GET-IT : GOT-IT // Canon Receipt</div><p id="canonOut">No canon has been irresponsibly declared.</p><div class="command-deck"><div class="command-top"><span>GITTET|GODDIT // COMMAND PROMPT</span><span>TYPE HELP</span></div><div id="commandLog" class="command-log" role="log" aria-live="polite"></div><div class="command-line"><span class="command-sigil">moz@reality:$</span><input id="commandInput" type="text" autocomplete="off" spellcheck="false" aria-label="GITTET GODDIT command prompt" placeholder="help"></div></div></article>
+            <article class="card wide"><div class="eyebrow">Hivemind Consensus Bus</div><p id="hiveOut">The little brains are asleep.</p><div class="hive-log" id="hiveLog"></div></article>
+          </div>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <div class="panel-head"><h2>Desire-O-Vision™</h2><span class="screws">⊙ ⊙</span></div>
+        <div class="portrait-panel">
+          <canvas id="desire" width="900" height="900" aria-label="Generated symbolic image of the character's greatest desire"></canvas>
+          <p class="caption" id="desireCaption">The character generator feeds a life-desire into this visualizer. Their horrible little dream becomes a picture, then gets shoved back into the story.</p>
+        </div>
+      </aside>
+    </section>
+
+    <section class="panel gunpaper-world" id="gunpaperWorld">
+      <div class="panel-head"><h2>GUNPAPER // Infinite Checkerboard World</h2><span class="muted">the newspaper keeps getting smaller</span></div>
+      <div class="gunpaper-body">
+        <div class="gunpaper-stage">
+          <canvas id="gunpaperCanvas" width="1280" height="640" tabindex="0" aria-label="A zooming checkerboard full of tiny Gunpaper front pages. Click for a glitched hypnoglyph and fake money."></canvas>
+        </div>
+        <div class="gunpaper-readout"><span><strong id="gunpaperState">LIVE</strong> // camera splitting on a vertex</span><span id="gunpaperHeadline">GUNPAPER IS PRINTING</span></div>
+        <div class="gunpaper-actions">
+          <button type="button" id="gunpaperPause">PAUSE WORLD</button>
+          <button type="button" id="gunpaperRefresh" class="gunpaper-new">NEW EDITION FROM THE MESS</button>
+          <button type="button" id="gunpaperPierce" class="gunpaper-pierce">BRUTEPIERCE MODE</button>
+          <button type="button" id="gunpaperRabbit" class="gunpaper-rabbit">HYPNOGLYPH // FOOD POINTS</button>
+        </div>
+        <section class="gunpaper-filelab" aria-labelledby="gunpaperFileTitle">
+          <div class="gunpaper-file-title"><span id="gunpaperFileTitle">LOCAL FILE LAB // LET GUNPAPER READ THE MESS</span><small>Text-like files only · 1 MB max · read only in this tab · original file stays untouched</small></div>
+          <input id="gunpaperFileInput" type="file" accept=".txt,.md,.csv,.tsv,.json,.jsonl,.html,.htm,.xml,.yaml,.yml,.js,.mjs,.cjs,.ts,.tsx,.jsx,.css,.svg,.log,text/plain,text/*" hidden>
+          <div class="gunpaper-file-actions">
+            <button type="button" id="gunpaperFilePick" class="gunpaper-file-pick">OPEN LOCAL TEXT</button>
+            <button type="button" id="gunpaperFileFuck" class="gunpaper-file-fuck" disabled>FUCK UP A SAFE COPY</button>
+            <button type="button" id="gunpaperFileDownload" class="gunpaper-file-download" disabled>DOWNLOAD COPY</button>
+            <button type="button" id="gunpaperFileEject" disabled>EJECT FILE</button>
+          </div>
+          <div id="gunpaperFileStatus" class="gunpaper-file-status" aria-live="polite">NO FILE LOADED // choose a text-style file when you are ready. GUNPAPER cannot edit or upload the original.</div>
+          <pre id="gunpaperFileOutput" class="gunpaper-file-output" aria-live="polite">CRUMPLED COPY // waiting for a local file. When you press FUCK UP A SAFE COPY, this box gets a separate cut-up text edition you can download.</pre>
+        </section>
+        <p class="gunpaper-caption">Every square contains another checkerboard and a fake front page. Click the board for a glitched hypnoglyph and entirely fake food points, then keep falling.</p>
+        <div class="news-spider" id="newsSpider">
+          <div class="news-spider-head"><span>🦑 SOUL SQUID // REAL NEWS CURRENT</span><span id="newsFish">🐟 NEW FISH // HATCHING</span><button type="button" id="newsSpiderFetch">TENTACLE GRAB NEWS</button></div>
+          <p class="news-spider-status" id="newsSpiderStatus">Soul Squid is waking in the current.</p>
+          <div class="soul-coral">
+            <strong>🦑↘🪸 SOUL SQUID // ATTACHED TO CORAL</strong><button type="button" id="soulSquidRead">READ THE BOTTOM</button>
+            <p id="soulSquidReading">BOTTOM READING // FICTION ONLY: the coral is still listening.</p>
+            <button type="button" id="soulSquidChain">REPAIR THE FAKE CHAIN</button>
+            <p id="soulSquidChainStatus">PIXEL BLOCKCHAIN // FICTION ONLY // no wallets, transactions, or real network connection.</p>
+          </div>
+          <div class="news-spider-list" id="newsSpiderList" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel rearfeed">
+      <div class="panel-head"><h2>Rear Feed // Ads + Dumbism</h2><span class="muted">feeds backward; evidence does not</span></div>
+      <div class="rearbody">
+        <textarea id="rearClaim" placeholder="Put the thing you know / suspect / do not know here…"></textarea>
+        <div class="reargrid">
+          <select id="rearCert"><option value="unknown">UNKNOWN</option><option value="suspected">SUSPECTED</option><option value="known">KNOWN / HAS EVIDENCE</option><option value="pain">PAIN REAL MODE</option><option value="emotional">EMOTIONAL DAMAGE?!?!</option></select>
+          <div><label for="dumbism">Dumbism</label><input id="dumbism" type="range" min="0" max="100" value="77"></div>
+          <div><label for="adLoad">Ad load</label><input id="adLoad" type="range" min="0" max="100" value="66"></div>
+        </div>
+        <button id="rearGo" class="rearbtn">↤ FEED IT INTO THE BACK OF THE MACHINE</button>
+        <div id="rearOut" class="rearout">EVIDENCE FIREWALL ARMED // suspicion may become nonsense, but never fact.</div>
+      </div>
+    </section>
+
+    <section class="panel rearfeed" id="baitSwitchTool">
+      <div class="panel-head"><h2>BAIT ’N’ SWITCH RIDICULATOR // Story Repair</h2><span class="muted">your words stay yours</span></div>
+      <div class="rearbody">
+        <p class="muted" style="font-size:.78rem;line-height:1.5;margin:0 0 10px">Lay out what was promised, what changed, and what you can support. The machine flags the gap; it does not invent motive, anatomy, diagnosis, or missing memories.</p>
+        <label for="baitOriginal">Original words / starting account</label><textarea id="baitOriginal" placeholder="Paste the account you want to preserve…"></textarea>
+        <div class="minirow">
+          <div><label for="baitPromise">BAIT // What was promised or led you to expect?</label><textarea id="baitPromise" style="min-height:82px" placeholder="Your words…"></textarea></div>
+          <div><label for="baitSwitch">SWITCH // What happened instead?</label><textarea id="baitSwitch" style="min-height:82px" placeholder="Your words…"></textarea></div>
+        </div>
+        <label for="baitEvidence">What is supported / what source says so?</label><textarea id="baitEvidence" style="min-height:82px" placeholder="Evidence you choose to enter; leave blank if unknown."></textarea>
+        <label for="baitCorrection">Your corrected story</label><textarea id="baitCorrection" style="min-height:100px" placeholder="Write the version you want carried forward. This stays editable."></textarea>
+        <div class="minirow"><button id="baitReveal" class="rearbtn">REVEAL THE SWITCH</button><button id="baitUse" class="mirrorbtn">USE MY CORRECTION AS GAME SEED</button></div>
+        <div id="baitOutput" class="rearout" aria-live="polite">NO STORY ALTERED // enter what you want compared, then reveal the switch.</div>
+      </div>
+    </section>
+
+    <section class="panel rearfeed" id="masterStoryVault">
+      <div class="panel-head"><h2>MASTER COPY // HUMAN STORY VAULT</h2><span class="muted">source stays separate</span></div>
+      <div class="rearbody">
+        <p class="muted" style="font-size:.78rem;line-height:1.5;margin:0 0 10px">Keep the human account here as its own copy. Export a plain text file for safekeeping; importing or working from it never sends it through Dumbism unless you deliberately choose FICTION mode.</p>
+        <label for="masterStoryText">Master story // preserved text</label><textarea id="masterStoryText" placeholder="Paste or import the human story here. This box is separate from the machine hopper."></textarea>
+        <label for="memoryLineText">Memory line // exact words for a local integrity stamp</label><textarea id="memoryLineText" placeholder="Enter one line if you want to preserve and check it. Blank stays blank."></textarea>
+        <div class="minirow"><button id="memoryLineStamp" class="mirrorbtn">STAMP / VERIFY LINE FINGERPRINT</button><button id="memoryLineEncrypt" class="rearbtn">ENCRYPT THIS LINE LOCALLY</button></div>
+        <label for="memoryLineFingerprint">SHA-256 text fingerprint // copy to keep</label><input id="memoryLineFingerprint" type="text" readonly placeholder="No fingerprint made yet">
+        <div id="memoryLineStatus" class="rearout" aria-live="polite">A text fingerprint checks exact-text changes; it does not prove truth, author, or event time. Encryption requires the passphrase below.</div>
+        <div class="minirow"><button id="masterFromHopper" class="rearbtn">CAPTURE HOPPER AS MASTER COPY</button><button id="masterToHopper" class="mirrorbtn">MAKE WORKING COPY // PERSONAL / PAST</button></div>
+        <div class="minirow"><button id="masterExport" class="mirrorbtn">DOWNLOAD MASTER COPY (.TXT)</button><button id="masterImportButton" class="rearbtn">IMPORT MASTER COPY (.TXT)</button></div>
+        <input id="masterImportFile" type="file" accept=".txt,text/plain" hidden>
+        <div id="masterStoryStatus" class="rearout" aria-live="polite">MASTER COPY EMPTY // nothing saved yet. Download the file to keep a durable copy outside this page.</div>
+      </div>
+    </section>
+
+    <section class="panel rearfeed" id="storyCareScanner">
+      <div class="panel-head"><h2>STORY OPTIONS // FEELINGS CHECK</h2><span class="muted">local file · review suggestions only</span></div>
+      <div class="rearbody">
+        <p class="muted" style="font-size:.78rem;line-height:1.5;margin:0 0 10px">Choose a real HTML, text, or Markdown file. This page reads it locally, extracts story choices and seeds, and flags wording that may dismiss a feeling, force a response, assign blame, erase identity, or overstate an uncertain story. It does not diagnose a person or decide what is true.</p>
+        <label for="storyCareFile">Choose a story file<input id="storyCareFile" type="file" accept=".html,.htm,.txt,.md,.json,text/html,text/plain,application/json"></label>
+        <div class="minirow"><button id="storyCareScan" class="rearbtn" disabled>SCAN STORY OPTIONS</button><button id="storyCareClear" class="mirrorbtn">CLEAR FILE + RESULTS</button></div>
+        <div id="storyCareStatus" class="rearout" aria-live="polite">NO FILE READ // nothing is uploaded or saved by this checker.</div>
+        <div id="storyCareResults" class="rearout" aria-live="polite">Choose the local game file, then scan its story choices.</div>
+      </div>
+    </section>
+
+    <section class="panel rearfeed" id="privateMatchMath">
+      <div class="panel-head"><h2>PRIVATE MATCH MATH // BEST FIT FIRST</h2><span class="muted">local · your criteria · no diagnosis</span></div>
+      <div class="rearbody">
+        <p class="muted" style="font-size:.78rem;line-height:1.5;margin:0 0 10px">A small compatibility helper, not a secret personality test. Pick the things that matter to you, then compare answers you choose to enter. Exact matches earn their stated weight; blanks stay unknown and are left out. Everything stays in this page.</p>
+        <label for="matchCriteria">Your criteria // one per line: question | preferred answer | importance 1–5</label>
+        <textarea id="matchCriteria" style="min-height:100px">communication | direct and kind | 3
+weekend pace | quiet / outdoors | 2
+future plans | open to family | 3</textarea>
+        <label for="matchProfiles">Match answers // one per line: name | answer 1 ; answer 2 ; answer 3</label>
+        <textarea id="matchProfiles" style="min-height:110px" placeholder="Alex | direct and kind ; quiet / outdoors ; open to family&#10;Sam | playful ; busy / social ; unsure"></textarea>
+        <label for="matchFile">Optional local text file // same one-profile-per-line format<input id="matchFile" type="file" accept=".txt,.csv,text/plain,text/csv"></label>
+        <div class="minirow"><button id="matchLoadFile" class="mirrorbtn" disabled>LOAD THIS FILE INTO THE BOX</button><button id="matchRank" class="rearbtn">RANK MY OPTIONS // BEST FIT FIRST</button><button id="matchClear" class="mirrorbtn">CLEAR MATCH DATA</button></div>
+        <div id="matchResults" class="rearout" aria-live="polite">NO RANKING YET // you decide the questions and what a match means.</div>
+        <small class="muted">Not medical, psychological, or identity diagnosis; not a guarantee of chemistry or safety. Missing answers are unknown, not a mismatch. A local file is read only after you choose it; no dating-site account is accessed. Avoid importing private details you do not have permission to use.</small>
+      </div>
+    </section>
+
+    <section class="panel rearfeed" id="bugRodeo">
+      <div class="panel-head"><h2>FAIREST BUG RODEO // CREATION || CORRUPTION → ENCRYPTION</h2><span class="muted">impact sets priority</span></div>
+      <div class="rearbody">
+        <p class="muted" style="font-size:.78rem;line-height:1.5;margin:0 0 10px">The report is evidence about the game. The reporter is not the bug. Sort by player impact, keep the report intact, and leave unverified fixes open. A pain check stays open too: it never becomes story input or a story ending.</p>
+        <label for="bugReport">What happened? Keep the report in the reporter’s own words.</label><textarea id="bugReport" placeholder="The bug report, copied as given…"></textarea>
+        <button id="bugReadPain" class="rearbtn">CHECK PAIN // ACKNOWLEDGE REPORT</button>
+        <div id="bugPainReadout" class="rearout" aria-live="polite">NOT READ YET // no report has been acknowledged.</div>
+        <button id="bugMakeRoom" class="mirrorbtn" aria-pressed="false">BECOME BIG ENOUGH ’NUF // MAKE ROOM FOR THE WORDS</button>
+        <div class="meterbox"><div class="meter-label"><span>CORRUPTOR GENERATOR // OPT-IN COPY CHARGE</span><span id="corruptorChargeOut">0 / 100</span></div><input id="corruptorCharge" type="range" min="0" max="100" value="0" disabled><p class="muted" style="font-size:.7rem;line-height:1.4;margin:6px 0 0">The acknowledged copy can power a fictional text-glitch preview. The source report stays intact; a pain check cannot enter the story hopper or reach a story ending.</p></div>
+        <div class="minirow"><button id="bugCreateBranch" class="mirrorbtn" disabled>CARE BRANCH // KEEP CHECK OPEN</button><button id="bugFeedCorruptor" class="rearbtn" disabled>CORRUPTION // FEED COPY TO GENERATOR</button></div>
+        <button id="bugRunCorruptor" class="rearbtn" disabled>CORRUPT COPY // PREVIEW</button>
+        <div id="corruptorOutput" class="rearout" aria-live="polite">CORRUPTOR IDLE // read and explicitly feed a fictional copy to charge it. Pain checks remain outside the story.</div>
+        <div class="minirow"><label for="corruptorPassphrase">Encryption passphrase<input id="corruptorPassphrase" type="password" autocomplete="new-password" placeholder="Use 8+ characters"></label><button id="bugEncryptCopy" class="mirrorbtn" disabled>ENCRYPT CORRUPTED COPY</button></div>
+        <label for="corruptorToken">Encrypted token // copy this to keep it</label><textarea id="corruptorToken" style="min-height:90px" placeholder="Encrypted output appears here. Paste a saved token here to decrypt."></textarea>
+        <div class="minirow"><button id="bugDecryptCopy" class="rearbtn">DECRYPT TOKEN</button><button id="bugClearCrypto" class="mirrorbtn">CLEAR ENCRYPTION DATA</button></div>
+        <div id="corruptorDecryptOut" class="rearout" aria-live="polite">ENCRYPTION IDLE // corrupt a copy first. Encryption and decryption run locally in this browser.</div>
+        <div class="minirow">
+          <div><label for="bugExpected">Expected behavior</label><textarea id="bugExpected" style="min-height:78px" placeholder="What should the game do?"></textarea></div>
+          <div><label for="bugObserved">Observed behavior</label><textarea id="bugObserved" style="min-height:78px" placeholder="What did it actually do?"></textarea></div>
+        </div>
+        <div class="minirow">
+          <div><label for="bugImpact">Player impact // sets the investigation order</label><select id="bugImpact"><option value="critical">BLOCKER // prevents play or risks losing work</option><option value="story">STORY HARM // changes identity, memory, or intended meaning</option><option value="feature">FEATURE BREAK // an important control does not work</option><option value="minor">SMALL GLITCH // workaround exists</option></select></div>
+          <div><label for="bugAffected">Who / what conditions are affected? No names needed.</label><input id="bugAffected" type="text" placeholder="For example: GURL ONLY mode" /></div>
+        </div>
+        <label for="bugRepro">Reproduction steps / evidence</label><textarea id="bugRepro" style="min-height:78px" placeholder="Build, steps, and what appeared. If it cannot be reproduced, say so; the report stays open."></textarea>
+        <button id="bugOpenRound" class="rearbtn">OPEN A FAIR RODEO ROUND</button>
+        <button id="bugFixMode" class="mirrorbtn">🧭 FIX FIX MODE // LEARN HOW TO LEARN AGAIN</button>
+        <div id="bugFixModeGuide" class="rearout" hidden aria-live="polite"></div>
+        <div id="bugRoundOut" class="rearout" aria-live="polite">ROUND NOT STARTED // no report has been changed.</div>
+        <div class="minirow">
+          <div><label for="bugFix">Proposed fix</label><textarea id="bugFix" style="min-height:74px" placeholder="Smallest change that restores the expected behavior…"></textarea></div>
+          <div><label for="bugRetest">Retest steps and result</label><textarea id="bugRetest" style="min-height:74px" placeholder="Repeat the original steps, then check nearby behavior…"></textarea></div>
+        </div>
+        <label for="bugLearning">What did the test teach us? What is still unknown?</label><textarea id="bugLearning" style="min-height:70px" placeholder="Record evidence, the updated understanding, and one next question. Don't promote a guess into a fact."></textarea>
+        <button id="bugLearningCard" class="mirrorbtn">MAKE A LEARNING CARD // KNOWN · UNKNOWN · NEXT TEST</button>
+        <div id="bugLearningOut" class="rearout" aria-live="polite">LEARNING CARD NOT MADE // your notes stay yours to write.</div>
+        <div class="minirow" style="align-items:center"><label for="bugTestResult" style="margin:0">Rodeo retest<select id="bugTestResult"><option value="not-run">NOT RUN</option><option value="failed">FAILED</option><option value="passed">PASSED</option></select></label><label style="display:flex;align-items:center;gap:8px;margin:0;text-transform:none;letter-spacing:0"><input id="bugReporterOk" type="checkbox" style="width:auto">Reporter / affected player confirms the fix works for them</label></div>
+        <button id="bugCloseRound" class="mirrorbtn">RECORD FIX STATUS</button>
+        <div id="bugCloseOut" class="rearout" aria-live="polite">OPEN // a fix needs a recorded retest; closure waits for the affected player’s confirmation.</div>
+      </div>
+    </section>
+
+    <section class="panel gamebox" id="everythingGame">
+      <div class="panel-head"><h2>THE FUCK // EVERYTHING MACHINE GAME</h2><span style="display:flex;align-items:center;gap:8px"><span id="gameMoodEmoji" role="img" aria-label="Donut mood" title="Does she know? UNKNOWN unless a person says.">🍩</span><span id="gameState" class="muted">PRESS START</span></span></div>
+      <div class="character-sheet" aria-labelledby="characterSheetTitle">
+        <div class="character-sheet-head"><div><h3 id="characterSheetTitle">Character Mad Lib // optional replay or side-story</h3><p>Use this for a human, a pet, or a made-up character. Blank details stay UNKNOWN. Your entries stay in this page.</p></div></div>
+        <div class="character-sheet-grid">
+          <label for="sheetName">Name<input id="sheetName" type="text" placeholder="Name / blank = UNKNOWN"></label>
+          <label for="sheetKind">Who are they?<input id="sheetKind" type="text" placeholder="Human, cat, hippo, ␀…"></label>
+          <label for="sheetState">Story situation<select id="sheetState"><option value="fiction">FICTION // player-created</option><option value="present">PRESENT // here in the story</option><option value="missing">MISSING // leave real-world outcome UNKNOWN</option><option value="memory">REMEMBRANCE // use only entered memories</option></select></label>
+          <label for="sheetTone">Story feeling<select id="sheetTone"><option>gentle</option><option>sad</option><option>bittersweet</option><option>hopeful</option><option>funny through tears</option></select></label>
+          <label for="sheetOrigin">Origin question<select id="sheetOrigin"><option value="open">OPEN ORIGIN // ordinary story</option><option value="first-soul">FIRST MODE EVER // first soul?</option></select></label>
+          <label for="sheetWant">They want<input id="sheetWant" type="text" placeholder="A safe place, an answer, a snack…"></label>
+          <label for="sheetTrouble">The trouble / unknown<input id="sheetTrouble" type="text" placeholder="What gets in the way? Blank = UNKNOWN"></label>
+          <label for="sheetFelt">What I felt // your words<textarea id="sheetFelt" placeholder="The feeling is recorded as your real experience. You can leave the cause open."></textarea></label>
+          <label for="sheetContinuity">Golden continuity map // what stayed the same<textarea id="sheetContinuity" placeholder="Link only the moments/details you choose. Leave gaps UNKNOWN."></textarea></label>
+          <label for="sheetVoices" class="cast-field">History for everyone // one account per line<textarea id="sheetVoices" placeholder="Keep each person's words and source separate. Conflicts stay visible; missing details stay UNKNOWN."></textarea></label>
+          <label for="sheetPattern">Rumor / pattern they notice<textarea id="sheetPattern" placeholder="Maybe a secret club? Maybe international? What seems to line up? Keep it a hypothesis until there is evidence."></textarea></label>
+          <label for="sheetClock">Time / order as you remember or imagine it<input id="sheetClock" type="text" placeholder="Clock changed? Backwards? Write it your way; blank = UNKNOWN"></label>
+          <label for="sheetAnchor">A detail they choose to carry<input id="sheetAnchor" type="text" placeholder="A real memory, a small comfort, or leave blank"></label>
+          <label for="sheetCast" class="cast-field">Other characters / possible companions<textarea id="sheetCast" placeholder="One name per line; remove any you don't want.">Hobbes
+Oreo
+Kiki
+Ginger
+? old dogs from previous worlds — details forgotten</textarea></label>
+          <label for="sheetChoice">Their next choice<input id="sheetChoice" type="text" placeholder="What can they choose now? Blank = UNKNOWN"></label>
+        </div>
+        <button id="characterBegin" class="character-begin">✎ USE THIS SHEET + BEGIN A RUN</button>
+        <button id="characterSpellcheck" style="margin:9px 0 0 6px;border:1px solid #27e2ff88;background:#0d1820;color:#aaf6ff;border-radius:7px;padding:9px 12px;font:950 .66rem ui-monospace,SFMono-Regular,Consolas,monospace">⌕ SOULCHECK // SPELLCHECK</button>
+        <div id="characterSpellStatus" class="character-boundary" aria-live="polite">Spellcheck suggestions are optional. Names and memories stay exactly as entered unless you edit them.</div>
+        <div class="resource-console"><strong>FOOLZ // SYSTEM RESOURCES</strong><div id="identityResourceReadout" aria-live="polite">LOCKED HUD // fictional values appear after you confirm the character details.</div><button id="identityDiscover" type="button">◈ DISCOVER IDENTITY // UNLOCK STORY RESOURCES</button><small>In-game story counts only. This panel does not inspect device hardware or reveal anyone’s real identity.</small></div>
+        <div class="character-boundary">MISSING keeps the outcome open. REMEMBRANCE makes a player-authored story from entered details; the game cannot bring back, contact, or verify an actual soul.</div>
+      </div>
+      <div class="gamebody">
+        <div style="display:grid;align-content:start;gap:8px">
+          <div class="gamemission"><strong>YOU ARE THE MACHINE.</strong><br>Make something beautiful, then buy the wildly overpriced victory confetti.<br><br>WIN // 3 GOOD COSMIC PIXELS + 1 HAPPY KITCHEN ANIMAL + BEAUTY 100.<br>NO-HURT MODE // no damage losses, no soul spending, and no real-money purchases. Play money only.</div>
+          <label for="theFuck">Put the whole deboggle in one FUCK</label>
+          <textarea id="theFuck" style="min-height:88px" placeholder="pain + money + love + bullshit + whatever the hell…">a world hurts, misunderstands itself, and still tries to make something beautiful</textarea>
+          <div class="gamebars">
+            <div class="gamebarline"><span>STORY BAD</span><span class="gamebar"><span id="gameStoryBar" class="gamefill" style="background:#a572ff"></span></span><span id="gameStory">0</span></div>
+            <div class="gamebarline"><span>DEMOCRACY</span><span class="gamebar"><span id="gameDemoBar" class="gamefill" style="background:#27e2ff"></span></span><span id="gameDemo">100</span></div>
+            <div class="gamebarline"><span>LINK HEALTH</span><span class="gamebar"><span id="gameLinkBar" class="gamefill" style="background:#ffe12c"></span></span><span id="gameLinkHealth">100</span></div>
+            <div class="gamebarline"><span>BEAUTY</span><span class="gamebar"><span id="gameBeautyBar" class="gamefill" style="background:#70ff8d"></span></span><span id="gameBeauty">0</span></div>
+          </div>
+          <div class="gamescore">
+            <div class="gamestat"><strong id="gameTurn">0/12</strong><span>TURN</span></div>
+            <div class="gamestat"><strong id="gameMoney">$60</strong><span>MONEY</span></div>
+            <div class="gamestat"><strong id="gamePixels">0/3</strong><span>PIXELS</span></div>
+            <div class="gamestat"><strong id="gameSouls">8/8</strong><span>SOULS</span></div>
+          </div>
+          <div id="gameHarvestTally" class="gamemission">TINY FARM LOOP // 0 seeds · 0 pretend food · 0 crops // start with a free story seed</div>
+          <section class="petbox" aria-labelledby="petboxTitle">
+            <div class="petbox-head"><div id="petAvatar" class="pet-avatar" role="img" aria-label="Virtual companion">🐱</div><div><div id="petboxTitle" class="petbox-title">TINY COMPANION // IN-PAGE FRIEND</div><div id="petStatus" class="petbox-status" aria-live="polite">Curious and cozy. Care actions are free and can’t be missed.</div></div></div>
+            <div class="pet-config"><label for="petName">NAME<input id="petName" value="Pip" maxlength="20" autocomplete="off"></label><label for="petType">LOOK<select id="petType"><option value="🐱">CAT</option><option value="🐶">DOG</option><option value="🤖">ROBOT</option><option value="🐟">FISH</option><option value="🐛">BUG</option></select></label></div>
+            <div class="pet-meters" aria-label="Companion mood meters">
+              <div class="pet-meter"><span>SNACK</span><div class="pet-meter-track"><div id="petSnackMeter" class="pet-meter-fill"></div></div></div>
+              <div class="pet-meter"><span>REST</span><div class="pet-meter-track"><div id="petRestMeter" class="pet-meter-fill"></div></div></div>
+              <div class="pet-meter"><span>PLAY</span><div class="pet-meter-track"><div id="petPlayMeter" class="pet-meter-fill"></div></div></div>
+              <div class="pet-meter"><span>TRUST</span><div class="pet-meter-track"><div id="petTrustMeter" class="pet-meter-fill"></div></div></div>
+            </div>
+            <div class="pet-actions"><button id="petSnack">🍪 SNACK</button><button id="petPlay">🧶 PLAY</button><button id="petRest">🌙 REST</button><button id="petHello">♡ HELLO</button></div>
+            <small class="muted">A fictional friend, not a real pet or a way to contact one. Needs only drift during turns; care never costs turns. No death, loss, or punishment.</small>
+          </section>
+        </div>
+        <div style="display:grid;align-content:start;gap:8px">
+          <div class="gamebuttons">
+            <button id="gameFuck">💥 FUCK WITH IT</button>
+            <button id="gameCollide">⚛ COLLIDE</button>
+            <button id="gameHarvest">⌁ MOUSE TRAP</button>
+            <button id="gamePayWin">💸 PAY TO WIN // GOLDEN COUPON $35</button>
+            <label class="muted" for="gameCodeRecipient">SECRET CODE RECIPIENT<select id="gameCodeRecipient"><option value="gurl">CHICK // GURL</option><option value="dude">DUDE</option></select></label>
+            <button id="gameBack" class="gameback">↶↶ BACKWARDS BACKWARDS</button>
+            <button id="gameChurch">⛪↶ BODY FIRST</button>
+            <button id="gameJustice">⚖ JUSTICE</button>
+            <button id="gameDemocracy">🗳 EVERY SOUL</button>
+            <button id="gameKitchen">🍳 KITCHEN ANIMAL</button>
+            <button id="gamePixelPerfect">✦ PIXEL PERFECT</button>
+            <button id="gameStoryGo">📖 STORY MODE</button>
+            <label class="muted" for="linkAttackTarget">LINK ATTACK TARGET // fictional story-system fault<select id="linkAttackTarget"><option value="rumor">Unverified rumor promoted to fact</option><option value="source">Missing source</option><option value="order">Scrambled event order</option><option value="continuity">Broken continuity link</option></select></label>
+            <button id="linkAttackToggle" type="button" aria-pressed="false">🛡 LINK ATTACK MOD // OFF</button>
+            <button id="gameLinkAttack">⚔ CONTAIN STORY-LINK FAULT</button>
+            <button id="gameSeed">✨ SEED FROM NOTHING // ONCE PER RUN</button>
+            <button id="gameFarm">🌱 PLANT, GROW + HARVEST</button>
+            <button id="gameFish">🎣 FISHING MODE // MAKE FISH</button>
+            <button id="gameCare">♡ DISORDER HEAL // CARE, NOT CURE</button>
+            <button id="gameReceiveLove">♥ RECEIVE LOVE // NO DEBT</button>
+            <button id="gameDreamCurrent">⚡ DREAM WITH CURRENT // NO CURRENCY</button>
+            <button id="gameNul">NUL NUL</button>
+            <button id="gameLove">♥ DEVOTION → BEAUTY</button>
+            <button id="gameRandom">🎲 RANDOM RANDOM</button>
+            <button id="gameStart" class="gamestart">▶ START / PLAY AGAIN</button>
+          </div>
+          <div id="gameLog" class="gamelog">THE FUCK is dormant. Start the game.</div>
+          <div id="pixelPerfectCard" class="pixelperfect-card"><canvas id="pixelPerfectCanvas" class="pixelperfect-canvas" width="128" height="128"></canvas><div class="pixelperfect-copy"><strong id="pixelPerfectName">PIXEL PERFECT // LOCKED</strong><br><span id="pixelPerfectMeta">Only the best Kitchen Animal gets the expensive pixels.</span></div></div>
+          <div id="gameSecretCodeCard" aria-live="polite" style="display:none;gap:7px;margin-top:8px;padding:10px;border:1px solid #27e2ff88;border-radius:8px;background:#06131a;color:#a9cbd2;font:800 .68rem/1.5 ui-monospace,SFMono-Regular,Consolas,monospace"><div>📨 SECRET FUN CODE // STORY DELIVERY</div><div id="gameSecretCodeMessage"></div><strong id="gameSecretCodeValue" style="font-size:1rem;letter-spacing:.08em;color:#ffe98a"></strong><button id="gameCopySecretCode" type="button">COPY CODE TO SHARE</button><span id="gameSecretCodeStatus">Delivered in the story; copy it if you want to share it with a real friend.</span></div>
+          <div class="gamemission"><strong>THE CREED</strong> // BODY FIRST · HURT COUNTS · STOP MEANS STOP · STORY CAN BE WRONG · MONEY ≠ MORE VOTES · EVERY SOUL HAS VETO POWER · <strong>DO NOT BANANA SPLIT THE PAIN</strong> · LOVE = DEVOTION WE BRING TO PAIN TO MAKE LIFE BEAUTIFUL.</div>
+          <div class="gamemission"><strong>VOID RULE</strong> // The Void scrambles the links between event, memory, and words. Reported pain stays real; the machine does not invent its cause or meaning. An observer preserves what was said and leaves gaps marked UNKNOWN. Farming and fishing are small present-day anchors; care supports healing without erasing identity, memory, or difference.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel scramblebox" id="bossScramble" aria-labelledby="scrambleTitle">
+      <div class="panel-head scramble-head">
+        <div><h2 id="scrambleTitle">BOSS SCRAMBLE // BREAKPOINT</h2><div class="scramble-sub">FIVE FIGHTS, BORROWED PATTERNS, NO-HURT PRACTICE // UNPREDICTABLE RUNS, READABLE MOMENTS</div></div>
+        <span id="scrambleStatus" class="scramble-status" aria-live="polite">GRID IDLE</span>
+      </div>
+      <div class="scramblebody">
+        <div class="scramble-arena">
+          <div class="scramble-readout" aria-label="Boss Scramble run status">
+            <div class="scramble-stat"><strong id="scrambleRound">—</strong><span>ROUND</span></div>
+            <div class="scramble-stat"><strong id="scrambleClarity">100</strong><span>CLARITY</span></div>
+            <div class="scramble-stat"><strong id="scrambleReboots">2</strong><span>REBOOTS</span></div>
+            <div class="scramble-stat"><strong id="scrambleKeys">2</strong><span>REROUTES</span></div>
+            <div class="scramble-stat"><strong id="scrambleScore">0</strong><span>RENOWN</span></div>
+          </div>
+          <div class="scramble-stage" id="scrambleStage" aria-live="polite"><span class="scramble-kicker">THREAT SCAN // WAITING</span><strong>THE BRACKET IS QUIET.</strong><p>Start a run to reveal three contracts. Every contract shows its boss, arena rule, borrowed trait, and counterplay before you choose.</p></div>
+          <div id="scrambleContracts" class="scramble-contracts" aria-live="polite"><div class="scramble-empty">NO CONTRACTS YET // the Curator is arranging a very loud, very fictional tournament.</div></div>
+          <section class="scramble-fight" id="scrambleFight" hidden aria-labelledby="scrambleFightLabel">
+            <div class="scramble-fight-top"><span id="scrambleFightLabel">ENCOUNTER READOUT</span><span id="scrambleBeat">BEAT 0/3</span></div>
+            <div id="scramblePrompt" class="scramble-beat">THREAT SCAN PENDING.</div>
+            <p id="scrambleAnswer" class="scramble-answer">Every cue states the correct counter. This is a test of noticing, not guessing.</p>
+            <div class="scramble-counters" aria-label="Choose a counter">
+              <button type="button" data-counter="brace">🛡 BRACE</button>
+              <button type="button" data-counter="break">✦ BREAK</button>
+              <button type="button" data-counter="glide">〰 GLIDE</button>
+            </div>
+          </section>
+          <section class="scramble-draft" id="scrambleDraft" hidden aria-labelledby="scrambleDraftTitle">
+            <div class="scramble-draft-title" id="scrambleDraftTitle">BREAKER DRAFT // PICK ONE TEMPORARY RUN UPGRADE</div>
+            <div id="scrambleBreakers" class="scramble-breakers" aria-live="polite"></div>
+          </section>
+        </div>
+        <aside class="scramble-rail">
+          <div class="scramble-control">
+            <label for="scrambleMode">Run format</label>
+            <select id="scrambleMode"><option value="standard">STANDARD // 5 fights</option><option value="sprint">SPRINT // 3 fights</option><option value="ascendant">ASCENDANT // 7 fights</option></select>
+            <div class="scramble-actions">
+              <button id="scrambleStart" class="scramble-start" type="button">▶ START BREAKPOINT</button>
+              <button id="scrambleReroute" type="button" disabled>↻ REROUTE</button>
+              <button id="scrambleAbandon" type="button" disabled>□ END RUN</button>
+            </div>
+          </div>
+          <div class="scramble-rule"><strong>FAIRNESS CONTRACT</strong><br>Bosses and traits do not repeat before the apex. The counter is written in the Threat Scan. A missed read only lowers fictional Clarity; a Reboot safely rewinds the beat. Nothing reaches the base game or persists outside this page.</div>
+          <div class="scramble-history" id="scrambleHistory" aria-live="polite"><div class="scramble-history-title">BRACKET HISTORY // EMPTY</div><div class="scramble-history-line">No boss has entered the archive.</div></div>
+          <div class="scramble-log" id="scrambleLog" aria-live="polite">THE CURATOR // “Pattern conflict detected. Adapt when you are ready.”</div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="panel improvebox" id="gameImprove" aria-labelledby="improveTitle">
+      <div class="panel-head improve-head">
+        <div><h2 id="improveTitle">GAME SELF-IMPROVEMENT FORM // THE GAME DOES THE HOMEWORK</h2><div class="scramble-sub">TURN ONE OBSERVATION INTO A SMALL, TESTABLE NEXT PATCH</div></div>
+        <span class="improve-status">LOCAL DRAFT // UNSENT</span>
+      </div>
+      <div class="improvebody">
+        <form class="improve-form" id="improveForm" novalidate>
+          <p class="improve-intro">Tell the game what to practice. This is not a score of you. Every field is optional; this form makes no network requests and does not save or send your note.</p>
+          <div class="improve-grid">
+            <label for="improveArea">Where did the game get weird?<select id="improveArea"><option value="">NOT SURE / NOT CHOSEN</option><option>Boss Scramble</option><option>Everything Machine</option><option>Paint Program</option><option>Story Tools</option><option>Sound Lab</option><option>Something Else</option></select></label>
+            <label for="improveImpact">How big was the bump?<select id="improveImpact"><option value="">NOT SURE / NOT CHOSEN</option><option value="spark">SPARK // tiny polish</option><option value="bump">BUMP // noticeable</option><option value="wall">WALL // stopped the flow</option></select><span class="improve-help">This measures game impact, not player ability.</span></label>
+          </div>
+          <fieldset class="improve-focus"><legend>WHAT SHOULD THE NEXT PATCH PRACTICE?</legend><label><input type="checkbox" data-improve-focus value="clarity">Clearer cues</label><label><input type="checkbox" data-improve-focus value="pace">Kinder pacing</label><label><input type="checkbox" data-improve-focus value="challenge">Challenge fit</label><label><input type="checkbox" data-improve-focus value="access">Comfort / access</label></fieldset>
+          <label for="improveKeep">What should stay?<textarea id="improveKeep" maxlength="280" placeholder="A rule, moment, or button that worked for you."></textarea><span class="improve-help">Optional · 280 characters max · no names or contact details needed.</span></label>
+          <label for="improveFriction">What got in the way?<textarea id="improveFriction" maxlength="280" placeholder="What happened or felt unclear? One sentence is plenty."></textarea><span class="improve-help">Optional · preserve the observation; this form will not turn it into a diagnosis.</span></label>
+          <label for="improveChange">One small patch wish<textarea id="improveChange" maxlength="280" placeholder="If the game could change one thing…"></textarea></label>
+          <div class="improve-grid">
+            <label for="improveTest">How would you test it?<textarea id="improveTest" maxlength="280" placeholder="Try this, then look for that."></textarea></label>
+            <label for="improveUnknown">What stays unknown?<textarea id="improveUnknown" maxlength="280" placeholder="A question to carry forward, or leave blank."></textarea></label>
+          </div>
+          <div class="improve-actions"><button id="improvePlan" class="improve-plan" type="button">✓ MAKE NEXT-RUN PLAN</button><button id="improveTestCard" type="button">⌕ MAKE TEST CARD</button><button id="improveClear" class="improve-clear" type="button">↺ CLEAR DRAFT</button></div>
+        </form>
+        <section class="improve-result" aria-labelledby="improveResultTitle">
+          <h3 id="improveResultTitle" tabindex="-1">LOCAL PATCH NOTE</h3>
+          <output id="improveOutput" class="improve-output" aria-live="polite">NO NOTE PACKAGED YET // one choice or one short line is enough. This turns your words into a local review card; it cannot patch the game by itself.</output>
+          <div id="improveLive" class="improve-live" aria-live="polite">A blank form is valid. You do not owe the game an explanation.</div>
+          <p class="improve-note">Nothing is submitted. Copy the result from this page only if you decide it belongs somewhere else.</p>
+        </section>
+      </div>
+    </section>
+
+    <section class="panel soundlab">
+      <div class="panel-head"><h2>Sound Lab // Codes N Shit</h2><span id="soundStatus" class="muted">WEB AUDIO // READY</span></div>
+      <div class="soundbody">
+        <div class="soundcontrols">
+          <button id="soundMaster" class="soundmaster">🔊 SOUND ON</button>
+          <label for="soundVolume">Master volume <span id="soundVolumeOut">55</span>%<input id="soundVolume" class="soundvol" type="range" min="0" max="100" value="55"></label>
+          <button id="soundAmbience" class="chip">〰 COLLIDER HUM // OFF</button>
+          <div class="soundnote">No MP3s required. These are generated live with the browser's Web Audio API. Click any code to preview it. First click unlocks audio because browsers are annoying.</div>
+          <div class="soundnote"><strong>KEYBOARD //</strong> F fuck · C collide · H harvest · B backwards · J justice · V vote · K kitchen · S story · N nul · L love · R random</div>
+          <section class="gamemission" style="display:grid;gap:7px" aria-labelledby="typingLearnTitle">
+            <strong id="typingLearnTitle">⌨ TYPING LEARN // PRACTICE AT YOUR PACE</strong>
+            <div id="typingLearnPhrase" aria-live="polite">Choose a practice line when you’re ready.</div>
+            <input id="typingLearnInput" type="text" maxlength="90" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Type the practice phrase" placeholder="Your typing goes here…">
+            <div id="typingLearnStatus" aria-live="polite">No timer. No penalties. You can try a new line any time.</div>
+            <div id="typingLearnFingerprint" aria-live="polite">UNIQUE ×2 FINGERPRINT FINGERPRINT // clean line; no typo marks yet.</div>
+            <div id="typingLearnSweetNote" aria-live="polite" style="display:none;color:#ffb6d9">A typo can bring your in-game companion back for one more tiny hello.</div>
+            <button id="typingLearnNew" type="button">NEW PRACTICE LINE</button>
+          </section>
+        </div>
+        <div class="soundcodes" id="soundCodes">
+          <button class="soundcode" data-sfx="START"><strong>START</strong><code>SFX.START // Enter</code><span>boot chord</span></button>
+          <button class="soundcode" data-sfx="FUCK"><strong>FUCK WITH IT</strong><code>SFX.FUCK // KeyF</code><span>dirty impact</span></button>
+          <button class="soundcode" data-sfx="COLLIDE"><strong>COLLIDE</strong><code>SFX.COLLIDE // KeyC</code><span>beam zap</span></button>
+          <button class="soundcode" data-sfx="HARVEST"><strong>MOUSE TRAP</strong><code>SFX.HARVEST // KeyH</code><span>pixel sparkle</span></button>
+          <button class="soundcode" data-sfx="BACK"><strong>BACKWARDS²</strong><code>SFX.BACK // KeyB</code><span>reverse staircase</span></button>
+          <button class="soundcode" data-sfx="CHURCH"><strong>WORD CHURCH</strong><code>SFX.CHURCH</code><span>DONG</span></button>
+          <button class="soundcode" data-sfx="JUSTICE"><strong>JUSTICE</strong><code>SFX.JUSTICE // KeyJ</code><span>scale thump</span></button>
+          <button class="soundcode" data-sfx="VOTE"><strong>EVERY SOUL</strong><code>SFX.VOTE // KeyV</code><span>ballot ticks</span></button>
+          <button class="soundcode" data-sfx="KITCHEN"><strong>KITCHEN</strong><code>SFX.KITCHEN // KeyK</code><span>animal chirp</span></button>
+          <button class="soundcode" data-sfx="STORY"><strong>STORY BAD</strong><code>SFX.STORY // KeyS</code><span>ominous wobble</span></button>
+          <button class="soundcode" data-sfx="NUL"><strong>NUL NUL</strong><code>SFX.NUL // KeyN</code><span>double bit</span></button>
+          <button class="soundcode" data-sfx="LOVE"><strong>LOVE</strong><code>SFX.LOVE // KeyL</code><span>soft major chord</span></button>
+          <button class="soundcode" data-sfx="RANDOM"><strong>RANDOM</strong><code>SFX.RANDOM // KeyR</code><span>whatever happens</span></button>
+          <button class="soundcode" data-sfx="WIN"><strong>WIN</strong><code>SFX.WIN</code><span>tiny victory</span></button>
+          <button class="soundcode" data-sfx="LOSE"><strong>LOSE</strong><code>SFX.LOSE</code><span>sad machine</span></button>
+        </div>
+        <div class="soundwave-wrap"><canvas id="berryWave" class="soundwave" width="1200" height="300" aria-label="Multiple berry live audio waveform"></canvas><div class="waveactions"><button id="berryClear">🍓 CLEAR BERRIES</button><button id="berrySave">↓ SAVE &lt;MULTIPLE&gt;[BERRY] WAVEFORM</button><span>LIVE AUDIO // 5 BERRY TRACES</span></div></div>
+      </div>
+    </section>
+
+    <section class="panel colliderbox">
+      <div class="panel-head"><h2>Cosmic Pixel Collider // Tubular Life World</h2><span class="muted">LHC-ish // mine a good one</span></div>
+      <div class="colliderbody">
+        <div class="collider-controls">
+          <p class="collider-copy">Two pixel beams orbit a toroidal Life-world in opposite directions. Interaction points kick the cellular soup; the harvester scores the wreckage for persistence, structure, novelty, and Kitchen Animal usefulness. Drag the ring to look around.</p>
+          <div class="collider-grid">
+            <label for="lifeRule">World physics<select id="lifeRule"><option value="B3/S23">LIFE // B3/S23</option><option value="B36/S23">HIGHLIFE // B36/S23</option><option value="B2/S">SEEDS // B2/S</option><option value="B3678/S34678">DAY &amp; NIGHT</option></select></label>
+            <label for="colliderSpeed">Clock <span id="colliderSpeedOut">6</span><input id="colliderSpeed" type="range" min="1" max="20" value="6"></label>
+            <label for="beamEnergy">Beam energy <span id="beamEnergyOut">72</span><input id="beamEnergy" type="range" min="1" max="100" value="72"></label>
+            <label for="cosmicMutation">Cosmic noise <span id="cosmicMutationOut">3</span>%<input id="cosmicMutation" type="range" min="0" max="20" value="3"></label>
+            <label for="storyLightMode">Story light<select id="storyLightMode"><option value="time">TIME STORY // cool white</option><option value="relax">RELAX STORY // warm white</option></select></label>
+            <label for="beamTemp">Beam white temperature <span id="beamTempOut">5200 K</span><input id="beamTemp" type="range" min="2200" max="6500" step="100" value="5200"></label>
+          </div>
+          <div class="collider-actions">
+            <button id="colliderToggle">Ⅱ PAUSE RING</button><button id="colliderStep">› STEP 1 GEN</button>
+            <button id="colliderRandom">🎲 NEW SOUP</button><button id="colliderClear">× VACUUM</button>
+            <button id="colliderKitchen">🍳 KITCHEN BAIT</button><button id="colliderHarvest">⌁ HARVEST NOW</button>
+            <button id="mouseTrap">🐭 MOUSE TRAP // ARMED</button><button id="colliderKeep">★ KEEP CURRENT BEST</button>
+            <button id="colliderFire" class="collider-fire">⚛ FIRE BOTH BEAMS // COLLIDE PIXELS</button>
+          </div>
+          <div id="colliderReadout" class="collider-readout"><strong>RING ONLINE</strong> // waiting for first collision.</div>
+          <div class="colliderlegend"><span><i id="beamASwatch" style="background:#fff"></i>BEAM A</span><span><i id="beamBSwatch" style="background:#fff"></i>BEAM B</span><span><i style="background:#ffe12c"></i>LIFE</span><span><i style="background:#70ff8d"></i>HARVEST</span><span id="storyLightReadout">TIME STORY // 5200 K</span></div>
+        </div>
+        <div class="colliderstage">
+          <canvas id="colliderCanvas" class="collidercanvas" width="1000" height="562" aria-label="Interactive 3D toroidal cellular life collider"></canvas>
+          <div class="colliderhud"><span id="colliderGen">GEN 000000</span><span id="colliderPop">PIXELS 0</span><span id="colliderIP">IP-1 ARMED</span></div>
+          <div class="harvest-row">
+            <canvas id="harvestCanvas" class="harvestcanvas" width="144" height="144" aria-label="Best harvested cosmic pixel specimen"></canvas>
+            <div class="harvestmeta"><strong id="harvestName">BEST SPECIMEN // NONE YET</strong><div id="harvestScore">QUALITY 0 / 100 // go hit some pixels together.</div><div class="quality-track"><div id="qualityBar" class="quality-bar"></div></div><div id="harvestTraits">PERSISTENCE — // STRUCTURE — // NOVELTY —</div><div id="kitchenVerdict" class="kitchen-verdict">🍳 KITCHEN ANIMALS: sniffing the detector.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel paintbox">
+      <div class="panel-head"><h2>Paint Program // Wobble Wave</h2><span class="muted">RAM canvas // draw some language n shit</span></div>
+      <div class="paintbody">
+        <div class="painttools">
+          <div class="paintgrid">
+            <label for="paintTool">Tool<select id="paintTool"><option value="brush">PIXEL BRUSH</option><option value="wobble">WOBBLE WAVE</option><option value="symbol">SYMBOL / TEXT</option><option value="dropper">EYEDROPPER</option><option value="erase">ERASER</option></select></label>
+            <label for="paintSymbol">Symbol<input id="paintSymbol" type="text" maxlength="6" value="FUCK" spellcheck="false"></label>
+          </div>
+          <div class="paintgrid">
+            <label for="paintColor">Ink<input id="paintColor" class="paint-color" type="color" value="#27e2ff"></label>
+            <label for="paintSize">Size <span id="paintSizeOut">18</span><input id="paintSize" class="paint-range" type="range" min="2" max="72" value="18"></label>
+          </div>
+          <div class="paint-palette" id="paintPalette" aria-label="Paint palette">
+            <button class="paint-swatch" data-color="#f4f7fb" style="background:#f4f7fb" aria-label="white"></button><button class="paint-swatch" data-color="#ffe12c" style="background:#ffe12c" aria-label="yellow"></button><button class="paint-swatch" data-color="#ff3e9d" style="background:#ff3e9d" aria-label="pink"></button><button class="paint-swatch" data-color="#27e2ff" style="background:#27e2ff" aria-label="cyan"></button><button class="paint-swatch" data-color="#70ff8d" style="background:#70ff8d" aria-label="green"></button><button class="paint-swatch" data-color="#ff8a34" style="background:#ff8a34" aria-label="orange"></button><button class="paint-swatch" data-color="#a572ff" style="background:#a572ff" aria-label="purple"></button><button class="paint-swatch" data-color="#11151b" style="background:#11151b" aria-label="almost black"></button>
+          </div>
+          <div class="paint-actions">
+            <button id="paintUndo">↶ UNDO</button><button id="paintClear">× CLEAR</button><button id="paintRandom" class="randompaint">🎲 RANDOM RANDOM</button><button id="paintVary" class="varybtn">&lt;VARY&gt;[VARY]</button><button id="paintSave">↓ SAVE PNG</button><button id="paintWobble">〰 WOBBLE IT</button><button id="paintAscend" class="ascii-paint">✧ CHARACTER ASCENSION // ASCII PICTURE</button><button id="paintCheeseCamera" class="cheese-camera">🧀📷 CHEESE4CAMERA // GLITCH + GLOW</button>
+          </div>
+        </div>
+        <div class="paintstage">
+          <canvas id="paintCanvas" class="paintcanvas" width="900" height="600" aria-label="Paint program canvas"></canvas>
+          <div class="paintstatus"><span id="paintStatus">BRUSH READY // POINTER DOWN = MAKE MARK</span><strong>VERY VERY: OFF</strong></div>
+          <div class="ascii-output-wrap"><label for="asciiPictureText">ASCII PICTURE // editable text</label><textarea id="asciiPictureText" class="ascii-output" spellcheck="false" placeholder="Draw something, then press CHARACTER ASCENSION to turn the picture into characters."></textarea><button id="asciiSave" class="ascii-save">↓ SAVE ASCII TEXT</button></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="ticker"><div class="ticker-inner" id="ticker">RAW → LITERAL → SUBJECTIVE → SYMBOLIC → BACK → WORD → CHARACTER → DESIRE → POEM → RIDICULATOR → SAUCE → GLITCH → EMOJI → ASCII → TELEPHONE → GET-IT → GOT-IT → HIVEMIND → STORY → EXIT ■ RAW → LITERAL → SUBJECTIVE → SYMBOLIC → BACK → WORD → CHARACTER → DESIRE → POEM → RIDICULATOR → SAUCE → GLITCH → EMOJI → ASCII → TELEPHONE → GET-IT → GOT-IT → HIVEMIND → STORY → EXIT ■ </div></div>
+  </main>
+  <div id="upgradeOverlay" class="upgrade-overlay" aria-live="polite"><div class="upgrade-box"><div class="upgrade-title">TOTAL UPGRADE</div><div id="upgradeStage" class="upgrade-stage">Preparing to improve everything…</div><div class="upgrade-track"><div id="upgradeBar" class="upgrade-bar"></div></div><div id="upgradeZero" class="upgrade-zero"></div></div></div>
+  <script src="./telephone-1.js"></script>
+  <script src="./telephone-2.js"></script>
+<script src="./doodle-bridge.js"></script><script src="./telephone-session.js"></script></body>
+</html>

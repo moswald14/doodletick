@@ -1,3 +1,39 @@
+## 0.9.3b — Telephone World, Studio and Jazz
+
+Telephone World, Dot Wave Studio and Doodle Keeper share an explicit creative-project shelf. Keep source, protected master, story, character, poem, drawings and editable soundtrack together; review before copying into the encrypted vault or making a fictional map. Shared projects and portable exports are unencrypted and remain separate from vault keys and balances.
+
+Doodle Jazz is included with smoother chord movement, call/repeat/answer phrases with rests, coordinated swing timing, and a straight bossa feel. All sound renders locally and waits for Play.
+
+The release also fixes partial imports after invalid drawing data, edits made during slow saves or loads, and Stop during soundtrack preparation. Existing Keeper identities, signed formats and DVC rules are unchanged. Use a Home Assistant backup before updating and export browser projects separately. See VALIDATION.md for the tested scope and limitations.
+
+## 0.9.1b
+
+Telephone playback Stop now cancels pending project reads and rendering immediately. The integrated Studio includes all 49 recovered sounds. Local integration edition; live installation is coordinated separately.
+
+## 0.9b — Telephone World and Dot Studio
+
+Local integration source cut; publication, merging and live Home Assistant installation are separate actions. Verification results must be read from the integration report, not inferred from this change list.
+
+- Add Bullshit Telephone World 2 and Dot Wave Studio 2.3 to the Keeper workspace, retaining the pending 0.8b Jazz room.
+- Keep a shared browser project shelf for narrative input, protected master copy, story, character, poem, drawings and an attached editable Studio score. Save/reopen sessions and export/import portable `.telephone.json` copies.
+- Add Studio's Telephone step: derive an editable score from a selected project, load an existing attached score, and save an edited score back. Use normal Studio playback and WAV/MIDI exports; Telephone can play the attached score through the same rendering worker. Playback remains opt-in.
+- Stage a selected narrative as a vault draft only after unlocking and review. An occupied draft requires confirmation; normal sealing, signatures and witness requests remain separate.
+- Create an editable playable map from a fictional project through the world workshop. Protected source modes remain protected; map export and sharing retain the workshop's credit and permission controls.
+- Store the project shelf separately from the encrypted vault. Portable project exports are unencrypted. Exclude typing-drill entries, match profiles, corruptor passwords and volatile arcade minigame state from narrative snapshots.
+- Serve same-origin scripts and rendering workers through desktop and authenticated ingress. News fetching starts only on an explicit news action; no remote executable news scripts are permitted.
+- Preserve identities, signed record formats, garden accounting, mining and native-chain rules. See [TELEPHONE-WORLD.md](TELEPHONE-WORLD.md).
+
+## 0.8b — Doodle Jazz room
+
+Source checks and browser observations are recorded in [VALIDATION.md](VALIDATION.md). Installation and release receipts are separate from this source-cut report.
+
+- Add **Jazz room** to the Keeper sidebar, opening the Doodle Jazz player in the same tab. **Back to Keeper** leaves the jazz page and stops its audio.
+- Generate original piano, plucked upright bass and percussion locally, with **Velvet swing**, **Blue hour** and **Bossa garden** styles. The trio keeps composing new phrases without a programmed final song.
+- Start only on **Play jazz**. Provide Pause/Resume, Stop, New set, master and instrument levels, mute, tempo, swing, room reverb and dim mode. Save sound preferences locally outside the vault; opening the page never resumes playback automatically.
+- Continue background listening while the jazz page remains open and the device stays awake. Page exit, device sleep, browser suspension or an audio interruption can end playback. The Keeper server itself does not play audio through Home Assistant hardware.
+- Serve the player and worklet as external same-origin assets under the existing Keeper and authenticated-ingress policy. Listening needs no vault, wallet connection, microphone or streaming account.
+- Preserve creator identities, signed formats, garden accounting and native-chain rules. See [JAZZ.md](JAZZ.md) for controls and boundaries, and [VALIDATION.md](VALIDATION.md) for checked behavior.
+
 ## 0.7b — Sleep garden and Keeper time
 
 0.7b is published. See the validation report for checked behavior and deployment limits.

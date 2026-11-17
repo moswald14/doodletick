@@ -1,8 +1,24 @@
-# Doodle Tick · 0.7b
+# Doodle Tick · 0.9.3b
 
 A creator arcade inspired by the loops of a telephone cord: an hourly color clock, Dot Wave sound mushrooms, an encrypted vault and direct peer connections. Run a Keeper on your computer or Home Assistant.
 
 [![Add Doodle Tick to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fmoswald14%2Fdoodletick)
+
+## Telephone World and Dot Studio
+
+**0.9.3b brings Bullshit Telephone World 2 and Dot Wave Studio 2.3 into the same Keeper workspace.** Open **Telephone World** to create or reopen a narrative session, move it into Studio for an editable soundtrack, or review it in Keeper before saving a vault draft or making a playable world map.
+
+The shared project shelf is stored **unencrypted in this browser**, separate from your encrypted vault. Source input, protected master, generated story, character, poem, drawings and attached Studio score travel together in a `.telephone.json` export. Use explicit export/import to move projects between browsers, devices, ports or Home Assistant addresses. Nothing starts playing, seals a story or publishes work automatically.
+
+This combined update includes the Jazz room and its new connected chord voicings, call-and-answer phrases and deliberate swing timing. Telephone imports validate drawings before changing the open session, and edits made during a save remain marked as unsaved. Read [the Telephone World guide](keeper/TELEPHONE-WORLD.md) for the workflow, storage boundaries and launch instructions. Existing signed formats, identities, garden balances and DVC rules are preserved.
+
+## Doodle Jazz room
+
+**0.8b adds Jazz room** to the Keeper sidebar. Open it and press **Play jazz** for an original, locally synthesized piano, bass and drum trio. Choose **Velvet swing**, **Blue hour** or **Bossa garden**, adjust the sound, or ask for a **New set**. No vault, wallet connection or streaming account is required.
+
+The player opens in the same tab. Jazz can continue in the background while that page stays open and your device remains awake. **Back to Keeper** leaves the jazz page and stops its audio. Sound comes from the listening browser's speakers or headphones, and playback never starts automatically. Read the [jazz guide](keeper/JAZZ.md) for controls and interruption limits.
+
+See the [validation record](keeper/VALIDATION.md) for the source checks and their limits. Published downloads are listed in [Releases](https://github.com/moswald14/doodletick/releases).
 
 ## Sleep garden and Keeper time
 
