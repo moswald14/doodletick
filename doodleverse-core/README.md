@@ -109,8 +109,8 @@ rejoins the peers, and restarts a node to check persistence.
 ## Compatibility and launch gates
 
 The existing Keeper identity, vault, mushroom records and legacy SHA-256 DVC
-ledger are preserved. They are separate histories, with no automatic conversion
-or duplicated founder payment. The published Ethereum founder certificate is
+ledger are preserved. They are separate histories, with no automatic conversion,
+bridge or balance import. The published Ethereum founder certificate is
 disclosure evidence; its address is not a native DVC receiving address. PEPE,
 Pepecoin and Ethereum balances cannot be sent to this chain.
 
@@ -120,7 +120,7 @@ For now use the computer's Keeper alongside its Core test node. Public RPC,
 router DMZ, mining pools and live external peers are not configured.
 
 Before a mainnet release: finish native wallet backup/recovery and the site
-spending flow; replace the old Windows dependency stack; review consensus and
+spending flow; finish reviewing the remaining Windows dependencies; review consensus and
 networking beyond the targeted tests; add tested Pi/ARM builds; select and verify
 the owner's native founder address; publish immutable genesis and launch
 parameters; then deploy independently operated nodes and validate their sync.

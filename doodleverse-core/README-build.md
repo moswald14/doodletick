@@ -40,7 +40,9 @@ Each successful package includes:
 - Original source license notices, a build manifest and SHA-256 checksums.
 - Build-tool/library information and the validation evidence that actually ran.
 - For Windows, all downloaded dependency source archives and their embedded
-  licenses, with corresponding recipes in the complete source archive.
+  licenses, with corresponding recipes in the complete source archive, plus
+  the full OpenSSL license in `licenses/OpenSSL-LICENSE.txt` and its verified
+  archive provenance in `validation/openssl-source.txt`.
 
 Archives contain no runtime wallet, cookie, blockchain data directory or host
 environment dump. The Linux package targets Ubuntu 22.04 x86_64 and dynamically
@@ -63,7 +65,7 @@ The Linux build requires GCC/G++, Make, Autoconf, Automake, Libtool, pkg-config,
 Git, Python 3.10 or newer, OpenSSL development files, libevent, Berkeley DB 5.3
 C++ development files, and the Boost system/filesystem/chrono/program-options/
 test/thread development libraries. It uses Ubuntu's maintained OpenSSL 3
-package, rather than the upstream OpenSSL 1.0.2u dependency recipe.
+package. The Windows cross-build separately pins OpenSSL 3.5.9 LTS.
 
 From the repository root:
 
@@ -96,16 +98,29 @@ The cross-build additionally requires the POSIX-thread MinGW-w64 x86_64 GCC/G++
 compilers, curl, patch, Perl, bison and zip. The workflow installs these on its
 temporary worker. No Windows or WSL setup is performed on the maintainer's PC.
 
-Upstream's `depends` recipes pin versions and verify each downloaded archive's
+The patched `depends` recipes pin versions and verify each downloaded archive's
 SHA-256. Berkeley DB's old HTTP location is upgraded to the official HTTPS
 location without changing the expected archive hash. All dependency downloads
 and redirects must remain HTTPS. Compiler selection is explicit and does not
 alter system compiler alternatives. Qt and UPnP are excluded.
 
-**The Windows dependencies include OpenSSL 1.0.2u, Boost 1.63.0 and Berkeley DB
-5.3.28.** These old versions are a known limitation. This build is for disposable
+OpenSSL is upgraded to **3.5.9 LTS**, supported upstream through April 8, 2030,
+using the official release archive and SHA-256:
+
+```text
+603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a
+```
+
+The build uses static libraries with embedded providers and retains deprecated
+APIs required by the inherited code. It checks the staged library version and
+rechecks the archive hash before extracting the full Apache-2.0 license notice.
+The OpenSSL test suite is not run by this cross-build.
+
+**Boost 1.63.0 and Berkeley DB 5.3.28 remain old dependencies.** They are known
+limitations requiring further release review. This build remains for disposable
 test-chain evaluation and is not ready for production funds or public service.
-Replacing and validating the old dependency stack remains release work.
+Windows compilation and runtime validation are still required for this upgrade;
+successful Linux compilation does not establish Windows compatibility.
 
 The result appears in `doodleverse-core/dist/windows-x86_64/`. The cross-build
 checks executable imports for missing compiler or crypto DLLs. It does not run
@@ -119,5 +134,9 @@ network deployment require separate verification.
 - [Unix build instructions](https://github.com/pepecoinppc/pepecoin/blob/4fb5a0cd930c0df82c88292e973a7b7cfa06c4e8/doc/build-unix.md)
 - [Windows cross-build instructions](https://github.com/pepecoinppc/pepecoin/blob/4fb5a0cd930c0df82c88292e973a7b7cfa06c4e8/doc/build-windows.md)
 - [Dependency recipes](https://github.com/pepecoinppc/pepecoin/tree/4fb5a0cd930c0df82c88292e973a7b7cfa06c4e8/depends)
+- [Official OpenSSL releases and support dates](https://openssl-library.org/source/)
+- [OpenSSL 3.5.9 release archive](https://github.com/openssl/openssl/releases/download/openssl-3.5.9/openssl-3.5.9.tar.gz)
+- [OpenSSL 3.5.9 published SHA-256](https://github.com/openssl/openssl/releases/download/openssl-3.5.9/openssl-3.5.9.tar.gz.sha256)
+- [OpenSSL 3.5.9 MinGW build notes](https://github.com/openssl/openssl/blob/openssl-3.5.9/NOTES-WINDOWS.md)
 - [Pinned checkout action release](https://github.com/actions/checkout/releases/tag/v7.0.1)
 - [Pinned artifact action release](https://github.com/actions/upload-artifact/releases/tag/v7.0.2)
