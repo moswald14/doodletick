@@ -1,3 +1,19 @@
+# Validation - Doodle Tick 0.14b
+
+## Home Assistant Jazz radio - 2026-11-17
+
+Integrated on published 0.13b `e5e2077f69ce83dbbb0d4c6a3b8800fa751b14f3`. Native Core source, wallet, default-disabled peer mapping, startup cancellation and shutdown are retained.
+
+- 981 combined Keeper/Home Assistant checks passed with no failures or skips after integration, using disposable identities, local servers and test data. Additional focused storage-failure Stop checks verify that Stop releases both outputs even when station writes fail, the guard can always be unlocked and unreadable station files remain unchanged.
+- New checks cover eight distinct genre arrangements; exact four-previous/four-current-and-following chord captures; real signatures, linked journals, hashes and restart/retry; private/ranged MP3 replay through authenticated ingress; body, origin, method and rate protection; preserved local volume; hourly/missed-hour changes; source-loss recovery; voice exclusion from recordings; slow control saves; naming feedback; and older-library pagination.
+- The three original styles' musical events/durations matched their pre-expansion digests over 7,680 seeded bars. Portable transport lifecycle checks exercise the actual patched SDK against local signaling fixtures and verify bounded cleanup and error messages.
+- A real FFmpeg development check synthesized original music, encoded MP3, decoded a nonzero recording and received ongoing MP3 monitor frames. This found and fixed initial streaming input probing latency. Offline voice/world-source behavior has bounded injected-process/network tests. The Linux image canaries separately require actual offline speech and native Opus audio.
+- Native Windows testing delivered 48 kHz stereo source samples through local Opus RTP into decoded nonzero audio, but its process failed native teardown independently of this adapter. Windows native backend support is therefore not claimed; browser-local fallback remains available. Released Home Assistant images must pass clean-exit native canaries on Linux amd64 and aarch64.
+
+At this checkpoint, Linux image canaries and the physical Home Assistant installation are pending. No OpenAI paid request, PEPE payment, owner wallet unlock, mining action or live key inspection was used for Jazz. Speaker output, a second physical network and uninterrupted overnight operation are not established by unit tests. This is not an independent security audit.
+
+---
+
 # Validation — Doodle Tick 0.13b
 
 ## Native Scrypt mining and site wallet · 2026-11-17

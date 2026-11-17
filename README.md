@@ -1,16 +1,13 @@
 # Doodle Tick · 0.14b
 
-
 **0.14b adds Home Assistant Jazz radio:** eight genres, hourly shuffle, optional world-update voice, local mute and signed eight-chord replay keepsakes. [Open the Jazz guide](keeper/JAZZ.md).
+
 **0.12b brings MozCorp’s cloud savepoints, fictional HOPE-LON feed and upgrade desk into Keeper.** Open **MozCorp → Keeper cloud** or **Upgrade desk**. Shared records live with this Keeper and survive restarts. AI drafts are optional and use a server-side key with explicit instruction-only consent. See [the MozCorp guide](keeper/MOZCORP.md).
 
 **0.13b adds a Pepecoin-derived Scrypt blockchain, a native browser wallet and a portable Windows GPU miner.** Open **Doodleverse Coin** to mine to a receiving address, or **Your wallet · Receive & send** to create an encrypted wallet and review a payment. Home Assistant includes its own validating node; your computer does the GPU work.
 
 A creator arcade inspired by the loops of a telephone cord: an hourly color clock, Dot Wave sound mushrooms, an encrypted vault and direct peer connections. Run a Keeper on your computer or Home Assistant.
 
-Development: Jazz now includes **Name this song**, a two-cent PEPE payment for an OpenAI title and a new beat. It stays disabled until the owner connects their account. See [setup, payment and recovery details](keeper/JAZZ-NAMING.md). This addition has not been published or installed as part of 0.9.3b.
-
-Jazz development also adds **Shuffle the trio**, with coordinated musical settings and Undo, plus **Cast Jazz live** for a free, audio-only VDO.Ninja listener link. Casting shares only the synthesized Jazz mix and does not capture devices or the screen. Read [the Jazz guide](keeper/JAZZ.md#cast-jazz-live) for controls and connection limits.
 
 [![Add Doodle Tick to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fmoswald14%2Fdoodletick)
 

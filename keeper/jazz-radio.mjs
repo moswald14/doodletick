@@ -57,6 +57,7 @@ export async function createJazzRadio({ dataDir, signer, enabled = false, now = 
   let storageError = null;
   try { saved = validateState(await readJazzJson(statePath)); }
   catch (e) { if (e.code !== 'ENOENT') storageError = 'Jazz station settings need recovery. Your saved files have been preserved.'; }
+  const unreadableStation = storageError !== null;
   let renderer, bank, transport, monitor, room, timer, announceTimer, running = false, starting = false, closing = false;
   let generation = 0, lastInfo = null, namingEvent = null, namingSequence = 0, infoEvents = [], recent = [], current = null, ordinal = 0;
   let startedAt = null, renderedFrames = 0, nextFrameAt = 0, lastWorldAt = 0, lastBrief = null, voiceSamples = null, voiceAt = 0, speaking = false, pendingSpeech = null;
@@ -64,10 +65,15 @@ export async function createJazzRadio({ dataDir, signer, enabled = false, now = 
   const jobs = new Map(), tasks = new Set();
   const serialized = task => { const result = chain.then(task); chain = result.catch(() => {}); return result; };
   const remember = promise => { tasks.add(promise); promise.catch(() => {}).finally(() => tasks.delete(promise)); return promise; };
-  function requireEnabled() { if (!enabled) throw error('Home Assistant broadcasting is not enabled on this Keeper.', 503); if (storageError || closing) throw error(storageError || 'Keeper is closing.', 503); }
+  function requireEnabled(allowStorageFailure = false) { if (!enabled) throw error('Home Assistant broadcasting is not enabled on this Keeper.', 503); if (closing || (storageError && !allowStorageFailure)) throw error(storageError || 'Keeper is closing.', 503); }
   function persist() {
     const copy = structuredClone(saved);
-    const result = persistence.then(() => atomicJazzJson(statePath, copy));
+    const result = persistence.then(async () => {
+      if (unreadableStation) throw error('The unreadable station file has been preserved for recovery.', 503);
+      await atomicJazzJson(statePath, copy);
+      if (lastError === storageError) lastError = null;
+      storageError = null;
+    });
     persistence = result.catch(() => { storageError = 'Jazz could not save its station settings. Check Keeper storage before changing the broadcast.'; lastError = storageError; });
     return result;
   }
@@ -229,16 +235,21 @@ export async function createJazzRadio({ dataDir, signer, enabled = false, now = 
     },
     start() { return serialized(async () => { if (!running) { recoveryPending = false; clearTimeout(timer); await startSource(); } return service.status(); }); },
     stop() { return serialized(async () => {
-      requireEnabled(); if (saved.neverStop) throw error('Never stop is on. Turn it off before stopping the broadcast.', 423);
-      saved.running = false; await persist(); await haltResources(); transportState = { phase: 'off' }; return service.status();
+      requireEnabled(true); if (saved.neverStop) throw error('Never stop is on. Turn it off before stopping the broadcast.', 423);
+      saved.running = false; await haltResources(); transportState = { phase: 'off' };
+      try { await persist(); }
+      catch { lastError = 'The broadcast is stopped for this run, but Keeper could not save that choice. It may resume after a restart. Free storage and press Stop again; existing recordings are preserved.'; throw error(lastError, 503); }
+      return service.status();
     }); },
     settings(input) { return serialized(async () => { requireEnabled(); applySettings(input); await persist(); settingsAnnouncement('The Jazz settings changed.'); return service.status(); }); },
     shuffle() { return serialized(async () => { requireEnabled(); await shuffle('The players have a new arrangement.'); return service.status(); }); },
     newSet() { return serialized(async () => { requireEnabled(); applySettings(saved.settings, true); await persist(); settingsAnnouncement('A fresh improvisation is beginning.'); return service.status(); }); },
     neverStop(value) { return serialized(async () => {
-      requireEnabled(); if (typeof value !== 'boolean') throw error('Choose whether Never stop is on.');
+      requireEnabled(value === false); if (typeof value !== 'boolean') throw error('Choose whether Never stop is on.');
       saved.neverStop = value; if (value) saved.running = true; saved.nextShuffleAt = value ? now() + JAZZ_HOUR : null; saved.revision++;
-      await persist(); if (value && !running) await startSource(); settingsAnnouncement(value ? 'Never stop is on. The players will shuffle each hour.' : 'Never stop is off. The broadcast can be stopped.');
+      try { await persist(); }
+      catch { lastError = value ? storageError : 'Never stop is unlocked for this run. Keeper could not save the change; press Stop to end the broadcast here, then repair storage before restarting.'; throw error(lastError, 503); }
+      if (value && !running) await startSource(); settingsAnnouncement(value ? 'Never stop is on. The players will shuffle each hour.' : 'Never stop is off. The broadcast can be stopped.');
       return service.status();
     }); },
     voice(value) { return serialized(async () => {
