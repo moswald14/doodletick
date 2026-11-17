@@ -37,9 +37,12 @@ test('local directory stays usable behind the Keeper origin boundary; legacy bri
     assert.equal(created.status, 201); assert.equal((await (await fetch(base + '/vpn-api/lobby/self/rooms')).json()).rooms.length, 1);
   } finally { await keeper?.close(); await rm(dir, { recursive: true, force: true }); }
 });
-test('HA package removes network privileges, VPN runtime and public listener configuration', async () => {
+test('HA package removes VPN privileges and offers only an opt-in coin peer port', async () => {
   const read = name => readFile(new URL('../../doodletick/' + name, import.meta.url), 'utf8');
-  assert(!/NET_ADMIN|NET_RAW|\/dev\/net\/tun|ports:/.test(await read('config.yaml')));
+  const config = await read('config.yaml');
+  assert(!/NET_ADMIN|NET_RAW|\/dev\/net\/tun/.test(config));
+  const ports = config.match(/^ports:\s*\n((?:[ \t]+[^\n]*\n?)*)/m)?.[1];
+  assert.equal(ports?.trim(), '38474/tcp: null');
   assert(!/tailscale|iptables|iproute2/.test(await read('Dockerfile')));
   assert(!/spawn\(|execFile\(/.test(await read('main.mjs')));
 });

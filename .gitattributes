@@ -3,3 +3,5 @@
 *.jpg binary
 *.zip binary
 *.gz binary
+# Unified patches require a leading space even on empty context lines.
+*.patch -whitespace

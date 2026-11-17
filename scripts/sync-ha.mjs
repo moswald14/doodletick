@@ -1,6 +1,7 @@
 import { lstat, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 
 export const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const normalizeLines = text => text.replace(/\r\n/g, '\n');
@@ -80,7 +81,45 @@ async function filesUnder(root, relative = '') {
   return files.sort();
 }
 
+export async function syncCorePayload({ checkOnly = false, root = repositoryRoot } = {}) {
+  const target = path.join(root, 'doodletick', 'core-source');
+  await assertNoLinks(root, 'doodletick/core-source');
+  const inputs = {
+    'doodleverse.patch': 'doodleverse-core/patches/doodleverse.patch',
+    'chain-manifest.json': 'doodleverse-core/chain-manifest.json',
+    'build-core.sh': 'doodleverse-core/home-assistant/build-core.sh',
+    LICENSE: 'LICENSE',
+  };
+  const expected = new Map();
+  for (const [name, relative] of Object.entries(inputs)) {
+    await assertNoLinks(root, relative);
+    expected.set(name, normalizeLines(await readFile(path.join(root, relative), 'utf8')));
+  }
+  const manifest = JSON.parse(expected.get('chain-manifest.json'));
+  expected.set('provenance.json', JSON.stringify({
+    upstreamRepository: 'https://github.com/pepecoinppc/pepecoin.git',
+    upstreamCommit: manifest.upstream.commit,
+    patchSha256: createHash('sha256').update(expected.get('doodleverse.patch')).digest('hex'),
+  }, null, 2) + '\n');
+  const extras = (await filesUnder(target)).filter(name => !expected.has(name));
+  if (extras.length) throw new Error('Unexpected generated Core source files: ' + extras.join(', '));
+  const changed = [];
+  for (const [name, wanted] of expected) {
+    let actual;
+    try { actual = await readFile(path.join(target, name), 'utf8'); }
+    catch (error) { if (error.code !== 'ENOENT') throw error; }
+    if (actual !== wanted) changed.push(name);
+  }
+  if (checkOnly && changed.length) throw new Error('Stale generated Core source; run node scripts/sync-ha.mjs: ' + changed.join(', '));
+  if (!checkOnly) {
+    await mkdir(target, { recursive: true });
+    for (const name of changed) await writeFile(path.join(target, name), expected.get(name), 'utf8');
+  }
+  return { files: expected.size, changed: changed.length };
+}
+
 export async function syncHa({ checkOnly = false, root = repositoryRoot } = {}) {
+  const core = await syncCorePayload({ checkOnly, root });
   const source = path.join(root, 'keeper'), target = path.join(root, 'doodletick', 'keeper');
   await assertNoLinks(root, 'keeper'); await assertNoLinks(root, 'doodletick/keeper');
   await assertNoLinks(source, 'pi/runtime-files.txt');
@@ -114,7 +153,7 @@ export async function syncHa({ checkOnly = false, root = repositoryRoot } = {}) 
       await writeFile(path.join(target, name), expected.get(name), 'utf8');
     }
   }
-  return { files: expected.size, changed: changed.length };
+  return { files: expected.size + core.files, changed: changed.length + core.changed };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

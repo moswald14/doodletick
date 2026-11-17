@@ -1,0 +1,5 @@
+{
+  "upstreamRepository": "https://github.com/pepecoinppc/pepecoin.git",
+  "upstreamCommit": "4fb5a0cd930c0df82c88292e973a7b7cfa06c4e8",
+  "patchSha256": "641c07ba26a034e6d778a6264ab0a3ddab2690e7620829d6357ee009ad406101"
+}

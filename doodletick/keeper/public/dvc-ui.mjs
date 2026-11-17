@@ -57,7 +57,7 @@ export function createDvcUI(container, { fetchImpl = (...args) => fetch(...args)
   if (!Number.isSafeInteger(repeatDelayMs) || repeatDelayMs < 1 || repeatDelayMs > 5000) throw Error('Invalid mining round interval.');
   const network = genesis();
   container.classList.add('native-dvc');
-  container.innerHTML = `<header class="native-heading"><div><span class="section-kicker">DOODLEVERSE NATIVE NETWORK</span><h2>Doodleverse Coin</h2><p>21,000,000 DVC maximum · 1,000,000 founder allocation · 20,000,000 mineable.</p></div><span class="native-badge">Experimental</span></header>
+  container.innerHTML = `<header class="native-heading"><div><span class="section-kicker">LEGACY SHA-256 NETWORK</span><h2>Previous DVC ledger</h2><p>Your existing coin history remains here. <a href="./scrypt.html">Open the new Doodleverse Scrypt test miner.</a> These are separate networks; balances do not convert automatically.</p></div><span class="native-badge">Legacy</span></header>
     <p class="native-note">Native DVC balances and transfers are stored on this Doodleverse node and its peers. This is not an Ethereum token or a Coinbase wallet balance. Your browser wallet signs DVC messages. Mining rewards become spendable after six blocks; confirmations can change when competing chains arrive.</p>
     <section class="native-node"><strong data-native-field="node">Node not loaded.</strong><span data-native-field="supply"></span><details><summary>Network identity</summary><code data-native-field="network"></code></details><button type="button" data-native-action="refresh">Refresh node & balances</button></section>
     <section class="native-mining"><h3>Mine native DVC</h3>
