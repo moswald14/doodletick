@@ -1,6 +1,6 @@
 FROM node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54 AS core-builder
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates git build-essential autoconf automake libtool pkg-config python3 \
+    ca-certificates git build-essential autoconf automake libtool pkg-config python3 bsdextrautils \
     libssl-dev libevent-dev libboost-system-dev libboost-filesystem-dev \
     libboost-chrono-dev libboost-program-options-dev libboost-test-dev libboost-thread-dev \
     && rm -rf /var/lib/apt/lists/*

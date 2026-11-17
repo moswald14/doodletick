@@ -6,12 +6,14 @@ on:
     branches: [main, feature/dvc-scrypt]
     paths:
       - 'doodleverse-core/**'
+      - 'doodletick/Dockerfile'
       - 'keeper/**'
       - 'crypto-vendor/**'
       - '.github/workflows/doodleverse-core.yml'
   pull_request:
     paths:
       - 'doodleverse-core/**'
+      - 'doodletick/Dockerfile'
       - 'keeper/**'
       - 'crypto-vendor/**'
       - '.github/workflows/doodleverse-core.yml'
