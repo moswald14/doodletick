@@ -1,10 +1,12 @@
-# MozCorp private rooms · 0.12b
+# MozCorp private rooms · 0.15b
 
 ## Install your rooms
 
 Open **MozCorp** in Keeper and choose the matching private ZIP with **Choose private bundle**. Keeper checks its complete size, fingerprint and file inventory before activating it. A failed upload leaves the installed bundle intact. Use the ZIP prepared for this Keeper version; an unrelated or modified bundle is refused.
 
 The public app contains a generic loader and the approved bundle fingerprint. Private station source stays in the separately installed bundle in Keeper's data. Rooms run in isolated, opaque-origin frames with no direct access to the parent app's storage or network. Home Assistant keeps its normal authenticated ingress. This isolation is not an independent security certification.
+
+Version 0.15b requires its matching private bundle to fix paragraph breaks in newly generated stories. Update this same Keeper app, then replace the private ZIP when prompted. Existing saved endings remain exact. The loader continues checking the complete bundle before activation.
 
 ## Create, save and score a world
 

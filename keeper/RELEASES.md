@@ -1,3 +1,9 @@
+## 0.15b — Telephone World story paragraphs
+
+New Bullshit Telephone World stories display proper paragraph breaks in the machine and retain them when carried into Dot Studio. The public app updates only its approved private bundle fingerprint; private station source remains separately installed.
+
+After the Keeper update, install the matching private MozCorp ZIP. Existing source text, master copies, saved endings, animal sessions and Studio scores remain exact. Typed literal backslashes in source or machine signals are preserved. Shared cloud, HOPE-LON and upgrade proposal formats, native coin rules and Home Assistant access remain unchanged.
+
 ## 0.14b — Home Assistant Jazz radio
 
 Jazz now broadcasts from Home Assistant, with free VDO.Ninja listening, independent local output volume and mute, eight distinct jazz genres, structured shuffle and hourly player changes under an unlockable Never stop guard. A started station resumes after Keeper restarts; power, network and third-party outages can interrupt it.

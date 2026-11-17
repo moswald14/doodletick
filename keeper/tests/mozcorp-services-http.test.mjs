@@ -17,23 +17,32 @@ async function serve(t, options = {}) {
   return { base: 'http://127.0.0.1:' + server.address().port, writes: () => writes };
 }
 const headers = { 'Content-Type': 'application/json', 'X-Keeper-Request': '1' };
+async function statusOf(...args) {
+  let response;
+  try { response = await fetch(...args); }
+  catch (cause) { throw new Error('Fixture request failed: ' + (args[1]?.method || 'GET') + ' / bytes ' + (args[1]?.body?.length || 0) + ' / ' + args[0], { cause }); }
+  // Finish each fixture response before reusing or closing its connection.
+  await response.arrayBuffer();
+  return response.status;
+}
 
 test('shared services require protected same-origin mutations and return no cache or CORS permission', async t => {
   const f = await serve(t);
   for (const area of ['cloud', 'hope', 'upgrades']) {
     const route = f.base + '/api/mozcorp/' + area;
     const read = await fetch(route); assert.equal(read.status, 200); assert.equal(read.headers.get('cache-control'), 'no-store'); assert.equal(read.headers.get('access-control-allow-origin'), null);
-    for (const extra of [{}, { ...headers, Origin: 'null' }, { ...headers, Origin: 'https://other.example' }, { ...headers, 'Sec-Fetch-Site': 'cross-site' }]) assert.equal((await fetch(route, { method: 'POST', headers: extra, body: '{}' })).status, 403);
-    assert.equal((await fetch(route, { method: 'POST', headers, body: '{"action":"read"}' })).status, 200);
+    await read.arrayBuffer();
+    for (const extra of [{}, { ...headers, Origin: 'null' }, { ...headers, Origin: 'https://other.example' }, { ...headers, 'Sec-Fetch-Site': 'cross-site' }]) assert.equal(await statusOf(route, { method: 'POST', headers: extra, body: '{}' }), 403);
+    assert.equal(await statusOf(route, { method: 'POST', headers, body: '{"action":"read"}' }), 200);
   }
   assert.equal(f.writes(), 3);
 });
 test('shared services reject malformed, unsafe, oversized and slow bodies before writing', async t => {
   const f = await serve(t), url = f.base + '/api/mozcorp/hope';
-  for (const body of ['[]', 'null', '{', '{"__proto__":{"x":1}}']) assert.equal((await fetch(url, { method: 'POST', headers, body })).status, 400);
-  assert.equal((await fetch(url, { method: 'POST', headers, body: JSON.stringify({ text: 'x'.repeat(20000) }) })).status, 413);
-  assert.equal((await fetch(url + '?secret=not-supported')).status, 400);
-  assert.equal((await fetch(url, { method: 'POST', headers: { ...headers, 'Content-Encoding': 'gzip' }, body: '{}' })).status, 415);
+  for (const body of ['[]', 'null', '{', '{"__proto__":{"x":1}}']) assert.equal(await statusOf(url, { method: 'POST', headers, body }), 400);
+  assert.equal(await statusOf(url, { method: 'POST', headers, body: JSON.stringify({ text: 'x'.repeat(20000) }) }), 413);
+  assert.equal(await statusOf(url + '?secret=not-supported'), 400);
+  assert.equal(await statusOf(url, { method: 'POST', headers: { ...headers, 'Content-Encoding': 'gzip' }, body: '{}' }), 415);
   const slowServer = await serve(t, { bodyTimeoutMs: 200 });
   const slow = await new Promise((resolve, reject) => {
     const req = http.request(slowServer.base + '/api/mozcorp/hope', { method: 'POST', headers }, res => { res.resume(); res.once('end', () => resolve(res.statusCode)); });

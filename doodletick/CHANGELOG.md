@@ -1,3 +1,7 @@
+# 0.15b — Telephone World story paragraphs
+
+Updates the approved private MozCorp bundle to fix paragraph breaks in newly generated stories and their Studio handoff. Install the matching private ZIP after updating this same Keeper app. Existing saved stories, source text, master copies and editable scores retain their contents. Shared service storage, signed formats, native coin rules and Home Assistant permissions are unchanged.
+
 # 0.14b — Home Assistant Jazz radio
 
 Jazz now broadcasts from Home Assistant, with free VDO.Ninja listening, independent local output volume and mute, eight distinct jazz genres, structured shuffle and hourly player changes under an unlockable Never stop guard. A started station resumes after Keeper restarts; power, network and third-party outages can interrupt it.

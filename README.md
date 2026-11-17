@@ -1,4 +1,6 @@
-# Doodle Tick · 0.14b
+# Doodle Tick · 0.15b
+
+**0.15b fixes paragraph formatting in new Bullshit Telephone World stories.** Install the matching private MozCorp bundle after updating Keeper. Source, master copies, existing saved stories and Studio scores retain their current contents. See [the MozCorp guide](keeper/MOZCORP.md).
 
 **0.14b adds Home Assistant Jazz radio:** eight genres, hourly shuffle, optional world-update voice, local mute and signed eight-chord replay keepsakes. [Open the Jazz guide](keeper/JAZZ.md).
 
