@@ -9,6 +9,7 @@ import { readPrivateBundle, createPrivateRoomStore, privateFramePolicy, fetchPri
 import { createKeeperServer } from '../server.mjs';
 import { createIngressServer } from '../../doodletick/gateway.mjs';
 import vm from 'node:vm';
+import { validateUpgradeState } from '../public/mozcorp-upgrades.mjs';
 const scope={module:{exports:{}},TextEncoder,crypto:globalThis.crypto};
 vm.runInNewContext(await readFile(new URL('../public/doodle-bridge.js',import.meta.url),'utf8'),scope);
 const B=scope.module.exports;
@@ -72,6 +73,26 @@ test('private upload and opaque frame policy survive authenticated ingress witho
     const frame=await fetch(base+'/mozcorp/frame/fixture');assert.equal(frame.status,200);assert.match(await frame.text(),/Private fixture/);
     const policy=frame.headers.get('content-security-policy');assert.match(policy,/sandbox allow-scripts allow-forms allow-modals allow-downloads$/);assert(!policy.includes('allow-same-origin'));assert.match(policy,/connect-src 'none'/);assert.equal(frame.headers.get('cache-control'),'no-store');
     const page=await fetch(base+'/');assert.match(page.headers.get('content-security-policy'),/script-src 'self'/);assert(!page.headers.get('content-security-policy').includes('nonce-'));
+    const service = async (area, payload) => {
+      const response = payload ? await post('/api/mozcorp/' + area, JSON.stringify(payload), { 'Content-Type': 'application/json' }) : await fetch(base + '/api/mozcorp/' + area);
+      const result = await response.json(); return { response, result };
+    };
+    const cloud = await service('cloud'); assert.equal(cloud.response.status, 200); assert.equal(cloud.result.slots.length, 0);
+    const saved = await service('cloud', { action: 'save', slotName: 'Fixture savepoint', kind: 'machine', payload: { format: 'fixture', seed: '  exact source  ' } });
+    assert.equal(saved.response.status, 200); assert.equal(saved.result.slots.length, 1); assert.equal(JSON.parse(saved.result.slots[0].payload).seed, '  exact source  ');
+    const stale = await service('cloud', { action: 'delete', scope: cloud.result.scope, revision: cloud.result.revision, id: saved.result.id }); assert.equal(stale.response.status, 409);
+    const removed = await service('cloud', { action: 'delete', scope: saved.result.scope, revision: saved.result.revision, id: saved.result.id }); assert.equal(removed.response.status, 200);
+    const fullShelf = Array.from({ length: 24 }, (_, index) => ({ slotName: 'Quoted fixture ' + index, kind: 'machine', payload: JSON.stringify({ seed: '"'.repeat(50000) }) }));
+    const imported = await service('cloud', { action: 'import', scope: removed.result.scope, revision: removed.result.revision, slots: fullShelf });
+    assert.equal(imported.response.status, 200, 'A full escaped export survives the gateway and real storage bounds.'); assert.equal(imported.result.slots.length, 24);
+    const feed = await service('hope'); assert.equal(feed.result.enabled, false);
+    const enabled = await service('hope', { action: 'settings', scope: feed.result.scope, generation: feed.result.generation, enabled: true });
+    const seeded = await service('hope', { action: 'seed', scope: enabled.result.scope, generation: enabled.result.generation, sourceAt: Date.now(), kind: 'persona', profile: { name: 'Fixture moth', pronouns: 'they/them', role: 'Fictional lamp keeper', place: 'Paper moon', bio: 'A disposable invented test character.', theme: 'deep' } });
+    assert.equal(seeded.response.status, 200); assert.equal(seeded.result.outcome, 'saved');
+    const desk = await service('upgrades'); assert.equal(desk.result.configured, false); validateUpgradeState(desk.result);
+    const proposal = await service('upgrades', { action: 'propose_manual', scope: desk.result.scope, revision: desk.result.revision, moduleId: 'world_shell', baseRelease: 'fixture-release', instruction: 'Make the fictional room navigation clearer.', proposal: { title: 'Fixture navigation', summary: 'Clarify fictional room labels for a disposable test.', proposedChanges: [{ area: 'Navigation', change: 'Use clearer labels.', rationale: 'Help visitors choose a room.' }], privacyImpact: 'No extra content collected.', reviewChecklist: ['Review room labels.'], rollbackPlan: 'Restore the earlier labels.', riskLevel: 'LOW' } });
+    assert.equal(proposal.response.status, 200); assert.equal(validateUpgradeState(proposal.result).proposals[0].currentVersion, 1);
+    for (const file of ['mozcorp-cloud.mjs', 'mozcorp-upgrades.mjs']) assert.equal((await fetch(base + '/' + file)).status, 200);
     for(const route of ['/private-stations/bundle.zip','/private-stations/upload.part','/mozcorp/frame/unknown','/mozcorp/frame/fixture/extra'])assert.equal((await fetch(base+route)).status,404);
     const after=await(await fetch(local+'/api/status')).json();assert.equal(after.publicKey,identity.publicKey);assert.equal(after.receipts,identity.receipts);
   }finally{gateway.closeAllConnections();await new Promise(r=>gateway.close(r));await keeper.close();}

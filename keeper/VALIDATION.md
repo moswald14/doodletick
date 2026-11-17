@@ -1,4 +1,17 @@
-# Validation — Doodle Tick 0.11b
+# Validation — Doodle Tick 0.12b
+
+## MozCorp shared services and Telephone repairs · 2026-11-17
+
+Built on public 0.11b commit `71948447594ef247369cb1f9acdfa5cdec4971b2`, preserving Shelf Defense, Phrase lab, Studio and signed formats.
+
+- **735/735 combined Keeper and Home Assistant tests passed**, with zero failures or skips, in 18.96 seconds using disposable identities, data and local servers.
+- New service checks cover restart persistence, atomic write failures, corruption recovery, serialized appends, stale revisions, full escaped 24-slot export/import through the real ingress gateway, quota limits, fictional persona ordering, clear/pause cancellation and private declarative solved-case rules.
+- Upgrade checks cover version-specific review, manual deployment/rollback references, provider consent, exact instruction-only payloads, eight-attempt quotas, bounded provider responses/timeouts/refusals and cancellation after settings or revision changes. Provider responses are fixtures; no paid or live API request was made.
+- Private bundle checks passed 26 Node regressions plus two manifest checks and compiled all 41 scripts in eight canonical rooms. The bundle remains separate from public assets. Actual-source regressions cover held input, HOPE session guards, machine/animal restoration, unsupported slot kinds, one-use handoffs and the complete Animal Telephone project state.
+- Chrome verified local machine generation, Credits 14/Blooper Reel 15, shared machine and animal cloud saves, feed pause/on controls, a fictional persona and solved Swordfish case arriving in HOPE-LON, a manual proposal and exact-version approval. A project generated 49 editable Studio notes in three tracks; after the song was attached and the world reopened, source, master, final story, animal transcript, credits and bloopers matched exactly. Sound remained stopped during that check.
+- Separate bounded AI reviews checked packaging, data preservation, service isolation, provider privacy and the parent UI. Review corrected an escaped-export size mismatch and a mixed-kind native cloud shelf failure. The frame sandbox and direct-network ban remain in force. No owner vault, existing key, real receipt, payment or mining action was used.
+
+This records pre-release source and local browser verification. The physical Home Assistant update and a configured live AI request require their own subsequent checks. Multiple physical devices, speaker output and a security audit are not established by these tests.
 
 ## Shelf Defense and shared idle shelves · 2026-11-17
 

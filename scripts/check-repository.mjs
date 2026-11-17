@@ -13,7 +13,7 @@ function scalar(text, key) {
 async function publicFiles(relative = '') {
   const files = [];
   const blockedDirectories = new Set(['.doodletick', 'node_modules', '__pycache__', 'user-data', '.aws', '.codex', '.ssh']);
-  const blockedNames = new Set(['witness-key.json', 'garden-ledger.json', 'shelf-idle.json', 'receipts.jsonl', 'dvc-chain.jsonl', 'server.lock', 'tailscaled.state', 'id_rsa', 'id_ed25519']);
+  const blockedNames = new Set(['witness-key.json', 'garden-ledger.json', 'shelf-idle.json', 'mozcorp-world.json', 'options.json', 'receipts.jsonl', 'dvc-chain.jsonl', 'server.lock', 'tailscaled.state', 'id_rsa', 'id_ed25519']);
   for (const entry of await readdir(path.join(repositoryRoot, relative), { withFileTypes: true })) {
     if (!relative && entry.name === '.git') continue;
     // Build/test dependencies are reproducibly installed from the lockfile and

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Trusted Keeper controller. Private stations remain opaque-origin sandboxed frames.
 import { createCreativeScorePlayer } from './creative-score-player.mjs';
+import { createMozCorpCloud } from './mozcorp-cloud.mjs';
+import { createMozCorpUpgrades } from './mozcorp-upgrades.mjs';
 const PROTOCOL = 'doodle-mozcorp/v1';
 const ENGINES = new Set(['mozcorp-v13', 'mozcorp-bug-world-v2']);
 const SAVABLE = new Set(['machine', 'bug-world']);
@@ -116,7 +118,7 @@ function captureRecord(bridge, value, base, title, stationId) {
   if (!MODES.has(snapshot.sourceMode)) fail('This station returned invalid source handling.');
   next.sourceMode = snapshot.sourceMode;
   const room = { version: 1, station: stationId };
-  for (const key of ['cloud', 'world', 'controls', 'outputs', 'modules']) if (snapshot[key] !== undefined) room[key] = snapshot[key];
+  for (const key of ['cloud', 'world', 'controls', 'outputs', 'modules', 'animal']) if (snapshot[key] !== undefined) room[key] = snapshot[key];
   if (stationId === 'machine' && !plain(room.cloud) || stationId === 'bug-world' && !plain(room.world)) fail('The station snapshot is missing its real world state.');
   next.machine = { engine: snapshot.engine, mozcorp: room, ...(base.machine?.legacy ? { legacy: clone(base.machine.legacy) } : {}) };
   return bridge.validate(next);
@@ -129,35 +131,45 @@ export function createMozCorpUI(container, { onVault, onWorld, navigate } = {}) 
     <p class="page-description">MozCorp’s machine, Bug World, EVERYWHEN and Mozville, connected to your Keeper and Dot Studio.</p>
     <section class="moz-install utility-card" id="moz-install"><h2>Your private station bundle</h2><p id="moz-install-note">Checking this Keeper…</p><div class="moz-actions"><button class="button primary" id="moz-install-button" type="button">Choose private bundle</button><button class="button quiet" id="moz-refresh" type="button">Refresh rooms</button></div><input id="moz-bundle-file" type="file" accept=".zip,application/zip" hidden><progress id="moz-upload-progress" max="100" value="0" hidden aria-label="Private bundle installation"></progress></section>
     <div class="moz-workspace" id="moz-workspace" hidden><nav id="moz-stations" class="moz-stations" aria-label="MozCorp stations"></nav>
-      <section class="moz-project utility-card"><div class="moz-title-row"><label>PROJECT NAME<input id="moz-title" maxlength="80" value="Untitled MozCorp world" autocomplete="off"></label><span id="moz-save-state" role="status">Ready</span></div>
+      <section class="moz-project utility-card" id="moz-project-controls"><div class="moz-title-row"><label>PROJECT NAME<input id="moz-title" maxlength="80" value="Untitled MozCorp world" autocomplete="off"></label><span id="moz-save-state" role="status">Ready</span></div>
       <div class="moz-actions"><button id="moz-save" class="button primary" type="button">Save world</button><button id="moz-new" class="button quiet" type="button">New</button><button id="moz-export" class="button quiet" type="button">Export project</button><button id="moz-import" class="button quiet" type="button">Import project</button><button id="moz-stop" class="button quiet" type="button">Stop sound & motion</button></div>
       <div class="moz-actions moz-shelf"><label class="sr-only" for="moz-projects">Saved MozCorp projects</label><select id="moz-projects" aria-label="Saved MozCorp projects"><option value="">Your saved worlds…</option></select><button id="moz-open" class="button quiet" type="button">Open</button><button id="moz-play" class="button quiet" type="button">▶ Soundtrack</button><button id="moz-studio" class="button quiet" type="button">Edit soundtrack ↗</button><button id="moz-vault" class="button quiet" type="button">Copy text to vault</button><button id="moz-world" class="button quiet" type="button">Make playable map</button></div>
       <p class="moz-note" id="moz-scope">Machine and Bug World projects use this browser’s unencrypted creative shelf. Other desks keep their own exports. Copy text to your unlocked vault for a separate encrypted draft.</p><input id="moz-project-file" type="file" accept=".json,.btwpkg,application/json" hidden></section>
       <p class="moz-status" id="moz-status" role="status" aria-live="polite">Choose a room to begin.</p>
       <div class="moz-original" id="moz-original" hidden><p id="moz-original-note"></p><a id="moz-original-link" class="button quiet" target="_blank" rel="noopener noreferrer">Open original private site ↗</a></div>
+      <section id="moz-cloud-desk" class="moz-local-desk utility-card" hidden></section>
+      <section id="moz-upgrades-desk" class="moz-local-desk utility-card" hidden></section>
       <div id="moz-frames" class="moz-frames" aria-label="Private MozCorp workspace"></div>
     </div>`;
   const $ = id => container.querySelector('#' + id);
   const frames = new Map(), allFrames = new Set(), handoffs = new Map(), handoffAnchors = new Map();
   let installed = null, active = null, visible = false, busy = false, sequence = 0, refreshTicket = 0, shelfTicket = 0, requestedOpened = false;
+  let localDesk = null;
   let preferences = {};
   try { const raw = localStorage.getItem(PREF_STORE); if (raw) { const data = parseJSON(raw, 140000); for (const key of PREF_KEYS) if (typeof data[key] === 'string' && data[key].length <= 65536) preferences[key] = data[key]; } } catch {}
   const status = (message, error = false) => { $('moz-status').textContent = message; $('moz-status').dataset.error = String(error); };
   const scorePlayer = createCreativeScorePlayer({ onStatus: message => status(typeof message === 'string' ? message : message?.message || 'Soundtrack updated.') });
+  const serviceRequest = area => (method, payload) => fetchJSON(area, method === 'POST' ? { method, headers: { 'X-Keeper-Request': '1', 'Content-Type': 'application/json' }, body: JSON.stringify(payload) } : {});
+  const cloudDesk = createMozCorpCloud({ container: $('moz-cloud-desk'), request: serviceRequest('cloud'), onRestore: slot => run(() => openCloudSlot(slot.id)), setStatus: status });
+  const upgradesDesk = createMozCorpUpgrades({ container: $('moz-upgrades-desk'), request: serviceRequest('upgrades'), setStatus: status });
   const requestToken = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, '0')).join('');
   function update() {
-    const writable = active && SAVABLE.has(active.stationId) && !active.closed;
+    const writable = !localDesk && active && SAVABLE.has(active.stationId) && !active.closed;
     for (const id of ['moz-save', 'moz-export', 'moz-play', 'moz-studio', 'moz-vault', 'moz-world']) $(id).disabled = busy || !writable;
     for (const id of ['moz-new', 'moz-open', 'moz-import', 'moz-refresh', 'moz-install-button']) $(id).disabled = busy;
     $('moz-title').disabled = busy || !writable;
     $('moz-stop').disabled = !active;
+    $('moz-project-controls').hidden = !!localDesk;
+    $('moz-frames').hidden = !!localDesk;
+    $('moz-cloud-desk').hidden = localDesk !== 'cloud';
+    $('moz-upgrades-desk').hidden = localDesk !== 'upgrades';
     if (active) {
       $('moz-save-state').textContent = active.dirty || active.titleDirty ? 'Unsaved changes' : active.record ? 'Saved on this browser' : 'New world';
       $('moz-save').textContent = active.dirty || active.titleDirty ? 'Save world ●' : 'Save world';
       $('moz-world').disabled ||= active.record?.sourceMode !== 'fiction';
       $('moz-scope').textContent = writable ? 'Machine and Bug World projects use this browser’s unencrypted creative shelf. Other desks keep their own exports. Copy text to your unlocked vault for a separate encrypted draft.' : 'This desk stays separate from story projects. Use its own export controls to keep receipts, source reviews, or personal notes.';
     }
-    for (const button of $('moz-stations').children) { const match = installed?.stations.find(station => station.id === button.dataset.station); button.classList.toggle('active', !!active && match?.canonical === active.stationId); button.disabled = busy; }
+    for (const button of $('moz-stations').children) { const match = installed?.stations.find(station => station.id === button.dataset.station); button.classList.toggle('active', button.dataset.service ? button.dataset.service === localDesk : !localDesk && !!active && match?.canonical === active.stationId); button.disabled = busy; }
   }
   async function run(fn) {
     if (busy) return;
@@ -169,7 +181,7 @@ export function createMozCorpUI(container, { onVault, onWorld, navigate } = {}) 
     const response = await fetch(apiUrl(path), { cache: 'no-store', ...options });
     let result;
     try { result = await response.json(); } catch { fail('This Keeper returned an unreadable response. Reopen its Web UI.'); }
-    if (!response.ok) fail(typeof result.error === 'string' ? result.error : 'This Keeper could not complete the request.');
+    if (!response.ok) throw Object.assign(new Error(typeof result.error === 'string' ? result.error : 'This Keeper could not complete the request.'), { status: response.status, code: result.code });
     return result;
   }
   function station(id) {
@@ -211,6 +223,7 @@ export function createMozCorpUI(container, { onVault, onWorld, navigate } = {}) 
   async function stop(session) { if (session && !session.closed) await rpc(session, 'stop', {}, 3000); }
   async function stopAll() { scorePlayer.stop(); await Promise.all([...allFrames].map(session => stop(session).catch(() => {}))); }
   function activate(session) {
+    localDesk = null; cloudDesk.setVisible(false); upgradesDesk.setVisible(false);
     active = session;
     for (const other of allFrames) { other.frame.hidden = other !== session; other.frame.inert = other !== session || !visible; if (other !== session) stop(other).catch(() => {}); }
     $('moz-title').value = session.title; update();
@@ -228,6 +241,7 @@ export function createMozCorpUI(container, { onVault, onWorld, navigate } = {}) 
     if (queued) { for (const [key, value] of Object.entries(transfer)) if (queued[key] === value) delete queued[key]; if (!Object.keys(queued).length) { handoffs.delete(session.stationId); handoffAnchors.delete(session.stationId); } }
   }
   async function openStation(id, supplied = {}, anchor = '') {
+    if (id === 'upgrades' || id === 'cloud') return openDesk(id);
     scorePlayer.stop();
     const spec = station(id), canonical = spec.canonical || spec.id;
     const memory = { ...(handoffs.get(canonical) || {}), ...validateMozCorpHandoff(supplied) };
@@ -240,6 +254,35 @@ export function createMozCorpUI(container, { onVault, onWorld, navigate } = {}) 
       if (created) { frames.set(canonical, session); checkpoint(await rpc(session, 'checkpoint')); }
       activate(session); status(SAVABLE.has(canonical) ? 'Room open. Save a world to carry it into Dot Studio or your Keeper.' : 'Room open. Its personal notes and receipts stay at this desk.');
     } catch (error) { if (created) dispose(session); throw error; }
+  }
+  async function openDesk(name) {
+    if (!['cloud', 'upgrades'].includes(name)) fail('Choose a MozCorp service.');
+    await stopAll(); localDesk = name;
+    for (const session of allFrames) { session.frame.hidden = true; session.frame.inert = true; }
+    $('moz-original').hidden = true; update();
+    status(name === 'cloud' ? 'Shared savepoints live in this Keeper. Open rooms and unsaved edits remain kept while you use this desk.' : 'Upgrade proposals and reviews live in this Keeper. External AI runs only after your explicit choice.');
+    await (name === 'cloud' ? cloudDesk : upgradesDesk).setVisible(visible);
+  }
+  async function openCloudSlot(id) {
+    const result = await fetchJSON('cloud'), slot = result.slots?.find(item => item.id === id);
+    if (!slot || !['machine', 'animal-animal'].includes(slot.kind)) fail('That savepoint is no longer available for the machine. Refresh the list.');
+    const payload = typeof slot.payload === 'string' ? parseJSON(slot.payload, 120000) : boundedJSON(slot.payload, 120000);
+    const previous = frames.get('machine'), generation = previous?.changeGeneration, titleGeneration = previous?.titleGeneration;
+    if (!confirmReplace([previous])) return { restored: false, cancelled: true };
+    if (previous) previous.frame.inert = true;
+    let candidate;
+    try {
+      await stopAll(); candidate = newFrame('machine');
+      const ack = await rpc(candidate, 'cloud-restore', { kind: slot.kind, payload });
+      if (!plain(ack) || ack.restored !== true || ack.kind !== slot.kind) fail('The machine did not confirm that the savepoint was restored.');
+      candidate.editVersion = checkpoint(await rpc(candidate, 'checkpoint'));
+      if (previous && (previous.changeGeneration !== generation || previous.titleGeneration !== titleGeneration)) fail('Restore canceled because the current machine changed. Save those edits first.');
+      candidate.title = slot.slotName.slice(0, 80); candidate.dirty = true; candidate.titleDirty = true;
+      if (previous) dispose(previous);
+      frames.set('machine', candidate); activate(candidate); candidate = null;
+      status('Savepoint opened as an unsaved world. The final story and soundtrack were outside that savepoint; run the machine and Save world when ready.');
+      return { restored: true, kind: slot.kind };
+    } finally { if (candidate) dispose(candidate); if (previous && !previous.closed) previous.frame.inert = !!localDesk || previous !== active || !visible; }
   }
   async function openRecord(value) {
     scorePlayer.stop();
@@ -330,10 +373,11 @@ export function createMozCorpUI(container, { onVault, onWorld, navigate } = {}) 
     $('moz-install-button').textContent = info.installed ? 'Replace with approved bundle' : 'Choose private bundle';
     $('moz-stations').replaceChildren();
     for (const item of installed.stations) { const button = document.createElement('button'); button.type = 'button'; button.className = 'moz-station'; button.dataset.station = item.id; button.textContent = item.title; button.onclick = () => run(() => openStation(item.id)); $('moz-stations').append(button); }
+    for (const [name, label] of [['cloud', 'Keeper cloud'], ['upgrades', 'Upgrade desk']]) { const button = document.createElement('button'); button.type = 'button'; button.className = 'moz-station'; button.dataset.service = name; button.textContent = label; button.onclick = () => run(() => openDesk(name)); $('moz-stations').append(button); }
     await refreshShelf(); update();
     const requested = new URLSearchParams(location.search).get('mozcorp');
     if (info.installed && requested && !requestedOpened) { requestedOpened = true; await openRecord(requested); }
-    else if (info.installed && visible && !active) await openStation('machine');
+    else if (info.installed && visible && !active && !localDesk) await openStation('machine');
   }
   async function install(file) {
     const expected = installed?.expected;
@@ -363,9 +407,20 @@ export function createMozCorpUI(container, { onVault, onWorld, navigate } = {}) 
     const url = new URL(payload.path, original.origin);
     if (validAnchor(payload.anchor)) url.hash = payload.anchor;
     $('moz-original-link').href = url.href;
+    $('moz-original-link').textContent = 'Open original private site ↗';
     $('moz-original-note').textContent = 'This feature uses your original private site and its normal sign-in. Open it when you choose; your Keeper has not sent this room’s contents there.';
     $('moz-original').hidden = false;
     return { url: url.href, message: 'Use the original private-site link shown in your Keeper.', opened: false };
+  }
+  function sourceLink(payload) {
+    if (!plain(payload) || typeof payload.url !== 'string' || payload.url.length > 4096) fail('Choose a supported source link.');
+    let url; try { url = new URL(payload.url); } catch { fail('This source address could not be read.'); }
+    if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) fail('Only ordinary web source links can be opened here.');
+    $('moz-original-link').href = url.href; $('moz-original-link').textContent = 'Open source ↗';
+    $('moz-original-note').textContent = 'Source link ready: ' + url.href;
+    $('moz-original').hidden = false;
+    status('Review the source address above, then open it when you choose.');
+    return { opened: false, ready: true };
   }
   async function childRequest(session, message) {
     const payload = message.payload;
@@ -374,9 +429,31 @@ export function createMozCorpUI(container, { onVault, onWorld, navigate } = {}) 
       if (payload.value === null) delete preferences[payload.key]; else preferences[payload.key] = payload.value;
       localStorage.setItem(PREF_STORE, JSON.stringify(preferences)); return { saved: true };
     }
-    if (session !== active || !visible) fail('Return to this room before using that action.');
-    if (message.requestType === 'open-original') return originalLink(payload);
-    if (message.requestType === 'hope') { originalLink({ path: '/hope-lon' }); fail('The shared HOPE feed remains on your original private site. Use the link shown in your Keeper; local desks remain available.'); }
+    if (session !== active || !visible || localDesk) fail('Return to this room before using that action.');
+    if (message.requestType === 'open-link') return sourceLink(payload);
+    if (message.requestType === 'open-original') { if (payload?.path === '/upgrades') { await openDesk('upgrades'); return { opened: true }; } return originalLink(payload); }
+    if (message.requestType === 'upgrades') {
+      if (session.stationId !== 'machine' || !plain(payload) || payload.action !== 'open') fail('Open the upgrade desk from the machine.');
+      await openDesk('upgrades'); return { opened: true };
+    }
+    if (message.requestType === 'cloud') {
+      if (session.stationId !== 'machine' || !plain(payload)) fail('Use the machine’s Cloud Bus for savepoints.');
+      if (payload.action === 'list') return fetchJSON('cloud');
+      if (payload.action === 'save') return serviceRequest('cloud')('POST', boundedJSON(payload, 125000));
+      if (payload.action === 'restore' && typeof payload.slotId === 'string' && payload.slotId.length < 100) {
+        if (busy) fail('Finish the current Keeper action, then open the savepoint.');
+        const restored = await run(() => openCloudSlot(payload.slotId));
+        if (!restored) fail('The savepoint could not be opened. Review the Keeper message.');
+        return restored;
+      }
+      fail('This cloud savepoint action is not supported.');
+    }
+    if (message.requestType === 'hope') {
+      if (!['hope-lon', 'swordfish'].includes(session.stationId) || !plain(payload)) fail('Open Swordfish or HOPE-LON to use the fictional feed.');
+      if (payload.action === 'read') return fetchJSON('hope');
+      if (!['settings', 'clear', 'seed'].includes(payload.action)) fail('Choose a supported fictional feed action.');
+      return serviceRequest('hope')('POST', boundedJSON(payload, 20000));
+    }
     if (message.requestType === 'news') {
       if (!plain(payload) || typeof payload.query !== 'string' || payload.query.length > 120 || !Number.isInteger(payload.limit) || payload.limit < 1 || payload.limit > 12) fail('Choose a short news query and up to twelve results.');
       return fetchJSON('news?q=' + encodeURIComponent(payload.query) + '&limit=' + payload.limit);
@@ -413,14 +490,14 @@ export function createMozCorpUI(container, { onVault, onWorld, navigate } = {}) 
       session.editVersion = message.editVersion; session.changeGeneration++; session.dirty = true; update(); return;
     }
     if (message.type === 'navigate') {
-      if (session !== active || busy || !plain(message.payload) || !validId(message.payload.stationId)) return;
+      if (session !== active || !visible || localDesk || busy || !plain(message.payload) || !validId(message.payload.stationId)) return;
       run(() => openStation(message.payload.stationId, validateMozCorpHandoff(message.payload.session || {}), message.payload.anchor || ''));
       return;
     }
     if (message.type === 'request' && typeof message.requestId === 'string' && /^[\w-]{1,100}$/.test(message.requestId) && !session.handled.has(message.requestId) && session.handled.size < 1000) {
       if (session.inFlight >= 12) { send(session, { type: 'response', requestId: message.requestId, error: 'Finish the pending room actions, then try again.' }); return; }
       session.handled.add(message.requestId); session.inFlight++;
-      Promise.resolve().then(() => childRequest(session, message)).then(result => send(session, { type: 'response', requestId: message.requestId, result }), error => send(session, { type: 'response', requestId: message.requestId, error: error.message || 'The Keeper could not complete this action.' })).finally(() => { session.inFlight--; });
+      Promise.resolve().then(() => childRequest(session, message)).then(result => send(session, { type: 'response', requestId: message.requestId, result }), error => send(session, { type: 'response', requestId: message.requestId, error: { message: error.message || 'The Keeper could not complete this action.', status: error.status || 400, code: error.code || 'MOZCORP_REQUEST' } })).finally(() => { session.inFlight--; });
     }
   }
   window.addEventListener('message', onMessage);
@@ -454,9 +531,10 @@ export function createMozCorpUI(container, { onVault, onWorld, navigate } = {}) 
     refresh,
     setVisible(value) {
       visible = !!value;
-      for (const session of allFrames) session.frame.inert = !visible || session !== active;
+      for (const session of allFrames) session.frame.inert = !!localDesk || !visible || session !== active;
+      cloudDesk.setVisible(visible && localDesk === 'cloud'); upgradesDesk.setVisible(visible && localDesk === 'upgrades');
       if (!visible) stopAll();
-      else if (installed?.installed && !active && !busy) run(() => openStation('machine'));
+      else if (installed?.installed && !active && !localDesk && !busy) run(() => openStation('machine'));
     },
   };
 }

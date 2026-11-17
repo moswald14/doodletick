@@ -20,6 +20,7 @@ Doodle Tick combines an encrypted browser workspace with a trusted local Keeper.
 | `keeper/public/doodleverse-recipient.mjs`, `doodleverse-recipient-ui.mjs`, `doodleverse-wallet.mjs` | Additive v2 recipient signatures/work, public-record UI and restricted injected-wallet adapter |
 | `keeper/public/public-chain*.mjs`, `contracts/` | Separate wallet-approved EVM garden and reproducible contract source |
 | `keeper/public/file-store.mjs`, `licenses.mjs` | Encrypted library and signed license metadata |
+| `keeper/public/mozcorp-upgrades.mjs` | Trusted proposal editor and version-review interface; no world, private-desk or vault access |
 | `doodletick/` | Home Assistant ingress, startup and one-time offline migration |
 | `doodletick/keeper/` | Generated copy of the canonical runtime |
 
@@ -39,6 +40,22 @@ Standalone HTTP binds only to loopback. The Home Assistant gateway listens insid
 Names containing `vpn` and the `/vpn-api` prefix remain for local compatibility; they do not start a VPN. Removed remote bridges return an explicit unavailable response. Room codes list rooms on the same Keeper only. Separate Keepers pair via signed manual offers/answers. Native DTLS encrypts transport; spirographs authenticate the signed transcript. Application data waits for both confirmations. ICE gathering must finish with candidates; no STUN/TURN service is configured automatically, so cross-router connectivity is not assured.
 
 Games remain player-hosted. Directory listings expire and do not migrate the host. Files require open, unlocked browsers; the Keeper does not provide unattended P2P storage. A future authenticated rendezvous/relay service requires a separate admission, revocation, abuse-control and operator design.
+
+## Shared MozCorp services
+
+Cloud savepoints, HOPE-LON's fictional feed and solved cases, upgrade proposal versions and their audit records use the Keeper's server-data workspace. Authorized users of the same Home Assistant app share these records. Browser world projects, encrypted vaults and private desk exports remain separate. Existing site records require explicit export/import; no site-account token or automatic database replication is introduced.
+
+Shared savepoints retain the pre-story snapshot boundary, with a 120,000-byte UTF-8 payload limit and 24-slot capacity. Capacity failures reject new records rather than evicting old ones. Import and deletion use the service scope and revision. Restoring stages a new private frame and swaps only after a successful acknowledgement. HOPE-LON starts paused; its feed is fictional and has no social-post, like or membership authority.
+
+## MozCorp upgrade proposal boundary
+
+The trusted upgrade desk receives a same-origin request function from the Keeper controller. It reads persisted settings, proposal versions and audit records; each mutation includes the current service scope and revision so a stale page cannot silently replace newer review work. Browser form drafts remain in the page when an operation fails. Proposal storage is separate from browser world projects, the encrypted creator vault and private desk exports.
+
+Manual proposals require no provider configuration or external-request preference. External AI drafting additionally requires configured server-side credentials, the persisted AI preference and explicit consent for that individual request. The request contains only the selected upgrade area, typed instruction and base release reference. The browser module does not read private frame state, desk notebooks, files or vaults and never supplies those as provider context.
+
+Home Assistant supplies `mozcorp_ai_enabled`, `mozcorp_openai_model` and `mozcorp_openai_api_key` at startup; a configuration change requires a restart. Desktop launches can supply `OPENAI_API_KEY` and `OPENAI_MODEL`. Provider keys stay server-side and are excluded from browser state and proposal exports. Merely configuring a key does not authorize a provider request.
+
+Proposal revisions retain their prior versions and return to review. Approval names the current saved version. Deployment and rollback actions record references to work completed separately; they are not code-execution or deployment capabilities. Proposal deletion removes its instruction/version content while retaining metadata-only audit events. An explicit versioned proposal export includes instructions, versions and permitted audit metadata without provider credentials; no proposal-import operation is exposed. These service records also need the Keeper's server-data backup, rather than a world-project export.
 
 ## Data and authority
 

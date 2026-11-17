@@ -11,9 +11,11 @@ import { createDvcHttpHandler } from './dvc-http.mjs';
 import { KEEPER_TIME_FORMAT, validTimeNonce } from './public/keeper-clock.mjs';
 import { createShelfIdleStore } from './shelf-idle-store.mjs';
 import { createShelfIdleHttpHandler } from './shelf-idle-http.mjs';
+import { createMozCorpWorld } from './mozcorp-world.mjs';
+import { createMozCorpWorldHttpHandler } from './mozcorp-world-http.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
-export async function createKeeperServer({ dataDir = path.join(root, '.doodletick'), lockDir = dataDir, port = 4317, vpnOptions, gardenOptions, privateRoomOptions } = {}) {
+export async function createKeeperServer({ dataDir = path.join(root, '.doodletick'), lockDir = dataDir, port = 4317, vpnOptions, gardenOptions, privateRoomOptions, mozcorpOptions } = {}) {
   await mkdir(dataDir, { recursive: true });
   // A managed Linux service keeps its lock in systemd's temporary runtime
   // directory. Its private identity and receipt ledger remain in dataDir.
@@ -45,6 +47,13 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
   const handleDvc = createDvcHttpHandler({ node: dvc || Object.fromEntries(['status', 'account', 'createJob', 'submitBlock', 'submitTransfer', 'getSegment', 'locate', 'locators', 'ingestSegment', 'getMempool'].map(name => [name, unavailable])), mutationLimit: 120 });
   const privateRooms = await createPrivateRoomStore({...privateRoomOptions, dataDir});
   const handlePrivateRooms = createPrivateRoomHandler({store:privateRooms});
+  let mozcorp;
+  try { mozcorp = await createMozCorpWorld({ ...mozcorpOptions, dataDir, getCaseRules: () => privateRooms.serviceConfig().hope.caseRules }); }
+  catch {
+    const unavailable = () => { throw Object.assign(new Error('MozCorp shared storage needs recovery. Export or restore its data from a backup; your vault and other rooms remain available.'), { status: 503, code: 'MOZCORP_STORAGE' }); };
+    mozcorp = Object.fromEntries(['cloudRead','cloudWrite','hopeRead','hopeWrite','upgradeRead','upgradeWrite'].map(name => [name, unavailable]));
+  }
+  const handleMozCorpWorld = createMozCorpWorldHttpHandler({ store: mozcorp });
   const shelfIdle = await createShelfIdleStore({ dataDir });
   const handleShelfIdle = createShelfIdleHttpHandler({ store: shelfIdle });
   const types = { '.txt': 'text/plain; charset=utf-8', '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json' };
@@ -61,7 +70,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
   for (const file of ['phrase-notices.mjs', 'phrase-notices.txt']) allowedFiles.add(file);
   for (const file of ['jazz.html', 'jazz.css', 'jazz-core.mjs', 'jazz-player.mjs', 'jazz-worklet.mjs']) allowedFiles.add(file);
   for (const file of ['doodle-bridge.js', 'telephone.html', 'telephone.css', 'telephone-1.js', 'telephone-2.js', 'telephone-session.js', 'telephone-post-roll.js', 'telephone-integration.css', 'telephone-rhyme.html', 'telephone-rhyme.css', 'telephone-rhyme-1.js', 'telephone-keeper.mjs', 'telephone-keeper.css', 'studio.html', 'studio-app.js', 'studio-worker.js', 'studio.css', 'studio-classic.html', 'studio-notices.txt']) allowedFiles.add(file);
-  for(const file of ['mozcorp-ui.mjs','mozcorp.css','creative-score-player.mjs'])allowedFiles.add(file);
+  for(const file of ['mozcorp-ui.mjs','mozcorp-cloud.mjs','mozcorp-upgrades.mjs','mozcorp.css','creative-score-player.mjs'])allowedFiles.add(file);
   for (const file of ['shelfdefense.html', 'shelfdefense.css', 'shelfdefense-art.js', 'shelfdefense-waves.js', 'shelfdefense-audio.js', 'shelfdefense-game.js', 'shelfdefense-app.js', 'shelfdefense-wave-lab.js']) allowedFiles.add(file);
   for (const file of ['shelf-idle.html', 'shelf-idle.css', 'shelf-idle-card.js', 'shelf-idle-client.mjs', 'shelf-idle.mjs']) allowedFiles.add(file);
   const server = http.createServer(async (req, res) => {
@@ -76,11 +85,12 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
     if (req.headers.origin && !hostnames.some(h => req.headers.origin === 'http://' + h)) return send(403, { error: 'Origin not allowed.' });
     try {
       const url = new URL(req.url, 'http://' + req.headers.host);
+      if (await handleMozCorpWorld(req,res,url)) return;
       if (await handlePrivateRooms(req,res,url)) return;
       if (await handleShelfIdle(req,res,url)) return;
       if (await handleDvc(req, res, url)) return;
       if (await vpn.handleLocal(req, res, url)) return;
-      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.11b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt(), nativeCoin: { available: !dvcUnavailable, error: dvcUnavailable ? 'DVC_STORAGE' : null } });
+      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.12b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt(), nativeCoin: { available: !dvcUnavailable, error: dvcUnavailable ? 'DVC_STORAGE' : null } });
       if (req.method === 'GET' && url.pathname === '/api/time') {
         const receivedAt = Date.now(), nonce = url.searchParams.get('nonce');
         if (!validTimeNonce(nonce) || url.searchParams.getAll('nonce').length !== 1) return send(400, { error: 'A fresh clock challenge is required.' });
@@ -110,11 +120,11 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
       return send(200, await readFile(path.join(root, 'public', file), 'utf8'), types[path.extname(file)]);
     } catch (e) { return send(e instanceof SyntaxError ? 400 : 500, { error: e instanceof SyntaxError ? 'Invalid JSON.' : 'The local witness could not complete this request.' }); }
   });
-  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); }).catch(async e => { await shelfIdle.close().catch(() => {}); await vpn.close(); await dvc?.close(); await garden.idle(); await lock.close(); await unlink(lockPath); throw e; });
+  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); }).catch(async e => { await mozcorp.close?.().catch(() => {}); await shelfIdle.close().catch(() => {}); await vpn.close(); await dvc?.close(); await garden.idle(); await lock.close(); await unlink(lockPath); throw e; });
   const close = async () => {
     await vpn.close(); await new Promise(resolve => server.close(resolve)); await queue; await privateRooms.idle();
     let shelfCloseError;
-    try { await shelfIdle.close(); } catch (error) { shelfCloseError = error; }
+    try { await shelfIdle.close(); await mozcorp.close?.(); } catch (error) { shelfCloseError = error; }
     await garden.idle(); await dvc?.close(); await lock.close(); await unlink(lockPath);
     if (shelfCloseError) throw shelfCloseError;
   };
@@ -122,7 +132,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const keeper = await createKeeperServer({ port: Number(process.env.DOODLETICK_PORT || 4317), ...(process.env.DOODLETICK_DATA ? { dataDir: path.resolve(process.env.DOODLETICK_DATA) } : {}), ...(process.env.DOODLETICK_LOCK_DIR ? { lockDir: path.resolve(process.env.DOODLETICK_LOCK_DIR) } : {}) });
+    const keeper = await createKeeperServer({ port: Number(process.env.DOODLETICK_PORT || 4317), ...(process.env.DOODLETICK_DATA ? { dataDir: path.resolve(process.env.DOODLETICK_DATA) } : {}), ...(process.env.DOODLETICK_LOCK_DIR ? { lockDir: path.resolve(process.env.DOODLETICK_LOCK_DIR) } : {}), mozcorpOptions: { provider: { apiKey: process.env.OPENAI_API_KEY || '', model: process.env.OPENAI_MODEL || 'gpt-5-mini' } } });
     console.log(`Doodle Tick Keeper is running at http://127.0.0.1:${keeper.port}\nKeep this window open. Press Ctrl+C to stop.`);
     let closing = false;
     for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, async () => { if (closing) return; closing = true; await keeper.close(); process.exit(0); });
