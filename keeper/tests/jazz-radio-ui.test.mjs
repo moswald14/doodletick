@@ -22,24 +22,27 @@ function station() {
 }
 const reply = (value, status = 200) => ({ ok: status >= 200 && status < 300, status, async json() { return copy(value); } });
 
-async function fixture(t, pages = new Map([[0, { count: 0, receipts: [], offset: 0, nextOffset: null }]])) {
-  const elements = new Map(), selectors = new Map(), timers = new Map(), windowEvents = new Map(), requests = [], pending = [], received = [];
+async function fixture(t, pages = new Map([[0, { count: 0, receipts: [], offset: 0, nextOffset: null }]]), prefs = null) {
+  const elements = new Map(), selectors = new Map(), timers = new Map(), windowEvents = new Map(), requests = [], pending = [], received = [], audioPlayers = [];
   let remote = station(), nextTimer = 0, namingOptions, disposed = false, holdStatus = false, heldPoll, holdLibrary = false, heldLibrary;
   class Element {
     constructor(tagName = 'div') {
       this.tagName = tagName.toUpperCase(); this.children = []; this.listeners = new Map(); this.attributes = new Map(); this.dataset = {}; this.style = {};
       this.hidden = false; this.disabled = false; this.textContent = ''; this._value = ''; this.lastChild = { textContent: '' };
       this.classList = { add() {}, toggle() {} };
+      if (this.tagName === 'AUDIO') { this.paused = true; this.pauseCalls = 0; this.loadCalls = 0; audioPlayers.push(this); }
     }
     set id(value) { this._id = value; elements.set(value, this); } get id() { return this._id; }
     set value(value) { this._value = String(value); } get value() { return this._value; }
+    set src(value) { this.setAttribute('src', value); } get src() { return this.getAttribute('src') || ''; }
     setAttribute(name, value) { this.attributes.set(name, String(value)); } getAttribute(name) { return this.attributes.get(name) ?? null; }
     removeAttribute(name) { this.attributes.delete(name); }
     addEventListener(name, fn) { const listeners = this.listeners.get(name) || []; listeners.push(fn); this.listeners.set(name, listeners); }
     fire(name) { for (const fn of this.listeners.get(name) || []) void fn({ target: this, preventDefault() {} }); }
     append(...children) { this.children.push(...children); } replaceChildren(...children) { this.children = children; }
     after(...children) { this.afterChildren = children; } closest() { return generic('cast-tool'); }
-    querySelector(selector) { return generic(selector); } click() { if (!this.disabled) this.fire('click'); } focus() {} load() {}
+    querySelector(selector) { return generic(selector); } click() { if (!this.disabled) this.fire('click'); } focus() {}
+    async play() { this.paused = false; } pause() { this.paused = true; this.pauseCalls++; } load() { this.loadCalls++; }
   }
   const generic = selector => { if (!selectors.has(selector)) selectors.set(selector, new Element()); return selectors.get(selector); };
   for (const match of html.matchAll(/\bid="([^"]+)"/g)) { const element = new Element(); element.id = match[1]; }
@@ -70,7 +73,7 @@ async function fixture(t, pages = new Map([[0, { count: 0, receipts: [], offset:
   };
   const context = vm.createContext({
     document, window: { addEventListener: (name, fn) => windowEvents.set(name, fn) },
-    localStorage: { getItem: () => null, setItem() {} }, Audio: class extends Element { constructor() { super('audio'); this.paused = true; } pause() { this.paused = true; } },
+    localStorage: { getItem: () => prefs ? JSON.stringify(prefs) : null, setItem() {} }, Audio: class extends Element { constructor() { super('audio'); } },
     fetch, DJ_GENRES, JAZZ_DEFAULT_SETTINGS, checkSignature: async () => true,
     createJazzNamingUI(options) { namingOptions = options; return { receive: data => received.push(copy(data)), playbackChanged() {}, dispose() { disposed = true; } }; },
     setTimeout(fn, delay) { const id = ++nextTimer; timers.set(id, { fn, delay }); return id; }, clearTimeout: id => timers.delete(id),
@@ -81,7 +84,7 @@ async function fixture(t, pages = new Map([[0, { count: 0, receipts: [], offset:
   t.after(() => windowEvents.get('pagehide')?.());
   const field = id => document.getElementById(id);
   return {
-    field, requests, pending, received, pages, naming: () => namingOptions, disposed: () => disposed,
+    field, requests, pending, received, pages, naming: () => namingOptions, disposed: () => disposed, monitor: () => audioPlayers[0],
     remote: () => remote, setRemote(value) { remote = copy(value); },
     input(id, value) { field(id).value = value; field(id).fire('input'); }, click(id) { field(id).click(); },
     timer(delay) { const entry = [...timers].find(([, item]) => item.delay === delay); if (!entry) return false; timers.delete(entry[0]); void entry[1].fn(); return true; },
@@ -197,4 +200,41 @@ test('a newly shifted older-page window refreshes page zero and a failed load ca
   assert.equal(f.field('saved-chords').children.length, 50); assert.equal(f.field('library-more').disabled, false);
   assert.match(f.field('library-status').textContent, /Try again/);
   f.click('library-more'); await flush(); assert.equal(f.field('saved-chords').children.length, 52); assert.equal(f.field('library-more').hidden, true);
+});
+
+const replayPlayers = f => f.field('saved-chords').children.map(article => article.children.find(child => child.tagName === 'AUDIO'));
+
+test('saved passage players inherit stored local mute and volume, including passages loaded later', async t => {
+  const f = await fixture(t, libraryPages(51), { volume: 23, muted: true });
+  assert(replayPlayers(f).every(audio => audio.volume === 0.23 && audio.muted === true));
+  f.input('volume', 61); f.click('mute'); f.click('library-more'); await flush();
+  assert.equal(replayPlayers(f).length, 51);
+  assert(replayPlayers(f).every(audio => audio.volume === 0.61 && audio.muted === true));
+  assert.equal(f.pending.length, 0, 'local output preferences never write station settings');
+});
+
+test('one local volume and mute update every playing replay and the monitor without stopping the broadcast', async t => {
+  const f = await fixture(t, libraryPages(3)), players = replayPlayers(f);
+  f.click('play'); await flush(); for (const audio of players) await audio.play();
+  f.input('volume', 16);
+  assert([...players, f.monitor()].every(audio => audio.volume === 0.16 && audio.muted === false && audio.paused === false));
+  f.click('mute'); assert([...players, f.monitor()].every(audio => audio.muted === true && audio.paused === false));
+  f.click('mute'); assert([...players, f.monitor()].every(audio => audio.muted === false));
+  assert.equal(f.remote().running, true); assert.equal(f.pending.length, 0);
+});
+
+test('library reset and leaving the page release removed local players while the server keeps broadcasting', async t => {
+  const f = await fixture(t, libraryPages(2)), oldPlayers = replayPlayers(f);
+  f.click('play'); await flush(); for (const audio of oldPlayers) await audio.play();
+  for (const [offset, page] of libraryPages(3)) f.pages.set(offset, page);
+  f.timer(1250); await flush();
+  assert(oldPlayers.every(audio => audio.paused && audio.src === '' && audio.pauseCalls >= 1 && audio.loadCalls >= 1));
+  assert.equal(f.monitor().paused, false, 'refreshing the saved library leaves local live listening alone');
+  const current = replayPlayers(f); f.input('volume', 77);
+  assert(current.every(audio => audio.volume === 0.77)); assert(oldPlayers.every(audio => audio.volume === 0.45), 'released players are no longer retained by the master controls');
+  for (const audio of current) await audio.play();
+  f.leave();
+  assert([...current, f.monitor()].every(audio => audio.paused && audio.src === '' && audio.pauseCalls >= 1 && audio.loadCalls >= 1));
+  assert.equal(f.disposed(), true); assert.equal(f.remote().running, true);
+  assert.equal(f.requests.filter(request => request.options.method === 'POST').length, 0, 'cleanup never sends Stop or any other station mutation');
 });

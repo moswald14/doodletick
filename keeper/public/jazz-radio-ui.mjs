@@ -38,11 +38,12 @@ export async function initializeJazzRadioUI() {
   libraryMore.type = 'button'; libraryMore.id = 'library-more'; libraryMore.hidden = true;
   libraryMore.textContent = 'Load older passages'; $('saved-chords').after(libraryMore);
   try { const prefs = JSON.parse(localStorage.getItem('doodle-jazz-v1')); if (Number.isFinite(prefs?.volume)) volume = Math.max(0, Math.min(100, prefs.volume)); muted = prefs?.muted === true; night = prefs?.night === true; } catch {}
-  const monitor = new Audio(); monitor.preload = 'none';
+  const monitor = new Audio(), replayPlayers = new Set(); monitor.preload = 'none';
   function notice(text, failed = false) { $('status').textContent = text; $('status').classList.toggle('error', failed); }
   function saveLocal() { try { const old = JSON.parse(localStorage.getItem('doodle-jazz-v1')) || {}; localStorage.setItem('doodle-jazz-v1', JSON.stringify({ ...old, volume, muted, night })); } catch {} }
   function localVolume() {
     monitor.volume = volume / 100; monitor.muted = muted;
+    for (const audio of replayPlayers) { audio.volume = volume / 100; audio.muted = muted; }
     $('volume').value = volume; $('volume-value').textContent = volume + '%';
     $('mute').setAttribute('aria-pressed', String(muted)); $('mute').setAttribute('aria-label', muted ? 'Unmute local listening' : 'Mute local listening');
     document.documentElement.classList.toggle('night', night); $('night').setAttribute('aria-pressed', String(night)); saveLocal();
@@ -187,6 +188,8 @@ export async function initializeJazzRadioUI() {
     libraryMore.textContent = libraryLoading ? 'Loading older passages…' : 'Load older passages';
     if (libraryMeta) $('library-status').textContent = libraryMeta.error || `${libraryMeta.count} permanent passage${libraryMeta.count === 1 ? '' : 's'} saved on this Keeper. Included in your Home Assistant app backup. Showing ${libraryIds.size} of ${libraryMeta.count}.`;
   }
+  function releasePlayer(audio) { audio.pause(); audio.removeAttribute('src'); audio.load(); }
+  function releaseReplays() { for (const audio of replayPlayers) releasePlayer(audio); replayPlayers.clear(); }
   async function appendLibrary(data, version) {
     for (const receipt of data.receipts) {
       if (closed || version !== libraryVersion) return;
@@ -197,7 +200,8 @@ export async function initializeJazzRadioUI() {
       const verified = await checkSignature(r, receipt.signature, receipt.publicKey);
       if (closed || version !== libraryVersion) return;
       meta.textContent = `${(r.durationMs/1000).toFixed(1)} seconds · ${verified ? 'Keeper signature verified' : 'Signature could not be verified'}`;
-      audio.controls = true; audio.preload = 'none'; audio.src = endpoint + 'audio/' + r.audio.sha256 + '.mp3'; audio.setAttribute('aria-label','Replay saved eight-chord passage');
+      audio.controls = true; audio.preload = 'none'; audio.volume = volume / 100; audio.muted = muted;
+      audio.src = endpoint + 'audio/' + r.audio.sha256 + '.mp3'; audio.setAttribute('aria-label','Replay saved eight-chord passage'); replayPlayers.add(audio);
       button.type = 'button'; button.textContent = 'Save signed receipt'; button.addEventListener('click', () => download(receipt, 'doodlechain-' + r.id + '.json'));
       const link = document.createElement('a'); link.href = audio.src; link.download = 'doodlechain-' + r.id + '.mp3'; link.textContent = 'Download audio';
       article.append(h, chords, meta, audio, button, link); $('saved-chords').append(article); libraryIds.add(r.id);
@@ -211,7 +215,7 @@ export async function initializeJazzRadioUI() {
     const data = await request('library'); if (closed) return;
     const signature = JSON.stringify([data.count, data.error]); if (signature === librarySignature) return;
     librarySignature = signature; const version = ++libraryVersion;
-    libraryNextOffset = null; libraryLoading = false; libraryIds.clear(); $('saved-chords').replaceChildren(); paintLibrary();
+    libraryNextOffset = null; libraryLoading = false; libraryIds.clear(); releaseReplays(); $('saved-chords').replaceChildren(); paintLibrary();
     await appendLibrary(data, version);
   }
   libraryMore.addEventListener('click', async () => {
@@ -237,7 +241,7 @@ export async function initializeJazzRadioUI() {
     if (e.key.toLowerCase() === 'm') { muted = !muted; localVolume(); }
     if (e.key.toLowerCase() === 'n') void action('new-set').catch(() => {});
   });
-  function leave() { closed = true; clearTimeout(pollTimer); clearTimeout(changeTimer); naming.dispose(); monitor.pause(); monitor.removeAttribute('src'); monitor.load(); }
+  function leave() { closed = true; clearTimeout(pollTimer); clearTimeout(changeTimer); naming.dispose(); releaseReplays(); releasePlayer(monitor); }
   window.addEventListener('pagehide', leave, {once:true});
   window.addEventListener('pageshow', e => { if (e.persisted) location.reload(); });
   localVolume(); paintSettings(); paint(); void poll();

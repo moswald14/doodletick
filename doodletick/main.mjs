@@ -47,7 +47,11 @@ try {
     console.error('The native Doodleverse node could not start. Review its app options and local log. Existing Keeper data was preserved.');
   }
   if (stopping) throw Error('App stopped during startup.');
-  const addonOptions = JSON.parse(await readFile('/data/options.json', 'utf8'));
+  let addonOptions = {};
+  try {
+    const value = JSON.parse(await readFile('/data/options.json', 'utf8'));
+    if (value && typeof value === 'object' && !Array.isArray(value)) addonOptions = value;
+  } catch { console.error('Optional Jazz naming settings are unavailable. Paid naming remains off.'); }
   keeper = await createKeeperServer({ dataDir: '/data/keeper', lockDir, mozcorpOptions: { provider }, scryptOptions, jazzOptions: { config: jazzConfigFromAddonOptions(addonOptions) }, jazzRadioOptions: { enabled: true } });
   if (stopping) throw Error('App stopped during startup.');
   gateway = createIngressServer({ keeperPort: keeper.port, control: { status: () => keeper.vpn.status() }, healthy: () => !core || core.healthy() });
