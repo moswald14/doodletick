@@ -1,4 +1,8 @@
-# Doodle Tick Keeper · 0.13b
+# Doodle Tick Keeper · 0.14b
+
+
+**0.14b adds Home Assistant Jazz radio:** eight genres, hourly shuffle, optional world-update voice, local mute and signed eight-chord replay keepsakes. [Open the Jazz guide](../keeper/JAZZ.md).
+**0.12b brings MozCorp’s cloud savepoints, fictional HOPE-LON feed and upgrade desk into Keeper.** Open **MozCorp → Keeper cloud** or **Upgrade desk**. Shared records live with this Keeper and survive restarts. AI drafts are optional and use a server-side key with explicit instruction-only consent. See [the MozCorp guide](../keeper/MOZCORP.md).
 
 **0.13b adds a native Scrypt blockchain, encrypted browser wallet and address-only GPU mining.** Open **Doodleverse Coin**, check the connected network, enter a native receiving address and press the red **MINE NOW** button. **Keep mining** repeats work until stopped; hiding the page stops GPU work. Eco and Balanced change GPU intensity while the chain's algorithm remains Scrypt 1024/1/1. Your browser computer needs hardware WebGPU; the Home Assistant node validates blocks and does not mine on its CPU.
 

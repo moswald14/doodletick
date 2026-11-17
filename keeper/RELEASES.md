@@ -1,10 +1,10 @@
-## Unreleased — Jazz casting and coherent shuffle
+## 0.14b — Home Assistant Jazz radio
 
-Shuffle the trio chooses correlated tempo, swing, room and instrumental balance, with an Undo button; the change joins on a bar boundary and preserves master volume and mutes. Cast Jazz live sends only the synthesized Jazz output through VDO.Ninja and produces an audio-only listener link, with no camera, microphone or screen capture. Includes explicit start/stop, bounded connection recovery, media cleanup, live audio-send counters and page-specific service permissions. A pinned, locally served MPL-2.0 SDK includes a documented interoperability correction for current viewer renegotiation. Existing Keeper authentication, vault, garden, DVC and paid-naming opt-in are preserved.
+Jazz now broadcasts from Home Assistant, with free VDO.Ninja listening, independent local output volume and mute, eight distinct jazz genres, structured shuffle and hourly player changes under an unlockable Never stop guard. A started station resumes after Keeper restarts; power, network and third-party outages can interrupt it.
 
-## Unreleased — Jazz titles and listener beats
+Optional offline voice announces settings, the Doodle clock color and dated constructive headlines from NASA/UN plus Open-Meteo modeled world weather. I dig this! saves exactly four previous chords and four starting at the click, with original MP3 audio and an independently signed, hash-linked local Doodlechain receipt. The private library is included in cold app backups and does not evict old recordings. Chord receipt also downloads a signed current snapshot.
 
-The Jazz room has a Name this song button for a listener-confirmed payment of about $0.02 in original Ethereum PEPE, followed by an OpenAI title and bounded drum groove at the next bar. Includes exact invoice validation, replay prevention, private recovery receipts, restart recovery, bounded retries and server-only API access. Off by default pending owner account setup. See JAZZ-NAMING.md for network fees, configuration, storage and validation limits. No existing vault, garden, DVC or signature format changes.
+Paid PEPE/OpenAI naming remains off until the owner finishes separate API setup. Existing vault identities, garden/DVC formats, private MozCorp rooms, Shelf Defense and Telephone/Studio work are preserved. No new ports, capture permissions or administrative API access. See JAZZ.md for operation, dependencies and tested limits.
 
 ## 0.13b — Native Scrypt coin, wallet and Windows miner
 

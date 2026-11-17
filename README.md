@@ -1,4 +1,8 @@
-# Doodle Tick · 0.13b
+# Doodle Tick · 0.14b
+
+
+**0.14b adds Home Assistant Jazz radio:** eight genres, hourly shuffle, optional world-update voice, local mute and signed eight-chord replay keepsakes. [Open the Jazz guide](keeper/JAZZ.md).
+**0.12b brings MozCorp’s cloud savepoints, fictional HOPE-LON feed and upgrade desk into Keeper.** Open **MozCorp → Keeper cloud** or **Upgrade desk**. Shared records live with this Keeper and survive restarts. AI drafts are optional and use a server-side key with explicit instruction-only consent. See [the MozCorp guide](keeper/MOZCORP.md).
 
 **0.13b adds a Pepecoin-derived Scrypt blockchain, a native browser wallet and a portable Windows GPU miner.** Open **Doodleverse Coin** to mine to a receiving address, or **Your wallet · Receive & send** to create an encrypted wallet and review a payment. Home Assistant includes its own validating node; your computer does the GPU work.
 

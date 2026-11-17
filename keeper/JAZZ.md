@@ -1,63 +1,68 @@
-# Doodle Jazz room
+# Doodle Jazz radio
 
-Doodle Jazz is an original, locally synthesized piano, plucked bass and percussion trio. It composes new phrases and accompaniment as it plays, with no programmed final song. It is a listening program rather than a recording stream.
+Doodle Jazz composes original piano, plucked bass and percussion continuously. In Home Assistant, the Keeper renders and broadcasts the music itself. Chrome can close and the PC can turn off while Home Assistant keeps playing.
 
-## Open the room
+## Open and listen
 
-Choose **Jazz room** in the Keeper sidebar. The player opens at `./jazz.html` in the same tab, on desktop or through Home Assistant's authenticated Web UI. Press **Play jazz** to begin. No creator vault, wallet connection, microphone or streaming account is required.
+Open **Jazz room** in Keeper and press **Start Jazz & listen**. **Listen here** connects this browser to the running station. **Pause listening**, **Local output** and the speaker/mute button affect only this device; they never turn down the outgoing broadcast. Returning to Keeper releases local listening and leaves the station running.
 
-Audio uses the speakers or headphones selected for this browser. Keeping the Keeper server or Home Assistant app running does not play music on that server's audio hardware. Use a current browser over trusted HTTPS or localhost.
+**Stop** ends the broadcast for everyone. **Never stop** guards Stop and shuffles the musical players every hour. Press **Never stop: ON · unlock** to turn the guard off before an intentional stop. The app remembers a started station and resumes it after Keeper restarts. Power, network, resource and casting-service outages can still interrupt delivery; this is not an uptime guarantee or a restriction on the Home Assistant administrator.
 
-## Choose a feel
+No microphone, camera, display capture, streaming account, creator vault or wallet is needed. Opening the page does not start a fresh station or play browser audio without a gesture. A running station remains running when the page opens.
 
-**Shuffle the trio** chooses a coherent variation of the musical settings: a mellow room, a warm trio or a brighter conversation. Tempo, swing, room and instrument balance move together on the next bar. It usually continues the current style, sometimes moves into another style, and keeps bossa straight. Master volume and your mutes are preserved. **Undo shuffle** restores the preceding musical settings.
+## Eight genres and organized shuffle
 
-| Style | Arrangement |
+| Tab | Arrangement |
 | --- | --- |
-| **Velvet swing** | Piano, walking bass and swinging percussion over changing jazz harmony. |
-| **Blue hour** | A slower twelve-bar blues. |
-| **Bossa garden** | A minor-key bossa with a straight Latin feel. |
+| Swing | Walking bass, swinging ride and changing 32-bar song form. |
+| Blues | Relaxed twelve-bar dominant blues and turnarounds. |
+| Bossa | Minor-key two-feel bass and interlocking straight rhythms. |
+| Bebop | Quicker ii-V turns, secondary dominants and chromatic neighbors. |
+| Cool | Soft brushes, spaced comping and restrained phrases. |
+| Modal | Long Dorian vamps, open space and pedal/two-feel bass. |
+| Latin | Afro-Cuban-inspired 2-3 son clave, anticipated bass and montuno-style comping. |
+| Jazz funk | Minor/dominant vamps, sixteenth syncopation and a backbeat. |
 
-The music moves through choruses with changing density. Piano voicings connect nearby chord tones; short motifs call, repeat and answer with rests. Swing gives the lead deliberate timing against the rhythm section, while Bossa garden keeps its straight feel. New motifs and possible key changes keep the performance developing. The instruments are synthesized sounds, not recordings of a live band.
+**Shuffle the trio** chooses a correlated mellow, warm or bright variation of tempo, feel, room and instrument balance. It usually stays in the current genre and sometimes chooses another. **Undo shuffle** restores the previous arrangement. Manual genre changes select that genre's starting tempo and feel. Bossa, Latin and funk retain straight timing. Tempo stays within 55-180 BPM. **New set** changes the seed and musical phrase.
 
-## Controls
+The three original styles keep their performed musical events. New genres retain the call/repeat/answer/cadence approach with rests. Rootless piano shapes move between nearby thirds, sevenths and color tones. These are original synthesized arrangements, not recordings or claims to reproduce a specific musician.
 
-- **Play / Pause / Resume:** pause a session and continue from its position.
-- **Stop:** end playback and release its audio resources. The next Play starts a new session from the beginning.
-- **New set:** begin a fresh improvisation on the next bar.
-- **Volume and speaker button:** overall level and mute.
-- **Piano, upright bass and drums:** each player's level and mute; the plus button unmutes a muted player.
-- **Tempo:** 55–180 beats per minute.
-- **Swing:** 50% is straight; higher values lengthen the first eighth note.
-- **Room:** the amount of room reverberation.
-- **Moon button:** dim or brighten the room.
+Arrangements take effect at the next bar. Instrument controls change the outgoing mix; local output does not. Room is a bounded server stereo effect. Station settings are shared by everyone authorized to open this Home Assistant app; browser volume and dim-room preferences stay local.
 
-Style, tempo, swing and New set changes arrive at the next bar. Level and room changes respond while the music plays. Settings are saved in this browser when local storage is available. They are outside the encrypted creator vault; they contain sound preferences, not identity keys or writing. Opening or reloading the page always waits for Play.
+## Free casting
 
-When focus is outside a control, **Space** plays or pauses, **M** toggles mute and **N** asks for a new set. Supported browser media keys can control playback too.
+The **Let others listen** panel provides a VDO.Ninja listener link. Anyone with the link can hear the current broadcast, including its voice updates. Keep it private if you want a private audience. The same station link is retained after normal restarts. Stopping ends delivery; starting the same station makes that link usable again.
 
-## Background listening and returning
+Home Assistant supplies its own 48 kHz stereo PCM to native WebRTC. Opus targets 128 kbps; actual channels and bandwidth depend on negotiation and network conditions. Each listener needs a peer connection and bandwidth. The panel distinguishes advertisement from observed outgoing audio counters; a signaling connection alone does not establish audio delivery.
 
-After starting, you can switch windows or minimize the browser while leaving the jazz page open. Keep the device awake. **Back to Keeper** leaves the jazz page and stops its sound; returning to Jazz room requires Play again. Opening Jazz room also leaves the main Keeper page, so its current page's sound players end through their normal page-exit cleanup.
+VDO.Ninja's fixed public signaling and TURN-discovery services are contacted when broadcasting starts. Direct WebRTC can disclose network addresses to peers; a relay can carry encrypted traffic when needed. The integration sends original music and enabled announcer speech. It does not send the Keeper URL, vault, private rooms, keys, saved chord library or API account. Home Assistant remains behind its authenticated ingress, with no new host ports, devices or administrative API permissions.
 
-Closing or reloading the page, device sleep, browser suspension or an audio-device interruption can stop playback. Mobile screen-lock playback and uninterrupted overnight operation are not guaranteed. If the browser interrupts the session, use the displayed Play or Resume control when ready. No device sleep or audio-output settings are changed by the player.
+## Optional voice
 
-## Cast Jazz live
+Switch **Voice updates on the broadcast** on to hear short setting announcements and, about every fifteen minutes, a world brief with constructive dated headlines, modeled world weather and the current Doodle clock color. Multiple quick adjustments are combined. Music ducks under speech. Turning voice off clears pending announcements.
 
-Press **Play Jazz**, then **Cast Jazz live**. Jazz sends its own synthesized audio directly to the free, account-free VDO.Ninja service and shows a listener link. Copy that link or open its listener page; anyone with the link can listen while this player remains open and the device stays awake. There is no station directory, recording archive or server-generated radio stream.
+Voice is synthesized offline with eSpeak NG and FFmpeg; it does not use an OpenAI account. The app fetches fixed NASA and United Nations RSS sources and filters for recent constructive headlines. A brief quotes at most 22 headline words and includes source links and dates. No qualifying recent story means an explicit unavailable message. Weather rotates modeled conditions for New York, Rio de Janeiro, London, Nairobi, Tokyo and Sydney, in Celsius, with Open-Meteo attribution. There is no device geolocation. Current model times and cache ages are checked, and unavailable or cached data is labeled. This is a light announcer, not an emergency weather service or a comprehensive news report.
 
-Only the Jazz mix is supplied to the casting library. No microphone, camera, display/tab capture, wallet connection or OpenAI account is needed. Your current mix, shuffle changes, master volume and Mute affect the cast. Pause sends silence; **Stop casting** ends the network cast while Jazz continues locally. **Stop Jazz**, reload or leaving the Jazz page ends the cast. Starting again creates a new link; a stopped link does not resume automatically.
+The latest speech and source links are visible under **Latest world update & sources**. Source requests are bounded and cached. No arbitrary client text or URL can be submitted to the announcer.
 
-The page shows connected listeners and audio bytes actually sent, rather than treating a signaling connection as evidence that a listener receives music. Browsers can require a click on the listener page before sound plays. Cast audio is Opus, with a 128-kbps target and a stereo-capable source; actual delivery depends on browser negotiation and network conditions. This is intended for a small audience: each listener needs a peer connection and outgoing bandwidth. It is not an unlimited always-on hosting service.
+## Chord receipts and I dig this!
 
-VDO.Ninja’s public signaling and TURN discovery services are contacted only when you start casting. Direct WebRTC connections may reveal network addresses to listening peers; relays can carry encrypted traffic if a direct connection is unavailable. No Keeper address, identity, saved content, vault, payment receipt or API key is sent by this integration. Treat the generated listener URL as an access link and stop casting to end its access.
+**Chord receipt** downloads a Keeper-signed snapshot of the current music and clock color. A snapshot contains no replay audio.
 
-The library is bundled locally, including its source and MPL-2.0 license. Script restrictions stay in place; only the Jazz page is permitted to contact its two casting-service origins. Home Assistant keeps its existing authentication and offline-shell restrictions. See [the casting library API](https://sdk.vdo.ninja/docs/api-reference.html) and [connection guide](https://sdk.vdo.ninja/docs/connecting.html).
+After four chords have played, **I dig this!** keeps four completed chords before the click and four starting with the chord being played at that moment. It waits for the following chords to finish, then saves their original music as MP3 with a permanent signed receipt. Voice announcements are excluded. The exact captured audio can be replayed later, even after the style changes or Keeper restarts.
 
-## Loading and privacy
+Open **Saved passages - listen again** to play recordings, download their audio or save signed receipt JSON. Older entries remain available through **Load older passages**. Receipts include all eight chord events, timing, arrangement, seed, clock color, audio SHA-256, previous receipt hash and the existing Keeper witness's public signature. The browser verifies each displayed signature. This new journal is separate from existing witness receipts, encrypted vaults, garden balances and DVC. It is your own Doodlekeeper's Doodlechain, not a public cryptocurrency transaction.
 
-The optional **Name this song** control adds an OpenAI title and a new drum beat after a listener-confirmed PEPE payment. It is off until owner account setup is complete; ordinary playback remains free and local. See [JAZZ-NAMING.md](JAZZ-NAMING.md) for the separate Ethereum fee, server-side API access, shared musical summary and private receipt recovery. This is an unreleased development addition.
+The private library is included in Home Assistant's cold app backups. It never silently removes old recordings. Its limit is 2,000 passages or 256 MiB of audio; two captures may be pending at once. A stop during an unfinished capture reports that it was interrupted. A record is permanent only after **Eight chords saved** is shown. Unread or damaged journal/audio files block new saves and are left in place for recovery. Back up the app and download important recordings; signatures establish integrity and issuer, not physical storage immortality.
 
-The integrated room loads external same-origin scripts, styles and its audio worklet from the Keeper. Relative URLs retain the Home Assistant ingress path. It uses the existing authenticated-ingress and script policy, with no remote music service or audio upload. The original standalone Doodle Jazz download is separate from this integrated loading path.
+## Optional paid naming
 
-Jazz listening does not sign records, modify the garden, transfer funds or start mining. Existing Keeper identities, vaults, signed formats, balances and native-chain rules retain their own behavior. See [VALIDATION.md](VALIDATION.md) for completed checks and remaining limits, and [RELEASES.md](RELEASES.md) for release status.
+**Name this song** remains off until the owner separately connects their OpenAI API account. No payment or API call is requested while it is off. The existing two-cent original Ethereum PEPE flow and its separate ETH network fee remain documented in [JAZZ-NAMING.md](JAZZ-NAMING.md). Ordinary playback, voice and keepsakes do not require payments. Existing identities and signed vault/DVC formats are unchanged.
+
+## Runtime and fallback
+
+Home Assistant images include FFmpeg, eSpeak NG and the lockfile-pinned native WebRTC package. The vendored patched VDO.Ninja SDK retains its MPL source/license; native dependency and codec notices are in `jazz-stream-deps/`. Images are checked on Linux amd64 and aarch64 before release.
+
+The ordinary desktop/Pi Keeper still defaults to browser-local playback, preserving its standalone workflow and no required native dependencies. In that mode the page must stay open and the computer awake; local pause/mute also affect its optional browser cast. Do not interpret that fallback as server radio. Windows native WebRTC teardown has a reproduced upstream crash, so the always-on backend is supported through the checked Home Assistant Linux image, not a Windows native setup.
+
+See [VALIDATION.md](VALIDATION.md) for measured checks and remaining limits, and [RELEASES.md](RELEASES.md) for release changes. Physical speaker output, cross-network reception and overnight operation need their own evidence.

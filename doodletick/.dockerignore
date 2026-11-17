@@ -1,6 +1,8 @@
 tests/
 *.md
 !keeper/THIRD_PARTY_NOTICES.md
+!keeper/jazz-stream-deps/THIRD_PARTY_NOTICES.md
+!keeper/jazz-stream-deps/licenses/*.md
 **/.doodletick
 **/node_modules
 **/*.log

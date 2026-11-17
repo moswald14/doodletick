@@ -68,6 +68,14 @@ Local modification on 2026-11-17: include the existing, password-hashed stream i
 
 Casting uses VDO.Ninja's public signaling and TURN discovery services only after the listener explicitly starts a cast. The integration supplies its own synthesized audio stream. It does not request a microphone, camera, display capture or remote control. Service availability and bandwidth limits are separate from the source license.
 
+## Home Assistant server audio and announcer
+
+The optional server renderer supplies original PCM to the lockfile-pinned `@roamhq/wrtc` 0.10.0 native distribution, using the same full MPL VDO.Ninja source above in a narrow Node compatibility context. Complete wrapper, native/WebRTC and transitive component license texts and exact versions are retained under `jazz-stream-deps/`. The native binaries' terms include their embedded components; the wrapper's BSD label alone is not a complete license description.
+
+The Debian-based Home Assistant image installs FFmpeg and eSpeak NG from Debian repositories. Their executable licenses, copyright and source-package pointers remain under `/usr/share/doc/` in the image. FFmpeg is at <https://ffmpeg.org/> and eSpeak NG source at <https://github.com/espeak-ng/espeak-ng>; Debian source packages are available through <https://sources.debian.org/src/ffmpeg/> and <https://sources.debian.org/src/espeak-ng/>. These command-line programs keep their own GPL/LGPL component terms; no project license is changed.
+
+Modeled world weather is provided by Open-Meteo with CC BY 4.0 attribution and a source link in each available brief. News uses short, attributed RSS headlines and links from NASA and UN News; no news article or weather dataset is bundled. The original jazz genre arrangements contain no recordings or copied songs.
+
 ## Recipient wallet signature verification
 
 The browser contains a pinned, unminified ethers 6.17.0 signature/encoding bundle, including Noble curve and hash primitives. These components retain their MIT licenses; full component versions, copyrights and license texts are in `keeper/public/recipient-crypto-notices.txt` (or `public/recipient-crypto-notices.txt` in desktop/Pi downloads). The bundle contains no wallet connection or provider API.

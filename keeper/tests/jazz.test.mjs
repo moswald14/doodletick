@@ -11,7 +11,8 @@ test('each jazz style keeps composing bounded, changing phrases across complete 
       const bar = composer.nextBar();
       assert(bar.info.bar >= 1 && bar.info.bar <= preset.bars);
       assert(bar.events.length > 8 && bar.events.length < 100);
-      assert.equal(bar.events.filter(e => e.instrument === 'bass').length, 4);
+      const bassCount = style === 'cool' || style === 'modal' ? 2 : style === 'funk' ? 5 : 4;
+      assert.equal(bar.events.filter(e => e.instrument === 'bass').length, bassCount);
       for (const e of bar.events) {
         assert(e.time >= 0 && e.time < bar.duration && e.duration > 0);
         assert(Number.isFinite(e.velocity));

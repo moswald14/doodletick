@@ -58,6 +58,24 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+## VDO.Ninja audio casting
+
+The browser source `public/vdoninja-sdk.js` is VDO.Ninja SDK 1.6.2, copyright 2025–2026 Steve Seguin, under MPL-2.0, with a local interoperability fix described below. The complete license is included in `public/vdoninja-sdk-license.txt`. Corresponding source is shipped in full, without minification. Project integration code remains GPL-3.0-only.
+
+Source revision: `c0f326583b96de8278f8ce0d60f2898af7945cd8` at <https://github.com/steveseguin/ninjasdk>. SHA-256 of the original upstream bytes: `2b9ddec56ef68ea5ef91cd1f494d65646cc7fa17e726a8bafebfe6ea8a0e0258`. SHA-256 of the included modified source: `80c0ab876661c4f2f34b1c9b3df4317663dd2bd4e3b22d0cc95c42d4f4dca141`.
+
+Local modification on 2026-11-17: include the existing, password-hashed stream identity on media-renegotiation and data-channel ICE-restart offers, retaining encryption and cancellation guards. Current VDO.Ninja viewers require this field; the original initial data connection succeeded but the audio renegotiation was rejected without it. The receiver's validation is not changed. Functional interoperability regressions live in `tests/jazz-sdk-interop.test.mjs` in the source downloads.
+
+Casting uses VDO.Ninja's public signaling and TURN discovery services only after the listener explicitly starts a cast. The integration supplies its own synthesized audio stream. It does not request a microphone, camera, display capture or remote control. Service availability and bandwidth limits are separate from the source license.
+
+## Home Assistant server audio and announcer
+
+The optional server renderer supplies original PCM to the lockfile-pinned `@roamhq/wrtc` 0.10.0 native distribution, using the same full MPL VDO.Ninja source above in a narrow Node compatibility context. Complete wrapper, native/WebRTC and transitive component license texts and exact versions are retained under `jazz-stream-deps/`. The native binaries' terms include their embedded components; the wrapper's BSD label alone is not a complete license description.
+
+The Debian-based Home Assistant image installs FFmpeg and eSpeak NG from Debian repositories. Their executable licenses, copyright and source-package pointers remain under `/usr/share/doc/` in the image. FFmpeg is at <https://ffmpeg.org/> and eSpeak NG source at <https://github.com/espeak-ng/espeak-ng>; Debian source packages are available through <https://sources.debian.org/src/ffmpeg/> and <https://sources.debian.org/src/espeak-ng/>. These command-line programs keep their own GPL/LGPL component terms; no project license is changed.
+
+Modeled world weather is provided by Open-Meteo with CC BY 4.0 attribution and a source link in each available brief. News uses short, attributed RSS headlines and links from NASA and UN News; no news article or weather dataset is bundled. The original jazz genre arrangements contain no recordings or copied songs.
+
 ## Recipient wallet signature verification
 
 The browser contains a pinned, unminified ethers 6.17.0 signature/encoding bundle, including Noble curve and hash primitives. These components retain their MIT licenses; full component versions, copyrights and license texts are in `keeper/public/recipient-crypto-notices.txt` (or `public/recipient-crypto-notices.txt` in desktop/Pi downloads). The bundle contains no wallet connection or provider API.

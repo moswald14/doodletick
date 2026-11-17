@@ -1,0 +1,18 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+.styles{grid-template-columns:repeat(4,minmax(0,1fr))}
+.style{min-width:0}.style strong{font-size:14px}
+[hidden]{display:none!important}
+#radio-tools .jazz-tool>button,.chord-library button{border:1px solid var(--line);border-radius:6px;background:var(--ink);color:var(--paper);padding:11px 16px;font-size:13px}
+#never-stop[aria-pressed=true]{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+.voice-switch{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600}.voice-switch input{width:18px;height:18px;accent-color:var(--ink)}
+.jazz-tool details{font-size:11px;line-height:1.7}.jazz-tool summary{cursor:pointer}.jazz-tool .radio-small{font-size:10px}
+.clock-color-row{display:flex;align-items:center;gap:9px;font:11px var(--mono)}#clock-swatch{display:inline-block;width:16px;height:16px;border-radius:50%;border:1px solid var(--line)}
+.chord-library{border:1px solid var(--line);border-radius:6px;padding:23px;margin:22px 0 32px;font-size:12px;line-height:1.7}.chord-library>p{color:var(--muted)}
+.chord-library .chord-trail{font:20px/1.7 Georgia,serif;color:var(--ink);overflow-wrap:anywhere}.chord-library .section-heading{margin:0}
+.chord-library summary{cursor:pointer;font-weight:600}.chord-library details{margin-top:18px;border-top:1px solid var(--line);padding-top:16px}
+#saved-chords article{padding:18px 0;border-top:1px solid var(--line)}#saved-chords h3{font:17px Georgia,serif;margin:0}#saved-chords p{margin:8px 0;color:var(--muted)}
+#saved-chords audio{display:block;width:min(100%,520px);margin:12px 0}#saved-chords button{font-size:11px;padding:8px 12px;margin-right:14px}#saved-chords .saved-chord-names{font:16px Georgia,serif;color:var(--ink)}
+.radio-mode .transport-left{flex-wrap:wrap}.radio-mode .play{min-width:178px}.radio-mode .volume label{letter-spacing:.3px;white-space:nowrap}
+.radio-mode .naming{margin-top:28px}.radio-mode button:disabled{cursor:default}.radio-mode .live{font-size:8px;letter-spacing:.7px}
+@media(max-width:760px){.styles{grid-template-columns:repeat(2,minmax(0,1fr))}.radio-mode .transport{align-items:flex-start;flex-direction:column}.radio-mode .now-row{align-items:flex-start;flex-direction:column;gap:12px}.radio-mode .volume{align-self:stretch}.radio-mode .volume input{flex:1}.radio-mode .transport-left{gap:8px}.radio-mode .quiet-button{padding:11px}}
+@media(max-width:400px){.chord-library{padding:17px}.radio-mode .play{min-width:160px;padding:13px 16px}.radio-mode .transport-left{gap:7px}}

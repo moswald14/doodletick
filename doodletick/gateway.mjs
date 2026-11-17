@@ -39,6 +39,7 @@ export function createIngressServer({ keeperPort, control, ingressIP = '172.30.3
       // Keep the same protection when the local game handler receives the request.
       if (req.headers['x-keeper-request'] === '1') headers['x-keeper-request'] = '1';
       for (const name of ['content-type', 'authorization']) if (req.headers[name]) headers[name] = req.headers[name];
+      if (/^\/api\/jazz-radio\/audio\/[a-f0-9]{64}\.mp3$/.test(req.url) && req.headers.range) headers.range = req.headers.range;
       const upstream = http.request({ hostname: '127.0.0.1', port: keeperPort, path: req.url, method: req.method, headers }, response => {
         const page = req.url.split('?')[0];
         let pageSecurity = security;
@@ -49,7 +50,11 @@ export function createIngressServer({ keeperPort, control, ingressIP = '172.30.3
           if(!match || privateFramePolicy(match[1])!==policy) {response.resume();reply(502,{error:'The private station isolation policy is unavailable.'});return;}
           pageSecurity={...security,'Content-Security-Policy':policy};
         }
-        res.writeHead(response.statusCode, { 'Content-Type': response.headers['content-type'] || 'application/octet-stream', ...pageSecurity });
+        const mediaHeaders = {};
+        if (/^\/api\/jazz-radio\/(?:stream|audio\/[a-f0-9]{64}\.mp3)$/.test(req.url)) {
+          for (const name of ['content-length', 'content-range', 'accept-ranges', 'x-accel-buffering']) if (response.headers[name]) mediaHeaders[name] = response.headers[name];
+        }
+        res.writeHead(response.statusCode, { 'Content-Type': response.headers['content-type'] || 'application/octet-stream', ...pageSecurity, ...mediaHeaders });
         response.pipe(res);
         response.on('error', () => res.destroy());
       });

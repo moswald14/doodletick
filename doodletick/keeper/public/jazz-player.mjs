@@ -3,8 +3,9 @@ import { DJ_NOTES, DJ_STYLES, DJRandom, djClamp, djMakeBank } from './jazz-core.
 import { createJazzNamingUI } from './jazz-name-ui.mjs';
 import { djShuffleSettings } from './jazz-settings.mjs';
 import { createJazzCastUI } from './jazz-cast.mjs';
+import { initializeJazzRadioUI } from './jazz-radio-ui.mjs';
 'use strict';
-(() => {
+if (!await initializeJazzRadioUI()) (() => {
   const $ = id => document.getElementById(id), storageKey = 'doodle-jazz-v1';
   const defaults = { style: 'swing', tempo: 112, swing: 64, volume: 45, room: 35, piano: 82, bass: 90, drums: 68,
     muted: false, night: false, trackMutes: { piano: false, bass: false, drums: false } };

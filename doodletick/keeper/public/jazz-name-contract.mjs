@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // This module is shared by the server, browser and audio thread. It contains no credentials.
+import { DJ_GENRE_IDS } from './jazz-genres.mjs';
 export const PEPE_CHAIN_ID = '0x1';
 export const PEPE_CONTRACT = '0x6982508145454ce325ddbe47a25d4ec3d2311933';
 export const PEPE_DECIMALS = 18;
@@ -15,7 +16,7 @@ function text(value, max) {
   return value.trim();
 }
 export function validateJazzContext(input) {
-  if (!object(input) || !['swing', 'bossa', 'blues'].includes(input.style) || !['call', 'repeat', 'answer', 'cadence'].includes(input.phraseRole)) throw new Error('Play a Jazz set first.');
+  if (!object(input) || !DJ_GENRE_IDS.includes(input.style) || !['call', 'repeat', 'answer', 'cadence'].includes(input.phraseRole)) throw new Error('Play a Jazz set first.');
   if (!Array.isArray(input.chords) || input.chords.length < 1 || input.chords.length > 2 || !Array.isArray(input.motif) || !input.motif.length || input.motif.length > 8) throw new Error('Invalid Jazz phrase.');
   return { seed: integer(input.seed, 1, 0xffffffff), set: integer(input.set, 1, 0x7fffffff), style: input.style,
     tempo: number(input.tempo, 55, 180), swing: number(input.swing, 0.5, 0.72), key: text(input.key, 24),

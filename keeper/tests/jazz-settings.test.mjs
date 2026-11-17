@@ -40,12 +40,18 @@ test('every bundle fits the controls and keeps its trio balanced and its style c
     assert(choice.drums < Math.min(choice.piano, choice.bass), 'Percussion supports both melodic voices.');
     const foreground = (choice.piano + choice.bass) / 2;
     assert(choice.drums >= foreground * 0.4 && choice.drums <= foreground * 0.9);
-    if (choice.style === 'bossa') {
-      assert.equal(choice.swing, 50, 'Bossa always keeps a straight grid.');
-      assert(choice.tempo >= 95 && choice.tempo <= 160);
+    if (DJ_STYLES[choice.style].straight) {
+      assert.equal(choice.swing, 50, 'Bossa, Afro-Cuban and funk shuffles keep their straight grid.');
+      assert(choice.tempo >= 75 && choice.tempo <= 175);
     } else if (choice.style === 'blues') {
       assert(choice.swing > 50, 'Blues retains its long/short swing feel.');
       assert(choice.tempo <= 110, 'Blue hour does not become a racing tempo.');
+    } else if (choice.style === 'bebop') {
+      assert(choice.swing > 50);
+      assert(choice.tempo >= 140 && choice.tempo <= 180, 'Bebop retains its quicker feel.');
+    } else if (choice.style === 'cool') {
+      assert(choice.swing > 50);
+      assert(choice.tempo >= 65 && choice.tempo <= 130, 'Cool jazz stays restrained.');
     } else {
       assert(choice.swing > 50);
       assert(choice.tempo >= 80 && choice.tempo <= 145);
@@ -55,8 +61,8 @@ test('every bundle fits the controls and keeps its trio balanced and its style c
 
 test('families correlate tempo, space and accompaniment instead of drawing unrelated controls', () => {
   const groups = new Map();
-  for (let seed = 0; seed < 4096; seed++) {
-    const choice = djShuffleSettings(initial('swing'), seed);
+  for (const currentStyle of styles) for (let seed = 0; seed < 1024; seed++) {
+    const choice = djShuffleSettings(initial(currentStyle), seed);
     const family = choice.label.split(' ')[0];
     const id = `${choice.style}:${family}`;
     const group = groups.get(id) || { count: 0, tempo: 0, swing: 0, room: 0, drums: 0 };
@@ -75,17 +81,17 @@ test('families correlate tempo, space and accompaniment instead of drawing unrel
     assert(mellowTempo < warmTempo - 10 && warmTempo < brightTempo - 10);
     assert(average(style, 'Mellow', 'room') > average(style, 'Bright', 'room') + 20);
     assert(average(style, 'Mellow', 'drums') < average(style, 'Bright', 'drums') - 15);
-    if (style !== 'bossa') assert(average(style, 'Mellow', 'swing') > average(style, 'Bright', 'swing') + 3);
+    if (!DJ_STYLES[style].straight) assert(average(style, 'Mellow', 'swing') > average(style, 'Bright', 'swing') + 3);
   }
 });
 
-test('shuffle usually continues the current style but also explores both alternatives', () => {
+test('shuffle usually continues the current style but also explores the other genres', () => {
   for (const currentStyle of styles) {
     const counts = Object.fromEntries(styles.map(style => [style, 0]));
     for (let seed = 0; seed < 4096; seed++) counts[djShuffleSettings(initial(currentStyle), seed).style]++;
     const continuity = counts[currentStyle] / 4096;
     assert(continuity > 0.65 && continuity < 0.9, 'Style changes are occasional, not constant or impossible.');
-    for (const style of styles.filter(value => value !== currentStyle)) assert(counts[style] > 100);
+    for (const style of styles.filter(value => value !== currentStyle)) assert(counts[style] > 40);
   }
 });
 

@@ -1,3 +1,11 @@
+# 0.14b — Home Assistant Jazz radio
+
+Jazz now broadcasts from Home Assistant, with free VDO.Ninja listening, independent local output volume and mute, eight distinct jazz genres, structured shuffle and hourly player changes under an unlockable Never stop guard. A started station resumes after Keeper restarts; power, network and third-party outages can interrupt it.
+
+Optional offline voice announces settings, the Doodle clock color and dated constructive headlines from NASA/UN plus Open-Meteo modeled world weather. I dig this! saves exactly four previous chords and four starting at the click, with original MP3 audio and an independently signed, hash-linked local Doodlechain receipt. The private library is included in cold app backups and does not evict old recordings. Chord receipt also downloads a signed current snapshot.
+
+Paid PEPE/OpenAI naming remains off until the owner finishes separate API setup. Existing vault identities, garden/DVC formats, private MozCorp rooms, Shelf Defense and Telephone/Studio work are preserved. No new ports, capture permissions or administrative API access. See JAZZ.md for operation, dependencies and tested limits.
+
 # 0.13b — Native Scrypt coin and browser wallet
 
 Adds the Pepecoin-derived Doodleverse Core node, native Scrypt GPU mining and encrypted browser-wallet payments. The chain caps issuance at 21,000,000 DVC: 1,000,000 for the publicly recorded founder recipient and 20,000,000 mineable. Mined rewards need 30 confirmations. The founder record alone does not create a balance.

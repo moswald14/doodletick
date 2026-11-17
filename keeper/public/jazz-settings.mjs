@@ -56,7 +56,7 @@ export function djShuffleSettings(current, seed) {
   const settings = {
     style,
     tempo,
-    swing: style === 'bossa' ? 50 : bounded(preset.swing * 100 + family.swing - gesture * 1.5, 54, 70),
+    swing: preset.straight ? 50 : bounded(preset.swing * 100 + family.swing - gesture * 1.5, 54, 70),
     room,
     piano,
     bass,

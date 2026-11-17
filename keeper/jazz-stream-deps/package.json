@@ -1,0 +1,13 @@
+{
+  "name": "doodletick-jazz-stream-deps",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pinned optional native WebRTC transport for server-generated Doodle Jazz audio",
+  "license": "GPL-3.0-only",
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@roamhq/wrtc": "0.10.0"
+  }
+}

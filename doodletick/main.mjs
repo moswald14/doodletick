@@ -48,7 +48,7 @@ try {
   }
   if (stopping) throw Error('App stopped during startup.');
   const addonOptions = JSON.parse(await readFile('/data/options.json', 'utf8'));
-  keeper = await createKeeperServer({ dataDir: '/data/keeper', lockDir, mozcorpOptions: { provider }, scryptOptions, jazzOptions: { config: jazzConfigFromAddonOptions(addonOptions) } });
+  keeper = await createKeeperServer({ dataDir: '/data/keeper', lockDir, mozcorpOptions: { provider }, scryptOptions, jazzOptions: { config: jazzConfigFromAddonOptions(addonOptions) }, jazzRadioOptions: { enabled: true } });
   if (stopping) throw Error('App stopped during startup.');
   gateway = createIngressServer({ keeperPort: keeper.port, control: { status: () => keeper.vpn.status() }, healthy: () => !core || core.healthy() });
   await new Promise((resolve, reject) => { gateway.once('error', reject); gateway.listen(8099, '0.0.0.0', resolve); });
