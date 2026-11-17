@@ -1,3 +1,25 @@
+# 0.9.3b — Telephone World, Studio and Jazz
+
+Telephone World, Dot Wave Studio and Doodle Keeper share an explicit creative-project shelf. Keep source, protected master, story, character, poem, drawings and editable soundtrack together; review before copying into the encrypted vault or making a fictional map. Shared projects and portable exports are unencrypted and remain separate from vault keys and balances.
+
+Doodle Jazz is included with smoother chord movement, call/repeat/answer phrases with rests, coordinated swing timing, and a straight bossa feel. All sound renders locally and waits for Play.
+
+The release also fixes partial imports after invalid drawing data, edits made during slow saves or loads, and Stop during soundtrack preparation. Existing Keeper identities, signed formats and DVC rules are unchanged. Use a Home Assistant backup before updating and export browser projects separately. See VALIDATION.md for the tested scope and limitations.
+
+# 0.9.1b
+
+Telephone playback Stop now cancels pending project reads and rendering immediately. The integrated Studio includes all 49 recovered sounds. Local integration edition; live installation is coordinated separately.
+
+# 0.9b — Telephone World and Dot Studio
+
+Local integration source cut; no release publication or live installation is implied. See the integration report for actual verification evidence.
+
+- Add Telephone World 2 and Studio 2.3 as same-origin Keeper pages under authenticated ingress; retain the pending Jazz room integration.
+- Share narrative sessions and editable soundtrack projects within the current browser origin. Offer portable `.telephone.json` export/import for other browsers, devices or addresses.
+- Keep original input and protected master separate from machine outputs. Offer reviewed vault drafts and fictional map drafts through existing Keeper workflows.
+- Keep the shared shelf and project exports unencrypted, separate from the encrypted vault. Preserve existing identity, signatures, balances, mining and chain rules.
+- Keep audio opt-in, news fetching explicit and Home Assistant request protection intact. See [the Telephone World guide](../keeper/TELEPHONE-WORLD.md).
+
 # 0.8b — Doodle Jazz room
 
 Source checks and browser observations are recorded in [the validation report](../keeper/VALIDATION.md). Installation and release receipts are separate from this source-cut report.

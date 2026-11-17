@@ -6,6 +6,10 @@ The mushroom renderer uses these Dot Wave Studio modules, adapted to ES module f
 
 The project owner authorized the copies included here for distribution under GPL-3.0-only. Attribution is retained in the source and mushroom guide. Other Dot Wave Studio code, downloads and branding outside this repository are not covered by this grant.
 
+## Included Telephone World and Studio workspace
+
+This repository also includes the project owner’s Bullshit Telephone World 2 narrative interface, the Dot Wave Studio 2.3 editor and their Doodleverse project bridge. The included project code is distributed under GPL-3.0-only with this repository. This does not change the separate rights to writing, drawings, sounds or projects imported or created by users.
+
 ## Runtime components
 
 The desktop distribution contains project source, not a bundled Node.js installer. The Home Assistant Dockerfile refers to a pinned official Node.js image and installs Debian certificate authorities. Version 0.3b does not bundle or run Tailscale. Runtime components retain their own licenses and notices:

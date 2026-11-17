@@ -16,7 +16,7 @@ Audio uses the speakers or headphones selected for this browser. Keeping the Kee
 | **Blue hour** | A slower twelve-bar blues. |
 | **Bossa garden** | A minor-key bossa with a straight Latin feel. |
 
-The music moves through choruses with changing density. New motifs and possible key changes keep the performance developing. The instruments are synthesized sounds, not recordings of a live band.
+The music moves through choruses with changing density. Piano voicings connect nearby chord tones; short motifs call, repeat and answer with rests. Swing gives the lead deliberate timing against the rhythm section, while Bossa garden keeps its straight feel. New motifs and possible key changes keep the performance developing. The instruments are synthesized sounds, not recordings of a live band.
 
 ## Controls
 
