@@ -16,7 +16,7 @@ source_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
 (cd -- "$source_dir" && sha256sum --check --strict SHA256SUMS >/dev/null) || die 'The package checksum check failed. Nothing was installed.'
 
 install_root=/opt/doodletick-keeper
-release_id=0.9.3b-pi.1
+release_id=0.10b-pi.1
 release_dir=$install_root/releases/$release_id
 node_version=v24.22.3
 node_archive=node-$node_version-linux-arm64.tar.xz
@@ -62,7 +62,7 @@ fi
 # Copy only the published runtime allowlist, never a local vault or witness key.
 install -d -m 0755 "$stage/release"
 while IFS= read -r file; do
-  [[ $file =~ ^(server\.mjs|garden-ledger\.mjs|vpn-network\.mjs|rendezvous\.mjs|dvc-node\.mjs|dvc-http\.mjs|package\.json|LICENSE|THIRD_PARTY_NOTICES\.md|public/[a-z0-9.-]+|pi/check\.mjs)$ && $file != *..* ]] || die 'Invalid runtime file list.'
+  [[ $file =~ ^(server\.mjs|private-rooms\.mjs|private-room-bundle\.mjs|garden-ledger\.mjs|vpn-network\.mjs|rendezvous\.mjs|dvc-node\.mjs|dvc-http\.mjs|package\.json|LICENSE|THIRD_PARTY_NOTICES\.md|public/[a-z0-9.-]+|pi/check\.mjs)$ && $file != *..* ]] || die 'Invalid runtime file list.'
   [[ -f $source_dir/$file && ! -L $source_dir/$file ]] || die 'Missing or linked runtime file.'
   install -D -m 0644 "$source_dir/$file" "$stage/release/$file"
 done < "$source_dir/pi/runtime-files.txt"

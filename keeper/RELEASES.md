@@ -1,3 +1,13 @@
+## 0.10b
+
+Adds an isolated private MozCorp station room and a pinned local bundle installer. The private source is installed separately; existing vault, garden, coin and identity formats remain unchanged.
+
+Adds module 14 Credits and module 15 Blooper Reel. Credits name the fictional cast and active machine stages; the reel shows real pre-story takes from the current run. Both save as separate literal end cards, stay out of story feedback and skip held sources. Older saves reopen with the new controls reset and the hardwired exit preserved.
+
+Adds Phrase lab: one-to-eight-word searches with repeats, saved checkpoints, a dictionary-backed candidate pile, Friendly mode, and a resumable queue that seals phrase batches using the unlocked Keeper. Work pauses when hidden or closed. Dictionary evidence is not a complete semantic test. Existing identities, drafts and signed formats are preserved.
+
+Phrase posting now cancels if the vault session changes while preparing a batch. Telephone soundtrack generation also fits the last melody note into the song boundary, so affected text seeds generate, save and reopen normally without changing the writing.
+
 ## 0.9.3b — Telephone World, Studio and Jazz
 
 Telephone World, Dot Wave Studio and Doodle Keeper share an explicit creative-project shelf. Keep source, protected master, story, character, poem, drawings and editable soundtrack together; review before copying into the encrypted vault or making a fictional map. Shared projects and portable exports are unencrypted and remain separate from vault keys and balances.

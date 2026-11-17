@@ -1,8 +1,12 @@
-# Doodle Tick Keeper 0.9.3b
+# Doodle Tick Keeper 0.10b
 
 Doodle Tick is an experimental creator vault, social arcade, file library and shared mushroom garden. Spirographs help people compare signed creator keys when pairing. Your writing and files remain in your browser; Keepers provide signed receipts, a local directory and a shared garden scorekeeper.
 
-The 0.9.3b update connects **Telephone World**, **Dot Studio** and Keeper. Save a narrative session, attach an editable Studio soundtrack, then copy its text to an encrypted vault draft or open a fictional map in the workshop. The shared creative shelf and `.telephone.json` exports are unencrypted, separate from the vault. See [Telephone World](TELEPHONE-WORLD.md).
+The 0.10b update also adds **Phrase lab** with a resumable one-to-eight-word search, Friendly mode, a dictionary-backed pile, and a queue of signed Keeper notes. Open **Start Phrase Lab.cmd** to start the desktop build. See [Phrase lab](PHRASE-LAB.md) for limits and [dictionary credits](PHRASE-SOURCES.md).
+
+Open **MozCorp** to install your matching private station bundle and connect its machine or Bug World to the shared Studio shelf. Other desks keep their own exports; cloud services remain on the private original site. See [MozCorp rooms](MOZCORP.md).
+
+The earlier 0.9.3b update connects **Telephone World**, **Dot Studio** and Keeper. Save a narrative session, attach an editable Studio soundtrack, then copy its text to an encrypted vault draft or open a fictional map in the workshop. The shared creative shelf and `.telephone.json` exports are unencrypted, separate from the vault. See [Telephone World](TELEPHONE-WORLD.md).
 
 The 0.8b source update adds a **Jazz room** with an original local piano, bass and drum trio. Open the sidebar link and press **Play jazz**; no vault, wallet or streaming account is required. It opens in the same tab, and **Back to Keeper** leaves the player and stops its audio. See [the jazz guide](JAZZ.md) for background listening, controls and saved preferences. See [VALIDATION.md](VALIDATION.md) for source checks and limits, and the published release for downloads.
 

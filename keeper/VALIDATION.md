@@ -1,3 +1,38 @@
+# Validation — Doodle Tick 0.10b
+
+## Combined MozCorp, Phrase lab and Telephone update · 2026-11-17
+
+The combined source is based on public 0.9.3b commit `9df14953361f226e64ab98b58fb6459e6fa12a14`. It retains the shipped Studio and Jazz changes, adds the public MozCorp loader, Phrase lab and separate Credits/Blooper end cards, and preserves existing Keeper identity, vault, garden and DVC formats.
+
+- **591/591 combined Keeper and Home Assistant tests passed**, with zero failures or skips, in 18.43 seconds. Tests used disposable data and local servers. The initial restricted-environment run could not connect to its local fixtures; the final run had local-server access.
+- Repository checks passed for **390 public source files and 122 matching generated Home Assistant runtime files**. The complete corpus is **555,203 single words and 29,738 recorded expressions**, with source notices retained. Dictionary files are loaded on demand rather than precached.
+- Actual Chrome testing preserved a paused 19,928-item Phrase queue across reload and navigation; posting remained disabled with the vault locked. The public MozCorp page offered separate bundle installation without including private station pages in the release.
+- Actual Chrome testing saved and reopened a Telephone project with module 14 Credits and module 15 Blooper Reel, generated a 47-note editable Studio score, attached it to the project, reopened it, and started/stopped its soundtrack. The original source and saved end cards remained visible.
+- Regression tests first reproduced a pending Phrase digest crossing a vault-session change and a generated Telephone note extending beyond the final measure. Both fixes then passed all six focused checks: session cancellation, durable-batch retry, source/master preservation, final-note and copied-pattern bounds, Unicode inputs, real validation and serialization. Longer interior notes are preserved.
+- Separate bounded AI reviews found no remaining blocker in Home Assistant packaging/access, the generic isolated-frame bridge, public/private bundle separation and the two regression fixes. Sixteen focused MozCorp checks used simulated frames and synthetic bundles. The final approved private bundle fingerprint is pinned in source; the private ZIP is supplied separately.
+
+This records pre-release source verification. Public downloads and a backed-up Home Assistant installation are checked separately after publication. The owner vault was not unlocked for these tests; no real posting, mining, wallet signature or payment was performed. Physical sound output, overnight playback and multi-device behavior are not established by these checks. This is not an independent security audit. Browser project and Phrase shelves remain unencrypted, separate from encrypted vaults and Home Assistant app backups.
+
+Component and historical evidence follows.
+
+---
+
+## 0.9.4b Phrase lab — November 17, 2026
+
+This local build is based on public Keeper commit `9df14953361f226e64ab98b58fb6459e6fa12a14`. It adds the Phrase lab without changing creator signature formats, DVC rules or existing vault limits.
+
+- Repository checks passed with 116 synchronized Home Assistant runtime files.
+- `node scripts/test.mjs`: **547 passed, 0 failed, 0 skipped**, including the new enumeration, filter, signed-note compatibility and desktop/ingress asset checks.
+- Five additional IndexedDB transaction tests passed: exact restart, deduplication, concurrent writer rejection, atomic queue-cap rollback and repeated batch acknowledgement.
+- An isolated Chrome signing workflow passed eight end-to-end checks: Friendly filtering, locked posting, reload without automatic restart, real Keeper signatures and witness verification, preservation of the open draft, recovery after a saved seal but missing queue acknowledgement, pause during batch preparation, and recovery from an encrypted-vault save failure. Literal cursor resume and pause-on-leaving were also exercised in that workflow. Disposable identities and data were used.
+- The actual complete corpus passed loading, filtering, search, reload, full-vocabulary literal enumeration and export checks: **555,203 single words** and **29,738 multiword expressions**. Text and JSON exports retained the complete source notices. This local headless Chrome run loaded the corpus in about 1.45 seconds; this is an observation on one machine, not a device performance guarantee.
+- Desktop and 390-pixel phone layouts were checked; no horizontal overflow or browser exceptions were observed.
+- The exported fixed piles contain **584,458** entries with Friendly mode on and **584,941** with it off. They contain dictionary/word-list evidence rather than every meaningful English sentence.
+
+The full larger Kaikki English export repeatedly failed during transfer. The package therefore contains complete ESDB and DWYL word-list sources plus the complete smaller Kaikki phrase export; no partial larger corpus is labeled complete. Complete provenance, pinned source information and licenses are in `PHRASE-SOURCES.md`.
+
+Not verified: installation in an existing physical Home Assistant app, use of a real person's vault, public distribution of phrases, a complete eight-word Cartesian search, perfect semantic meaning or complete audience-suitability filtering. The app pauses when hidden or closed and requires explicit resumption. It stores at most 20,000 waiting phrases and 250,000 total history records. Exported workspace snapshots are archival and cannot be imported by this version. Signed batches are local Keeper notes, not public blockchain broadcasts.
+
 # Validation — Doodle Tick 0.9.3b
 
 ## Combined Telephone World, Studio and Jazz · 2026-11-17

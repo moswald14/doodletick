@@ -108,3 +108,17 @@ public/studio-worker.js
 public/studio.css
 public/studio-classic.html
 public/studio-notices.txt
+private-rooms.mjs
+private-room-bundle.mjs
+public/mozcorp-ui.mjs
+public/mozcorp.css
+public/creative-score-player.mjs
+public/telephone-post-roll.js
+public/phrase-core.mjs
+public/phrase-store.mjs
+public/phrase-ui.mjs
+public/phrase.css
+public/phrase-dictionary.json
+public/phrase-attestations.json
+public/phrase-notices.mjs
+public/phrase-notices.txt

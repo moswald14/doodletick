@@ -34,7 +34,8 @@ export function createTelephoneKeeper(container, { stageDraft, stageWorld, navig
     selected=p;$('telephone-title').textContent=p.title;
     $('telephone-meta').textContent=p.sourceMode+' · '+new Date(p.updatedAt).toLocaleString()+' · '+(p.soundtrack?'Studio score attached':'no soundtrack yet');
     $('telephone-text').textContent=B.text(p);
-    for(const [id,url] of [['telephone-open','./telephone.html?project='],['telephone-studio','./studio.html?project=']]){$(id).hidden=false;$(id).href=url+encodeURIComponent(p.id)+(id==='telephone-studio'?'#telephone':'');}
+    $('telephone-open').hidden=false;$('telephone-open').href=B.route(p);
+    $('telephone-studio').hidden=false;$('telephone-studio').href='./studio.html?project='+encodeURIComponent(p.id)+'#telephone';
     for(const id of ['telephone-vault','telephone-world','telephone-export'])$(id).disabled=false;
     $('telephone-world').disabled=p.sourceMode!=='fiction';
     status(p.sourceMode==='fiction'?'Review your text before copying it to a vault draft or making a playable map.':'Source held exactly. Saving and soundtracks preserve this mode; fictional map generation is disabled.');

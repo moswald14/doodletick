@@ -1,4 +1,4 @@
-const CACHE = 'doodletick-shell-v0.9.3b-r1';
+const CACHE = 'doodletick-shell-v0.10b-r2';
 const ASSETS = ['/clock-wheel.mjs', '/', '/index.html', '/app.mjs', '/core.mjs', '/style.css', '/logo.svg', '/files.css', '/files-ui.mjs', '/licenses.mjs', '/archive.mjs', '/file-store.mjs', '/peers.mjs', '/manifest.webmanifest', '/theme.mjs', '/theme.css'];
 ASSETS.push('/spirograph.mjs', '/spirograph-auth.mjs', '/vpn-description.mjs', '/vpn-transport.mjs', '/vpn-ui.mjs', '/arcade.css', '/arcade-ui.mjs', '/arcade-canvas.mjs', '/arcade-room.mjs', '/arcade-store.mjs', '/arcade-link.mjs', '/game-engine.mjs', '/workshop.mjs');
 ASSETS.push('/mushroom-core.mjs', '/mushroom-ui.mjs', '/mushroom-art.mjs', '/mushroom.css', '/dot-effects-dsp.mjs', '/dot-amp-tone.mjs', '/dot-studio-dsp.mjs', '/dot-collision-audio.mjs', '/dot-wave-export.mjs', '/dot-mushroom-dsp.mjs', '/dot-mushroom-motion.mjs');
@@ -8,12 +8,16 @@ ASSETS.push('/doodleverse-recipient.mjs', '/doodleverse-recipient-ui.mjs', '/doo
 ASSETS.push('/weather.mjs', '/weather-ui.mjs', '/weather.css', '/background-music.mjs', '/background-music-ui.mjs', '/background-music.css');
 ASSETS.push('/dvc-core.mjs', '/dvc-miner.mjs', '/dvc-wallet.mjs', '/dvc-ui.mjs', '/dvc-sync.mjs', '/dvc-peer-ui.mjs', '/dvc.css', '/dvc-console.mjs', '/dvc-console.css');
 ASSETS.push('/keeper-clock.mjs', '/sleep-ui.mjs', '/sleep-audio.mjs', '/sleep-mix.mjs', '/sleep-worker.mjs', '/sleep.css');
+ASSETS.push('/phrase-core.mjs', '/phrase-store.mjs', '/phrase-ui.mjs', '/phrase.css');
+ASSETS.push('/phrase-notices.mjs', '/phrase-notices.txt');
+const DICTIONARIES = ['/phrase-dictionary.json', '/phrase-attestations.json'];
 ASSETS.push('/jazz.html', '/jazz.css', '/jazz-core.mjs', '/jazz-player.mjs', '/jazz-worklet.mjs');
-ASSETS.push('/doodle-bridge.js','/telephone.html','/telephone.css','/telephone-1.js','/telephone-2.js','/telephone-session.js','/telephone-integration.css','/telephone-rhyme.html','/telephone-rhyme.css','/telephone-rhyme-1.js','/telephone-keeper.mjs','/telephone-keeper.css','/studio.html','/studio-app.js','/studio-worker.js','/studio.css','/studio-classic.html','/studio-notices.txt');
+ASSETS.push('/doodle-bridge.js','/telephone.html','/telephone.css','/telephone-1.js','/telephone-2.js','/telephone-session.js', '/telephone-post-roll.js','/telephone-integration.css','/telephone-rhyme.html','/telephone-rhyme.css','/telephone-rhyme-1.js','/telephone-keeper.mjs','/telephone-keeper.css','/studio.html','/studio-app.js','/studio-worker.js','/studio.css','/studio-classic.html','/studio-notices.txt');
+ASSETS.push('/mozcorp-ui.mjs','/mozcorp.css','/creative-score-player.mjs');
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting())));
 self.addEventListener('activate', event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('doodletick-shell-') && key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
-  if (event.request.method !== 'GET' || url.origin !== self.location.origin || !ASSETS.includes(url.pathname)) return;
+  if (event.request.method !== 'GET' || url.origin !== self.location.origin || !(ASSETS.includes(url.pathname) || DICTIONARIES.includes(url.pathname))) return;
   event.respondWith(fetch(event.request).then(response => { if (response.ok) { const copy = response.clone(); event.waitUntil(caches.open(CACHE).then(cache => cache.put(event.request, copy))); } return response; }).catch(() => caches.open(CACHE).then(cache => cache.match(event.request))));
 });
