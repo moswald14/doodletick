@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import { mineScryptGpu } from './dvc-scrypt-miner.mjs';
 const $ = id => document.getElementById(id);
-let connected = false, controller = null, count = 0;
+let connected = false, controller = null, checkingNode = false, count = 0;
 const lines = [];
+const COMMANDS = new Set(['help', 'status', 'check node', 'check gpu', 'mine', 'stop', 'keep on', 'keep off', 'intensity eco', 'intensity balanced', 'clear']);
 function log(kind, message) {
-  lines.push(`${new Date().toLocaleTimeString()} ${kind} ${message}`);
+  const text = String(message).replace(/[\u0000-\u0008\u000b-\u001f\u007f\u202a-\u202e\u2066-\u2069]/g, '').slice(0, 1024);
+  lines.push(`${new Date().toLocaleTimeString()} ${kind} ${text}`);
   if (lines.length > 80) lines.shift();
   $('console').textContent = lines.join('\n'); $('console').scrollTop = $('console').scrollHeight;
 }
@@ -12,6 +14,7 @@ function controls() {
   $('mine').disabled = !!controller || !connected;
   $('stop').disabled = !controller;
   for (const id of ['address', 'intensity', 'check-gpu', 'refresh']) $(id).disabled = !!controller;
+  $('refresh').disabled = !!controller || checkingNode;
   document.body.classList.toggle('mining', !!controller);
 }
 async function api(path, body, signal) {
@@ -21,17 +24,24 @@ async function api(path, body, signal) {
   return result;
 }
 async function refresh() {
+  if (controller || checkingNode) return;
+  checkingNode = true; controls();
   try {
     const status = await api('status'); connected = status.connected;
     $('network').textContent = connected ? `${status.network} · block ${status.height} · ${status.peers} peer(s) · test coins only` : status.message;
     log('GODDIT', connected ? 'Pinned Doodleverse test node connected.' : status.message);
   } catch (error) { connected = false; $('network').textContent = error.message; log('ERROR', error.message); }
-  controls();
+  checkingNode = false; controls();
 }
 function stop(reason = 'Stopped by you.') { controller?.abort(); $('mining-status').textContent = reason; log('GITTIT', reason); }
+function setKeepMining(enabled) {
+  $('keep-mining').checked = enabled;
+  if (controller && !enabled) stop('Keep mining turned off.');
+  else log('GODDIT', enabled ? (controller ? 'Keep mining is on for this session.' : 'Keep mining is on. Press MINE NOW or run mine to start.') : 'Keep mining is off.');
+}
 $('stop').addEventListener('click', () => stop());
 $('refresh').addEventListener('click', refresh);
-$('keep-mining').addEventListener('change', () => { if (controller && !$('keep-mining').checked) stop('Keep mining turned off.'); });
+$('keep-mining').addEventListener('change', () => setKeepMining($('keep-mining').checked));
 document.addEventListener('visibilitychange', () => { if (document.hidden && controller) stop('Tab hidden. Press MINE NOW to resume.'); });
 window.addEventListener('pagehide', () => controller?.abort());
 const delay = (signal, ms) => new Promise((resolve, reject) => {
@@ -42,8 +52,9 @@ const delay = (signal, ms) => new Promise((resolve, reject) => {
 });
 async function run(checkOnly) {
   if (controller || document.hidden || (!checkOnly && !connected)) return;
-  const current = new AbortController(); controller = current; controls();
   const address = $('address').value.trim(), intensity = $('intensity').value;
+  if (!checkOnly && !/^[1-9A-HJ-NP-Za-km-z]{26,35}$/.test(address)) { log('ERROR', 'Enter a Doodleverse receiving address in the field above before mining.'); return; }
+  const current = new AbortController(); controller = current; controls();
   log('GITTIT', checkOnly ? 'CHECK GPU — disposable self-test; no block submission.' : `MINE NOW — Scrypt, ${intensity}, receiving address ${address}`);
   try {
     do {
@@ -86,4 +97,29 @@ async function run(checkOnly) {
 }
 $('mining-form').addEventListener('submit', event => { event.preventDefault(); run(false); });
 $('check-gpu').addEventListener('click', () => run(true));
+function submitCommand() {
+  const raw = $('command-input').value; $('command-input').value = '';
+  // No shell, arbitrary RPC, address or key arguments. Never echo rejected text.
+  const command = /^[a-z \t]{1,80}$/i.test(raw) ? raw.trim().toLowerCase().replace(/[ \t]+/g, ' ') : '';
+  if (!COMMANDS.has(command)) { log('ERROR', 'Unknown command. Type help for the command list.'); return; }
+  if (command === 'clear') { lines.length = 0; log('GODDIT', 'Console cleared.'); return; }
+  log('GITTIT', command);
+  if (document.hidden && !['help', 'status', 'stop', 'keep off'].includes(command)) { log('ERROR', 'Return to this tab before running that command.'); return; }
+  if (controller && (command === 'mine' || command.startsWith('check ') || command.startsWith('intensity '))) { log('ERROR', 'Mining is busy. Stop the current round before running that command.'); return; }
+  if (command === 'help') {
+    log('GODDIT', 'Commands: help · status · check node · check gpu · mine · stop · keep on · keep off · intensity eco · intensity balanced · clear.\nMine uses the receiving address above. Keep on never starts mining by itself.');
+  } else if (command === 'status') {
+    log('GODDIT', `${$('network').textContent}\nMining: ${controller ? 'running' : 'stopped'} · Scrypt · ${$('intensity').value} · Keep mining: ${$('keep-mining').checked ? 'on' : 'off'}.`);
+  } else if (command === 'check node') {
+    if (checkingNode) log('ERROR', 'A node check is already running.'); else refresh();
+  } else if (command === 'check gpu') run(true);
+  else if (command === 'mine') {
+    if (!connected) log('ERROR', 'Connect your Doodleverse test node before mining. Use check node to check its connection.'); else run(false);
+  } else if (command === 'stop') stop();
+  else if (command === 'keep on' || command === 'keep off') setKeepMining(command === 'keep on');
+  else if (command === 'intensity eco' || command === 'intensity balanced') {
+    $('intensity').value = command.slice('intensity '.length); log('GODDIT', `GPU intensity is ${$('intensity').value}.`);
+  }
+}
+$('command-form').addEventListener('submit', event => { event.preventDefault(); submitCommand(); });
 refresh();

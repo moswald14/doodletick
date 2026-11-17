@@ -24,6 +24,7 @@ dvc_prepare() {
   [[ "$(uname -s)" == Linux ]] || dvc_fail 'Run this build in Linux; no host toolchain is installed automatically.'
   [[ -s "$DVC_PATCH" ]] || dvc_fail "Missing nonempty consensus patch: $DVC_PATCH"
   [[ -f "$DVC_CORE_DIR/tests/functional.py" ]] || dvc_fail 'Missing isolated regtest functional tests.'
+  [[ -f "$DVC_CORE_DIR/tests/wallet-recovery.py" ]] || dvc_fail 'Missing isolated wallet recovery tests.'
   dvc_require git python3 make autoconf automake libtoolize pkg-config tar gzip sha256sum
   python3 -c 'import sys; assert sys.version_info >= (3, 10), "Python 3.10 or newer is required"'
   DVC_JOBS="${DVC_JOBS:-2}"
@@ -58,7 +59,10 @@ dvc_prepare() {
   cp "$DVC_SOURCE_DIR/COPYING" "$DVC_STAGE_DIR/licenses/Pepecoin-COPYING"
   cp "$DVC_REPO_ROOT/LICENSE" "$DVC_STAGE_DIR/licenses/build-integration-LICENSE"
   cp "$DVC_CORE_DIR/README-build.md" "$DVC_STAGE_DIR/README-build.md"
-  cp "$DVC_CORE_DIR/README.md" "$DVC_CORE_DIR/chain-manifest.json" "$DVC_STAGE_DIR/"
+  cp "$DVC_CORE_DIR/README.md" "$DVC_CORE_DIR/VALIDATION.md" "$DVC_CORE_DIR/chain-manifest.json" "$DVC_STAGE_DIR/"
+  mkdir -p "$DVC_STAGE_DIR/scripts" "$DVC_STAGE_DIR/patches"
+  cp "$DVC_CORE_DIR/scripts/start-local.ps1" "$DVC_STAGE_DIR/scripts/"
+  cp "$DVC_PATCH" "$DVC_STAGE_DIR/patches/doodleverse.patch"
   mkdir -p "$DVC_STAGE_DIR/source/build-support"
   cp -R "$DVC_CORE_DIR/scripts" "$DVC_CORE_DIR/tests" "$DVC_STAGE_DIR/source/build-support/"
   mkdir -p "$DVC_STAGE_DIR/source/keeper"
@@ -158,8 +162,9 @@ dvc_build_linux() {
   cp "$DVC_SOURCE_DIR/src/pepecoind" "$DVC_SOURCE_DIR/src/pepecoin-cli" "$DVC_STAGE_DIR/bin/"
   ldd "$DVC_STAGE_DIR/bin/pepecoind" > "$DVC_STAGE_DIR/validation/runtime-libraries.txt"
   ldd "$DVC_STAGE_DIR/bin/pepecoin-cli" >> "$DVC_STAGE_DIR/validation/runtime-libraries.txt"
-  python3 "$DVC_CORE_DIR/tests/functional.py" --daemon "$DVC_STAGE_DIR/bin/pepecoind" --cli "$DVC_STAGE_DIR/bin/pepecoin-cli" 2>&1 | tee "$DVC_STAGE_DIR/validation/functional-tests.txt"
-  dvc_package 'Doodleverse consensus suite, Scrypt vectors and isolated local regtest functional checks passed on Linux; the inherited Pepecoin full suite was not run.'
+  python3 -B "$DVC_CORE_DIR/tests/functional.py" --daemon "$DVC_STAGE_DIR/bin/pepecoind" --cli "$DVC_STAGE_DIR/bin/pepecoin-cli" 2>&1 | tee "$DVC_STAGE_DIR/validation/functional-tests.txt"
+  python3 -B "$DVC_CORE_DIR/tests/wallet-recovery.py" --daemon "$DVC_STAGE_DIR/bin/pepecoind" --cli "$DVC_STAGE_DIR/bin/pepecoin-cli" 2>&1 | tee "$DVC_STAGE_DIR/validation/wallet-recovery-tests.txt"
+  dvc_package 'Doodleverse consensus suite, Scrypt vectors, isolated local regtest functional checks and encrypted-wallet backup/recovery checks passed on Linux; the inherited Pepecoin full suite was not run.'
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

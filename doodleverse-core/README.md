@@ -10,6 +10,7 @@ pinned to a full commit and changed by the reviewable
 [`doodleverse.patch`](patches/doodleverse.patch). All original MIT notices remain;
 new Doodleverse changes and integration are GPL-3.0-only, with the complete license
 in the repository's `LICENSE`. The build includes complete corresponding source.
+See [validation evidence](VALIDATION.md) for the exact tested packages and limits.
 
 ## What changed
 
@@ -77,6 +78,13 @@ Open `http://127.0.0.1:4317/scrypt.html`, paste the test receiving address, run
 pauses when the tab is hidden. Eco and Balanced select 64 or 128 nonce batches;
 the consensus algorithm remains Scrypt. There is no hidden CPU search fallback.
 
+The **GITTIT::GODDIT** command box accepts `help`, `status`, `check node`,
+`check gpu`, `mine`, `stop`, `keep on`, `keep off`, `intensity eco`,
+`intensity balanced` and `clear`. Press Enter or Run to submit a command.
+`keep on` arms repeat mode; it starts only on `mine` or MINE NOW. Use the separate
+receiving-address field for the payout destination. No shell, key-import or
+arbitrary node command is exposed.
+
 Every GPU session checks fixed Scrypt vectors and full-target comparison before
 searching. The browser independently verifies a candidate, the bridge verifies it
 again, and Core decides whether the complete block is valid. Only a confirmed
@@ -119,7 +127,7 @@ not install a Core node in Home Assistant or connect it to another machine's RPC
 For now use the computer's Keeper alongside its Core test node. Public RPC,
 router DMZ, mining pools and live external peers are not configured.
 
-Before a mainnet release: finish native wallet backup/recovery and the site
+Before a mainnet release: finish the owner's native wallet setup and the site
 spending flow; finish reviewing the remaining Windows dependencies; review consensus and
 networking beyond the targeted tests; add tested Pi/ARM builds; select and verify
 the owner's native founder address; publish immutable genesis and launch

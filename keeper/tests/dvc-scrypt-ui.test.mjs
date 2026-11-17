@@ -80,6 +80,7 @@ function fixture({ connected = true, serverHook } = {}) {
     calls, miners, jobs, timers, field, doc, win, until, settle,
     click: id => field(id).click(),
     submit() { return field('mining-form').fire('submit'); },
+    command(value) { field('command-input').value = value; return field('command-form').fire('submit'); },
     repeat(enabled) { field('keep-mining').checked = enabled; field('keep-mining').fire('change'); },
     hide() { doc.hidden = true; doc.dispatchEvent(new Event('visibilitychange')); },
     show() { doc.hidden = false; doc.dispatchEvent(new Event('visibilitychange')); },
@@ -254,5 +255,136 @@ for (const [intensity, status] of [['eco', 'found'], ['balanced', 'exhausted']])
     f.finish({ ...found(0, batch), status }); await f.until(() => f.field('stop').disabled); await f.advance(10000);
     assert.match(f.field('mining-status').textContent, /GPU Scrypt self-tests passed/);
     assert.equal(f.calls.some(call => call.path !== 'status'), false); assert.equal(f.miners.length, 1); assert.equal(f.field('accepted').textContent, '0');
+  } finally { await f.cleanup(); }
+});
+
+test('typing a command stays inert until the shared Run/Enter form submission', async () => {
+  const f = fixture();
+  try {
+    await f.ready();
+    assert.match(html, /<label for="command-input">Command<\/label>/);
+    assert.match(html, /id="command-input"[^>]*maxlength="80"[^>]*aria-describedby="command-help"/);
+    assert.match(html, /id="command-run" type="submit"/);
+    f.field('command-input').value = 'mine'; f.field('command-input').fire('input');
+    await f.advance(10000); assert.equal(f.jobs.length, 0); assert.equal(f.miners.length, 0);
+    // Native Enter and the Run submit button both emit this same form event.
+    const event = f.field('command-form').fire('submit'); assert.equal(event.defaultPrevented, true);
+    await f.until(() => f.miners.length === 1); assert.equal(f.field('command-input').value, '');
+    assert.deepEqual(f.calls.find(call => call.path === 'job').body, { address: ADDRESS });
+    f.finish(found(34)); await f.until(() => f.field('stop').disabled);
+    assert.deepEqual(f.calls.find(call => call.path === 'submit').body, { id: f.jobs[0].id, nonce: 34 });
+  } finally { await f.cleanup(); }
+});
+
+test('help, status, intensity and Keep commands use the visible settings without starting work', async () => {
+  const f = fixture();
+  try {
+    await f.ready(); f.command(' \t HELP  '); assert.match(f.field('console').textContent, /Commands: help.*check node.*keep off.*intensity balanced.*clear/);
+    f.command('  InTensity\tBalanced '); assert.equal(f.field('intensity').value, 'balanced');
+    f.command('KeEp\tON'); assert.equal(f.field('keep-mining').checked, true);
+    f.command('status'); assert.match(f.field('console').textContent, /Mining: stopped.*balanced.*Keep mining: on/);
+    f.command('intensity eco'); f.command('keep off');
+    assert.equal(f.field('intensity').value, 'eco'); assert.equal(f.field('keep-mining').checked, false);
+    await f.advance(10000); assert.equal(f.miners.length, 0); assert.deepEqual(f.calls.map(call => call.path), ['status']);
+  } finally { await f.cleanup(); }
+});
+
+test('unknown, multiline, oversized, RPC, address and key commands are cleared without echo or execution', async () => {
+  const f = fixture(), secret = 'private-fixture-value-that-must-not-be-logged';
+  try {
+    await f.ready();
+    for (const raw of ['', '   ', 'mine;stop', 'mine\nstop', 'mine\r', 'stop\0', 'keep true', 'intensity fast', 'check wallet',
+      'rpc submitblock', 'address ' + ADDRESS, 'importprivkey ' + secret, 'status ' + secret, '<script>private-marker</script>',
+      'eval(private-marker)', 'fetch(private-marker)', 'help ' + 'x'.repeat(100000)]) {
+      f.command(raw); assert.equal(f.field('command-input').value, ''); assert.match(f.field('console').textContent, /ERROR Unknown command/);
+    }
+    await f.advance(10000); assert.equal(f.jobs.length, 0); assert.equal(f.miners.length, 0); assert.equal(f.calls.length, 1);
+    assert.doesNotMatch(f.field('console').textContent, /private-fixture|private-marker|importprivkey|submitblock|<script>|xxxxxxxx/);
+    assert.equal(f.field('console').textContent.includes(ADDRESS), false);
+  } finally { await f.cleanup(); }
+});
+
+test('mine commands require the same connected node and a receiving address from the visible field', async () => {
+  const f = fixture({ connected: false });
+  try {
+    await f.ready(); f.command('mine'); assert.match(f.field('console').textContent, /Connect your Doodleverse test node before mining/);
+    assert.equal(f.jobs.length, 0); assert.equal(f.miners.length, 0);
+    f.status({ connected: true }); f.command('check node'); await f.until(() => !f.field('mine').disabled);
+    for (const address of ['', '  ', '0x' + '12'.repeat(20), '<invalid-address>']) {
+      f.field('address').value = address; f.command('mine'); assert.match(f.field('console').textContent, /Enter a Doodleverse receiving address/);
+    }
+    await f.settle(); assert.equal(f.jobs.length, 0); assert.equal(f.miners.length, 0);
+    f.field('address').value = ADDRESS; f.hide(); f.command('mine'); f.show(); await f.advance(10000);
+    assert.equal(f.jobs.length, 0); assert.match(f.field('console').textContent, /Return to this tab/);
+  } finally { await f.cleanup(); }
+});
+
+test('a pending command node check is bounded to one request and disables the matching button', async () => {
+  const gate = deferred(), f = fixture();
+  try {
+    await f.ready(); f.hookServer(call => call.path === 'status' ? gate.promise : undefined);
+    f.command('check node'); await f.until(() => f.calls.length === 2);
+    assert.equal(f.field('refresh').disabled, true); assert.equal(f.click('refresh'), false);
+    f.command('check node'); f.command('check node');
+    assert.equal(f.calls.length, 2); assert.match(f.field('console').textContent, /node check is already running/);
+    f.command('status'); assert.equal(f.calls.length, 2);
+    gate.resolve(json({ connected: true, network: 'regtest', height: 9, peers: 1 }));
+    await f.until(() => !f.field('refresh').disabled); assert.match(f.field('network').textContent, /block 9/); assert.equal(f.miners.length, 0);
+  } finally { gate.resolve(json({ connected: false, message: 'Fixture stopped.' })); await f.cleanup(); }
+});
+
+test('busy commands cannot change intensity, check the node, or launch extra miners, while Stop stays available', async () => {
+  const f = fixture();
+  try {
+    await f.ready(); f.command('intensity balanced'); f.command('mine'); await f.until(() => f.miners.length === 1);
+    assert.equal(f.miners[0].options.intensity, 'balanced');
+    for (const command of ['mine', 'check gpu', 'check node', 'intensity eco']) f.command(command);
+    assert.equal(f.field('intensity').value, 'balanced'); assert.match(f.field('console').textContent, /Mining is busy/);
+    assert.equal(f.miners.length, 1); assert.equal(f.calls.filter(call => call.path === 'status').length, 1); assert.equal(f.jobs.length, 1);
+    assert.equal(f.field('command-input').disabled, false); assert.equal(f.field('command-run').disabled, false); assert.equal(f.field('stop').disabled, false);
+    f.command('status'); f.command('help'); f.command('stop');
+    assert.equal(f.miners[0].options.signal.aborted, true); f.finish(found()); await f.until(() => f.field('stop').disabled);
+    await f.advance(10000); assert.equal(f.calls.some(call => call.path === 'submit'), false); assert.equal(f.miners.length, 1);
+  } finally { await f.cleanup(); }
+});
+
+test('Keep off command cancels a pending repeated round through the same checkbox path', async () => {
+  const f = fixture();
+  try {
+    await f.ready(); f.command('keep on'); assert.equal(f.field('keep-mining').checked, true); assert.equal(f.jobs.length, 0);
+    f.command('mine'); await f.until(() => f.miners.length === 1); f.finish(exhausted(64)); await f.until(() => f.timers.size === 1);
+    f.command('keep off'); assert.equal(f.field('keep-mining').checked, false); await f.until(() => f.field('stop').disabled);
+    assert.equal(f.timers.size, 0); await f.advance(10000); assert.equal(f.jobs.length, 1); assert.equal(f.miners.length, 1);
+    assert.match(f.field('mining-status').textContent, /Keep mining turned off/);
+  } finally { await f.cleanup(); }
+});
+
+test('Stop command interrupts job acquisition and tab hiding cancels a command-started GPU check', async () => {
+  const gate = deferred(), f = fixture();
+  try {
+    await f.ready(); f.hookServer(call => call.path === 'job' ? gate.promise : undefined);
+    f.command('mine'); await f.until(() => f.calls.some(call => call.path === 'job')); f.command('stop');
+    assert.equal(f.calls.find(call => call.path === 'job').options.signal.aborted, true);
+    gate.resolve(json({ id: '01'.repeat(24), header: '00'.repeat(80), target: '7f' + 'ff'.repeat(31), height: 2 }));
+    await f.until(() => f.field('stop').disabled); assert.equal(f.miners.length, 0);
+    f.command('check gpu'); await f.until(() => f.miners.length === 1);
+    assert.equal(f.miners[0].options.maxCandidates, 64); f.hide(); assert.equal(f.miners[0].options.signal.aborted, true);
+    f.finish(found()); await f.until(() => f.field('stop').disabled); f.show(); await f.advance(10000);
+    assert.equal(f.miners.length, 1); assert.equal(f.calls.some(call => call.path === 'submit'), false);
+    assert.doesNotMatch(f.field('console').textContent, /self-tests passed/);
+  } finally { gate.resolve(json({})); await f.cleanup(); }
+});
+
+test('Clear removes a bounded transcript without changing or canceling active mining', async () => {
+  const f = fixture();
+  try {
+    await f.ready(); for (let i = 0; i < 100; i++) f.command('help');
+    assert.equal(f.field('console').textContent.split(/\n(?=\S.*(?:GITTIT|GODDIT|ERROR) )/).length <= 80, true);
+    f.command('mine'); await f.until(() => f.miners.length === 1);
+    f.command('clear'); assert.match(f.field('console').textContent, /GODDIT Console cleared\.$/);
+    assert.doesNotMatch(f.field('console').textContent, /Commands:|MINE NOW|GITTIT/);
+    assert.equal(f.miners[0].options.signal.aborted, false); assert.equal(f.field('stop').disabled, false); assert.equal(f.miners.length, 1);
+    f.command('stop'); f.finish(found()); await f.until(() => f.field('stop').disabled);
+    assert.equal(f.calls.some(call => call.path === 'submit'), false);
   } finally { await f.cleanup(); }
 });

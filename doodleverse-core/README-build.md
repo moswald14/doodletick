@@ -22,7 +22,7 @@ public node, open a router port, or change a Home Assistant installation.
 
 The `Build experimental Doodleverse Core` workflow builds Linux first, runs the
 Doodleverse-specific consensus suite, fixed Scrypt vectors and
-`tests/functional.py`, and only then
+`tests/functional.py` and `tests/wallet-recovery.py`, and only then
 starts the Windows cross-build. Tests must use temporary regtest directories,
 loopback RPC/P2P addresses and explicitly connected local peers. They must check
 that production startup remains blocked. There is no public-chain test target.
@@ -79,8 +79,12 @@ for a machine with enough memory. The result appears in
 directory. Preserve or move an earlier result before building again.
 
 The Linux validation gate runs
-`test/test_pepecoin --run_test=doodleverse_tests,scrypt_tests`
-and `tests/functional.py --daemon PATH --cli PATH`. The inherited Pepecoin full
+`test/test_pepecoin --run_test=doodleverse_tests,scrypt_tests`,
+`tests/functional.py --daemon PATH --cli PATH` and
+`tests/wallet-recovery.py --daemon PATH --cli PATH`. Wallet recovery uses a random
+in-memory test password, an encrypted backup made before funding, a fresh node
+rescan, locked-spend rejection and an exact test payment. It never opens an
+operator wallet or prints a private key or password. The inherited Pepecoin full
 test suite contains old genesis, address, reward and AuxPoW assumptions and is
 not presented as a passing Doodleverse test suite. A passing gate is evidence
 for the named checks, not a security audit, economic validation or live Pi/GPU

@@ -18,6 +18,10 @@ FOUNDER_SCRIPT = '76a914751e76e8199196d454941c45d1b3a323f1433bd688ac'
 COIN = 100000000
 
 
+def hidden_process_options():
+    return {'creationflags': subprocess.CREATE_NO_WINDOW} if os.name == 'nt' else {}
+
+
 def wait_for(check, timeout=40):
     until = time.monotonic() + timeout
     last = None
@@ -105,7 +109,7 @@ class Node:
         command = [self.daemon, '-regtest', '-server=1', '-listen=1', '-dnsseed=0', '-discover=0', '-upnp=0',
                    '-bind=127.0.0.1', '-rpcbind=127.0.0.1', '-rpcallowip=127.0.0.1', '-txindex=1',
                    '-datadir=' + str(self.directory), '-port=' + str(self.p2p_port), '-rpcport=' + str(self.rpc_port)]
-        self.process = subprocess.Popen(command, stdout=self.log, stderr=self.log)
+        self.process = subprocess.Popen(command, stdout=self.log, stderr=self.log, **hidden_process_options())
         try:
             wait_for(lambda: self.rpc('getblockchaininfo'))
         except Exception:
@@ -148,14 +152,16 @@ def main():
     daemon, cli = str(Path(args.daemon).resolve()), str(Path(args.cli).resolve())
     assert Path(daemon).is_file() and Path(cli).is_file()
     with tempfile.TemporaryDirectory(prefix='dvc-regtest-') as temporary:
-        root = Path(temporary)
+        root = Path(temporary).resolve()
+        temporary_parent = Path(tempfile.gettempdir()).resolve()
+        assert root.parent == temporary_parent and root.name.startswith('dvc-regtest-')
         first, second = Node(daemon, root / 'one'), Node(daemon, root / 'two')
         try:
             # Production startup must fail before opening a spendable unpinned chain.
             main_dir = root / 'main-guard'
             main_dir.mkdir()
             guard = subprocess.run([daemon, '-datadir=' + str(main_dir), '-listen=0', '-dnsseed=0', '-printtoconsole=1'],
-                                   capture_output=True, timeout=20)
+                                   capture_output=True, timeout=20, **hidden_process_options())
             assert guard.returncode != 0, 'Mainnet started without an approved founder script'
             assert 'founder' in (guard.stdout + guard.stderr).decode(errors='replace').lower()
             first.start()
@@ -184,11 +190,15 @@ def main():
             assert sorted(round(out['value'] * COIN) for out in coinbase['vout']) == [50 * COIN, 1000000 * COIN]
             assert any(out['scriptPubKey']['hex'] == FOUNDER_SCRIPT for out in coinbase['vout'])
             # The standard Core CLI also works; cookie auth stays in the disposable directory.
-            result = subprocess.run([cli, '-regtest', '-datadir=' + str(first.directory), '-rpcport=' + str(first.rpc_port), 'getblockcount'], capture_output=True, text=True, check=True)
+            result = subprocess.run([cli, '-regtest', '-datadir=' + str(first.directory), '-rpcport=' + str(first.rpc_port), 'getblockcount'], capture_output=True, text=True, check=True, **hidden_process_options())
             assert int(result.stdout) == 1
             assert first.rpc('getbalance') == 0, 'Immature coinbase is spendable'
             bridge_check = Path(__file__).with_name('bridge-functional.mjs')
-            subprocess.run(['node', str(bridge_check), str(first.rpc_port), str(first.directory / 'regtest' / '.cookie'), address], check=True)
+            bridge_result = subprocess.run(['node', str(bridge_check), str(first.rpc_port), str(first.directory / 'regtest' / '.cookie'), address], capture_output=True, text=True, check=True, **hidden_process_options())
+            bridge_receipt = json.loads(bridge_result.stdout)
+            assert bridge_receipt['accepted'] is True and bridge_receipt['network'] == 'regtest'
+            assert bridge_receipt['height'] == 2 and bridge_receipt['address'] == address
+            print(json.dumps(bridge_receipt))
             first.rpc('generatetoaddress', 31, address)
             wait_for(lambda: second.rpc('getblockcount') == first.rpc('getblockcount'))
             assert first.rpc('getbalance') >= 50
@@ -217,6 +227,7 @@ def main():
         finally:
             first.stop()
             second.stop()
+            assert root.resolve() == root and root.parent == temporary_parent and root.name.startswith('dvc-regtest-')
 
 
 if __name__ == '__main__':
