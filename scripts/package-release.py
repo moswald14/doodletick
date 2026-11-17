@@ -14,7 +14,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parent.parent
 DIST = ROOT / 'dist'
 BLOCKED_DIRS = {'.git', 'dist', '.doodletick', 'node_modules', '__pycache__', '.aws', '.codex', '.ssh', 'user-data', 'work', 'tmp', 'temp', '.cache'}
-BLOCKED_NAMES = {'witness-key.json', 'garden-ledger.json', 'shelf-idle.json', 'receipts.jsonl', 'dvc-chain.jsonl', 'server.lock', 'tailscaled.state', 'id_rsa', 'id_ed25519'}
+BLOCKED_NAMES = {'witness-key.json', 'garden-ledger.json', 'shelf-idle.json', 'mozcorp-world.json', 'options.json', 'receipts.jsonl', 'dvc-chain.jsonl', 'server.lock', 'tailscaled.state', 'id_rsa', 'id_ed25519'}
 BLOCKED_SUFFIXES = ('.vault.json', '.doodletick-receipt.json', '.log', '.pem', '.key', '.pfx', '.exe', '.msi', '.scr', '.zip', '.tar', '.gz', '.tmp', '.bak')
 
 

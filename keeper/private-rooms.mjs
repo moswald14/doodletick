@@ -12,6 +12,17 @@ const validId=value=>typeof value==='string'&&/^[a-z][a-z0-9-]{0,49}$/.test(valu
 const validFile=value=>typeof value==='string'&&/^(?:frames\/)?[a-z][a-z0-9.-]{0,79}$/.test(value)&&!value.includes('..');
 const plain=value=>value&&typeof value==='object'&&!Array.isArray(value);
 
+export function privateServiceConfig(value) {
+  if (value === undefined) return { hope: { caseRules: {} } };
+  if (!plain(value) || Object.keys(value).some(key => key !== 'hope') || !plain(value.hope) || Object.keys(value.hope).some(key => key !== 'caseRules') || !plain(value.hope.caseRules) || Object.keys(value.hope.caseRules).length > 24) throw error('Invalid private service configuration.');
+  const rules = {};
+  for (const [id, rule] of Object.entries(value.hope.caseRules)) {
+    if (!validId(id) || !plain(rule) || Object.keys(rule).sort().join(',') !== 'answer,essential' || typeof rule.answer !== 'string' || !/^[a-zA-Z0-9-]{1,60}$/.test(rule.answer) || !Array.isArray(rule.essential) || !rule.essential.length || rule.essential.length > 6 || new Set(rule.essential).size !== rule.essential.length || rule.essential.some(item => typeof item !== 'string' || !/^[a-zA-Z0-9-]{1,60}$/.test(item))) throw error('Invalid private fictional case rule.');
+    rules[id] = { answer: rule.answer, essential: [...rule.essential] };
+  }
+  return { hope: { caseRules: rules } };
+}
+
 export function readPrivateBundle(bytes, expected) {
   if(!Buffer.isBuffer(bytes))bytes=Buffer.from(bytes);
   if(!Number.isInteger(expected?.bytes)||expected.bytes<1||expected.bytes>MAX_ZIP||!/^[a-f0-9]{64}$/.test(expected.sha256||''))throw error('This release has no private station bundle configured.',503);
@@ -59,7 +70,8 @@ export function readPrivateBundle(bytes, expected) {
   }
   let originalUrl=null;
   if(typeof manifest.originalUpgradesUrl==='string'){try{const u=new URL(manifest.originalUpgradesUrl);if(u.protocol==='https:'&&!u.username&&!u.password)originalUrl=u.origin;}catch{}}
-  return{files,stations,originalUrl,sha256:expected.sha256,bytes:expected.bytes};
+  const services = privateServiceConfig(manifest.services);
+  return{files,stations,originalUrl,services,sha256:expected.sha256,bytes:expected.bytes};
 }
 
 export async function createPrivateRoomStore({dataDir,expected=PRIVATE_ROOM_BUNDLE}={}) {
@@ -72,6 +84,7 @@ export async function createPrivateRoomStore({dataDir,expected=PRIVATE_ROOM_BUND
   function status(){return{installed:!!bundle,error:unavailable,name:expected.name||'Private stations',expected:{bytes:expected.bytes,sha256:expected.sha256},stations:bundle?.stations.map(({id,title,canonical,startAnchor,focusAnchors})=>({id,title,canonical,startAnchor,focusAnchors}))||[],originalUrl:bundle?.originalUrl||null};}
   return{
     status,
+    serviceConfig(){return bundle ? structuredClone(bundle.services) : {hope:{caseRules:{}}};},
     begin(){return serial(async()=>{if(!expected.bytes||!expected.sha256)throw error('This release has no private station bundle configured.',503);await ensure();upload={id:randomBytes(16).toString('hex'),offset:0};await writeFile(temp,Buffer.alloc(0),{mode:0o600});return{uploadId:upload.id,offset:0,chunkBytes:CHUNK,totalBytes:expected.bytes};});},
     append(id,offset,bytes){return serial(async()=>{if(!upload||id!==upload.id)throw error('Start the private bundle upload again.',409);if(!Number.isSafeInteger(offset)||offset!==upload.offset)throw error('The upload position changed. Start the upload again.',409);if(!bytes.length||bytes.length>CHUNK||upload.offset+bytes.length>expected.bytes)throw error('Private bundle chunk exceeds its limits.',413);await ensure();const {appendFile}=await import('node:fs/promises');await appendFile(temp,bytes,{mode:0o600});upload.offset+=bytes.length;return{offset:upload.offset,totalBytes:expected.bytes};});},
     finish(id){return serial(async()=>{if(!upload||id!==upload.id||upload.offset!==expected.bytes)throw error('The private bundle upload is incomplete.',409);await ensure();const candidate=readPrivateBundle(await readFile(temp),expected);await rename(temp,final);bundle=candidate;upload=null;unavailable=null;return status();});},

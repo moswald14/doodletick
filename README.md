@@ -1,4 +1,6 @@
-# Doodle Tick · 0.11b
+# Doodle Tick · 0.12b
+
+**0.12b brings MozCorp’s cloud savepoints, fictional HOPE-LON feed and upgrade desk into Keeper.** Open **MozCorp → Keeper cloud** or **Upgrade desk**. Shared records live with this Keeper and survive restarts. AI drafts are optional and use a server-side key with explicit instruction-only consent. See [the MozCorp guide](keeper/MOZCORP.md).
 
 A creator arcade inspired by the loops of a telephone cord: an hourly color clock, Dot Wave sound mushrooms, an encrypted vault and direct peer connections. Run a Keeper on your computer or Home Assistant.
 
@@ -14,7 +16,7 @@ Tower-defense saves stay in this browser and reopen paused. Idle cookies are sav
 
 **0.10b adds a private station bundle to Keeper.** Install your matching private bundle in **MozCorp**, then open the machine, Bug World, EVERYWHEN, Mozville and the related desks. Machine and Bug World projects share the creative shelf with Dot Studio. Legacy Bug World packages restore through their actual engine, preserve the original package as data and wait for manual play.
 
-The public app includes a generic loader and the approved bundle fingerprint. Private station pages are supplied separately and run in isolated frames. Story saves exclude EVERYWHEN personal receipts and Integrity notebooks. Shared cloud saves, HOPE-LON posts and the upgrade proposal desk continue at the original private site; follow the explicit link there. No login or private site permissions are copied into Keeper. Read [the MozCorp guide](keeper/MOZCORP.md).
+The public app includes a generic loader and the approved bundle fingerprint. Private station pages are supplied separately and run in isolated frames. Story saves exclude EVERYWHEN personal receipts and Integrity notebooks. Shared savepoints, the fictional HOPE-LON feed and upgrade proposal records now live in this Keeper. Existing private-site records need explicit export/import; no site login or permissions are copied. Read [the MozCorp guide](keeper/MOZCORP.md).
 
 ## Phrase lab
 

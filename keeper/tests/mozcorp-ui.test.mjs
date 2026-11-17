@@ -81,6 +81,8 @@ async function harness(options = {}) {
       { id: 'bug-world', title: 'Bug World', canonical: 'bug-world', startAnchor: '' },
       { id: 'everywhen', title: 'EVERYWHEN', canonical: 'everywhen', startAnchor: '' },
       { id: 'integrity', title: 'Integrity', canonical: 'integrity', startAnchor: '' },
+      { id: 'hope-lon', title: 'HOPE-LON', canonical: 'hope-lon', startAnchor: '' },
+      { id: 'swordfish', title: 'Swordfish', canonical: 'swordfish', startAnchor: '' },
     ] };
   if (!info.installed) info.stations = [];
   function emit(frame, data, origin = 'null', source = frame.contentWindow) {
@@ -88,15 +90,21 @@ async function harness(options = {}) {
     for (const fn of listeners.get('message') || []) fn(event);
   }
   class Element {
-    constructor(tag = 'div', id = '') { this.tagName = tag.toUpperCase(); this.id = id; this.value = ''; this.textContent = ''; this.children = []; this.dataset = {}; this.attributes = {}; this.events = new Map(); this.hidden = false; this.inert = false; this.disabled = false; this.classes = new Set(); this.classList = { toggle: (key, value) => value ? this.classes.add(key) : this.classes.delete(key) }; }
+    constructor(tag = 'div', id = '') { this.tagName = tag.toUpperCase(); this.id = id; this.ownerDocument = document; this.value = ''; this._text = ''; this.children = []; this.dataset = {}; this.attributes = {}; this.events = new Map(); this.hidden = false; this.inert = false; this.disabled = false; this.checked = false; this.required = false; this.classes = new Set(); this.classList = { toggle: (key, value) => value ? this.classes.add(key) : this.classes.delete(key) }; }
+    get textContent() { return this._text + this.children.map(child => child.textContent || '').join(''); }
+    set textContent(value) { this._text = String(value); this.replaceChildren(); }
     set innerHTML(text) { this.html = text; for (const [, tag, attrs, id] of text.matchAll(/<([A-Za-z][\w-]*)\b([^>]*\bid="([^"]+)"[^>]*)>/g)) { const element = elements.get(id) || new Element(tag, id); for (const [, name, value] of attrs.matchAll(/([\w-]+)="([^"]*)"/g)) element.attributes[name] = value; if (element.attributes.value !== undefined) element.value = element.attributes.value; element.hidden = /\bhidden\b/.test(attrs); elements.set(id, element); } }
-    querySelector(selector) { return elements.get(selector.slice(1)); }
+    descendants() { return this.children.flatMap(child => [child, ...(typeof child.descendants === 'function' ? child.descendants() : [])]); }
+    querySelector(selector) { return this.querySelectorAll(selector)[0] || (selector.startsWith('#') ? elements.get(selector.slice(1)) : null); }
+    querySelectorAll(selector) { const selectors = selector.split(',').map(item => item.trim()); return this.descendants().filter(child => selectors.some(item => item.startsWith('#') ? child.id === item.slice(1) : item.startsWith('.') ? String(child.className || '').split(/\s+/).includes(item.slice(1)) : child.tagName === item.toUpperCase())); }
     append(...children) { this.children.push(...children); for (const child of children) { child.parent = this; if (child.tagName === 'IFRAME') queueMicrotask(() => emit(child, { type: 'ready' })); } }
-    replaceChildren(...children) { this.children = [...children]; }
+    replaceChildren(...children) { for (const child of this.children) child.parent = null; this.children = []; this.append(...children); }
     remove() { this.removed = true; if (this.parent) this.parent.children = this.parent.children.filter(child => child !== this); }
-    setAttribute(key, value) { this.attributes[key] = value; }
-    addEventListener(type, fn) { this.events.set(type, fn); }
-    click() { return this.onclick?.({ target: this, preventDefault() {} }); }
+    setAttribute(key, value) { this.attributes[key] = String(value); }
+    addEventListener(type, fn) { if (!this.events.has(type)) this.events.set(type, []); this.events.get(type).push(fn); }
+    removeEventListener(type, fn) { this.events.set(type, (this.events.get(type) || []).filter(item => item !== fn)); }
+    click() { const event = { target: this, preventDefault() {} }; const result = this.onclick?.(event); for (const fn of this.events.get('click') || []) fn(event); return result; }
+    focus() { this.focused = true; }
     get contentDocument() { throw new Error('Parent must never inspect the private station DOM.'); }
   }
   function createFrame() {
@@ -118,9 +126,10 @@ async function harness(options = {}) {
           } else if (message.requestType === 'capture') {
             const value = { engine: frame.stationId === 'bug-world' ? 'mozcorp-bug-world-v2' : 'mozcorp-v13', editVersion: frame.version,
               sourceText: frame.source, sourceMode: frame.mode, masterText: frame.loaded?.masterText || '', storyText: frame.loaded?.storyText || '', poemText: frame.loaded?.poemText || '', characterText: frame.loaded?.characterText || '', asciiText: frame.loaded?.asciiText || '' };
-            if (frame.stationId === 'machine') value.cloud = cloud(frame.source); else value.world = { format: 'mozcorp-bug-world-v2', state: { source: frame.source } };
+            if (frame.stationId === 'machine') value.cloud = cloud(frame.source); else value.world = { format: 'mozcorp-new-bug-world-v2', state: { source: frame.source } };
             respond(value);
           } else if (message.requestType === 'checkpoint') respond({ editVersion: frame.version });
+          else if (message.requestType === 'cloud-restore') { frame.cloudLoaded = copy(message.payload); frame.source = message.payload.payload.seed || message.payload.payload.source || ''; respond({ restored: true, kind: message.payload.kind, editVersion: frame.version }); }
           else if (message.requestType === 'focus') respond({ focused: true, handoff: !!Object.keys(message.payload.session || {}).length, editVersion: frame.version });
           else if (message.requestType === 'stop') { frame.stopped = (frame.stopped || 0) + 1; respond({ stopped: true, editVersion: frame.version }); }
           else throw new Error('Unknown parent request.');
@@ -133,6 +142,7 @@ async function harness(options = {}) {
     frames.push(frame); return frame;
   }
   const document = { createElement: tag => tag === 'iframe' ? createFrame() : new Element(tag), hidden: false, addEventListener() {} };
+  document.body = new Element('body');
   const container = new Element();
   const window = { addEventListener(type, fn) { if (!listeners.has(type)) listeners.set(type, []); listeners.get(type).push(fn); } };
   Object.assign(globalThis, { document, window, location: { search: '', href: 'http://keeper.example/', hash: '' }, DoodleBridge: bridge,
@@ -143,7 +153,8 @@ async function harness(options = {}) {
       fetches.push({ path, query, request });
       let result;
       if (options.fetch) result = await options.fetch(path, query, request, info);
-      if (result === undefined) result = path === 'status' ? copy(info) : { items: [], sourceFeed: 'News RSS', grabbedAt: '2026-11-17T12:00:00Z' };
+      if (result && typeof result.ok === 'boolean' && typeof result.json === 'function') return result;
+      if (result === undefined) result = path === 'status' ? copy(info) : path === 'cloud' ? { scope: 'fixture-cloud-scope', revision: 0, slots: [] } : path === 'upgrades' ? { scope: 'fixture-upgrade-scope', revision: 0, generation: 0, settings: { enabled: false, consentAt: null, updatedAt: null }, configured: false, model: 'fixture-model', dailyLimit: 8, consentVersion: 'BTW-AI-UPGRADE-CONSENT-1', modules: [], proposals: [], audit: [] } : path === 'hope' ? { scope: 'fixture-hope-scope', revision: 0, generation: 0, paused: true, personas: [], cases: [] } : { items: [], sourceFeed: 'News RSS', grabbedAt: '2026-11-17T12:00:00Z' };
       return { ok: true, status: 200, json: async () => copy(result) };
     },
   });
@@ -154,6 +165,7 @@ async function harness(options = {}) {
   if (options.visible !== false && info.installed) { ui.setVisible(true); await settled(); }
   return { ui, node, frames, bridge, fetches, storage, writes, emit, info, settled,
     station: id => node('moz-stations').children.find(button => button.dataset.station === id),
+    service: id => node('moz-stations').children.find(button => button.dataset.service === id),
     async open(id) { node('moz-projects').value = id; await node('moz-open').click(); await settled(); },
     warn() { const event = { prevented: false, preventDefault() { this.prevented = true; } }; for (const fn of listeners.get('beforeunload') || []) fn(event); return event.prevented; },
     cleanup() { for (const fn of listeners.get('pagehide') || []) fn({}); for (const [key, descriptor] of previous) { if (descriptor) Object.defineProperty(globalThis, key, descriptor); else delete globalThis[key]; } },
@@ -266,16 +278,95 @@ test('aliases reuse the canonical machine and personal desks never grant generic
   } finally { h.cleanup(); }
 });
 
-test('original cloud features expose an explicit safe link without automatically opening or sending room data', async () => {
+test('the original private site remains an explicit safe link without automatically opening or sending room data', async () => {
   const h = await harness();
   try {
-    const frame = h.frames[0]; frame.childRequest('open-original', { path: '/upgrades' }); await h.settled();
-    assert.equal(h.node('moz-original-link').href, 'https://private.example/upgrades');
+    const frame = h.frames[0]; frame.childRequest('open-original', { path: '/' }); await h.settled();
+    assert.equal(h.node('moz-original-link').href, 'https://private.example/');
     assert.equal(h.node('moz-original-link').attributes.rel, 'noopener noreferrer');
     assert.equal(h.node('moz-original-link').attributes.target, '_blank');
     assert(!h.fetches.some(call => call.path.includes('upgrades')));
     frame.childRequest('open-original', { path: 'https://evil.example/' }); await h.settled();
-    assert.equal(h.node('moz-original-link').href, 'https://private.example/upgrades');
+    assert.equal(h.node('moz-original-link').href, 'https://private.example/');
+  } finally { h.cleanup(); }
+});
+
+test('local upgrade and cloud desks keep an unsaved machine alive and read only their own Keeper services', async () => {
+  const h = await harness();
+  try {
+    const machine = h.frames[0]; machine.edit('UNSAVED MACHINE WORK');
+    machine.childRequest('open-original', { path: '/upgrades' }); await h.settled();
+    assert.equal(h.node('moz-upgrades-desk').hidden, false);
+    assert.equal(h.node('moz-original').hidden, true, 'Upgrade navigation stays in Keeper rather than offering the old external service.');
+    assert(h.fetches.some(call => call.path === 'upgrades' && !call.request.method));
+    assert.equal(machine.removed, undefined); assert.equal(machine.source, 'UNSAVED MACHINE WORK');
+    await h.service('cloud').click(); await h.settled();
+    assert.equal(h.node('moz-cloud-desk').hidden, false); assert(h.fetches.some(call => call.path === 'cloud' && !call.request.method));
+    assert.equal(h.bridge.saved.length, 0); assert.equal(h.frames.length, 1);
+    assert(!machine.messages.some(message => message.requestType === 'capture'));
+    await h.station('machine').click(); await h.settled();
+    assert.equal(machine.hidden, false); assert.equal(machine.inert, false); assert.equal(machine.source, 'UNSAVED MACHINE WORK'); assert.equal(h.warn(), true);
+  } finally { h.cleanup(); }
+});
+
+test('machine Cloud Bus saves reach the protected shared cloud endpoint without saving a browser project', async () => {
+  const h = await harness({ fetch(path, query, request) {
+    if (path === 'cloud' && request.method === 'POST') return { scope: 'fixture-cloud-scope', revision: 1, slots: [{ id: 'slot-1', slotName: 'Shared fixture', kind: 'machine', payload: JSON.stringify(cloud('PRE-STORY FIXTURE')) }], slotName: 'Shared fixture' };
+  } });
+  try {
+    const machine = h.frames[0], payload = { action: 'save', slotName: 'Shared fixture', kind: 'machine', payload: JSON.stringify(cloud('PRE-STORY FIXTURE')) };
+    machine.childRequest('cloud', payload); const requestId = 'child-' + machine.childSequence; await h.settled();
+    const calls = h.fetches.filter(call => call.path === 'cloud'); assert.equal(calls.length, 1); assert.equal(calls[0].request.method, 'POST'); assert.equal(calls[0].request.headers['X-Keeper-Request'], '1'); assert.equal(calls[0].request.headers['Content-Type'], 'application/json'); assert.deepEqual(JSON.parse(calls[0].request.body), payload);
+    const response = machine.messages.find(message => message.type === 'response' && message.requestId === requestId); assert(response); assert.equal(response.error, undefined); assert.equal(response.result.slotName, 'Shared fixture');
+    assert.equal(h.bridge.saved.length, 0); assert(!machine.messages.some(message => message.requestType === 'capture'));
+    await h.station('everywhen').click(); const desk = h.frames.at(-1); desk.childRequest('cloud', payload); const deniedId = 'child-' + desk.childSequence; await h.settled();
+    assert.equal(h.fetches.filter(call => call.path === 'cloud').length, 1);
+    const denied = desk.messages.find(message => message.type === 'response' && message.requestId === deniedId); assert.match(denied.error.message, /machine’s Cloud Bus/); assert.equal(denied.error.status, 400); assert.equal(h.bridge.saved.length, 0);
+  } finally { h.cleanup(); }
+});
+
+test('HOPE capabilities belong only to active HOPE-LON or Swordfish and preserve typed service errors', async () => {
+  const h = await harness({ fetch(path) {
+    if (path === 'hope') return { ok: false, status: 503, json: async () => ({ error: 'Shared fictional feed is temporarily unavailable.', code: 'MOZCORP_HOPE_UNAVAILABLE' }) };
+  } });
+  try {
+    const machine = h.frames[0]; machine.edit('KEEP THIS INPUT');
+    for (const id of ['machine', 'bug-world', 'everywhen', 'integrity']) {
+      await h.station(id).click(); const frame = h.frames.find(item => !item.removed && !item.hidden);
+      frame.childRequest('hope', { action: 'read' }); const requestId = 'child-' + frame.childSequence; await h.settled();
+      const denied = frame.messages.find(message => message.type === 'response' && message.requestId === requestId); assert.match(denied.error.message, /Swordfish or HOPE-LON/); assert.equal(denied.error.status, 400);
+    }
+    assert.equal(h.fetches.filter(call => call.path === 'hope').length, 0);
+    for (const id of ['hope-lon', 'swordfish']) {
+      await h.station(id).click(); const frame = h.frames.find(item => !item.removed && !item.hidden);
+      frame.childRequest('hope', { action: 'read' }); const requestId = 'child-' + frame.childSequence; await h.settled();
+      const reply = frame.messages.find(message => message.type === 'response' && message.requestId === requestId); assert.equal(reply.error.status, 503); assert.equal(reply.error.code, 'MOZCORP_HOPE_UNAVAILABLE'); assert.equal(reply.error.message, 'Shared fictional feed is temporarily unavailable.');
+      const count = h.fetches.filter(call => call.path === 'hope').length;
+      frame.childRequest('hope', { action: 'delete-vault' }); await h.settled(); assert.equal(h.fetches.filter(call => call.path === 'hope').length, count);
+    }
+    const hiddenHope = h.frames.find(frame => frame.stationId === 'hope-lon'), beforeHiddenRead = h.fetches.filter(call => call.path === 'hope').length;
+    hiddenHope.childRequest('hope', { action: 'read' }); const hiddenRequest = 'child-' + hiddenHope.childSequence; await h.settled();
+    assert.equal(h.fetches.filter(call => call.path === 'hope').length, beforeHiddenRead);
+    assert.match(hiddenHope.messages.find(message => message.type === 'response' && message.requestId === hiddenRequest).error.message, /Return to this room/);
+    assert.equal(h.bridge.saved.length, 0); assert.equal(h.writes.length, 0); assert.equal(machine.source, 'KEEP THIS INPUT'); assert.equal(h.warn(), true);
+  } finally { h.cleanup(); }
+});
+
+test('failed shared savepoint restoration retains the existing machine and its browser Save target', async () => {
+  const a = record();
+  const h = await harness({ records: [a], fetch(path) {
+    if (path === 'cloud') return { scope: 'fixture-cloud-scope', revision: 1, slots: [{ id: 'invalid-slot', slotName: 'Invalid fixture', kind: 'machine', payload: JSON.stringify(cloud('INCOMING SOURCE')), createdAt: '2026-11-17T12:00:00Z' }] };
+  }, request(frame, message, respond, reject) {
+    if (message.requestType === 'cloud-restore') { reject(new Error('Cloud state rejected by its actual station boundary.')); return true; }
+    return false;
+  } });
+  try {
+    await h.open(a.id); const machine = h.frames.find(frame => !frame.removed && !frame.hidden);
+    await h.service('cloud').click(); await h.settled();
+    const restore = h.node('moz-cloud-desk').descendants().find(item => item.tagName === 'BUTTON' && item.textContent === 'Open in machine'); assert(restore); await restore.click(); await h.settled();
+    assert.equal(machine.removed, undefined); assert.equal(machine.source, 'ORIGINAL A'); assert.equal(h.bridge.saved.length, 0); assert.match(h.node('moz-status').textContent, /Cloud state rejected/);
+    await h.station('machine').click(); await h.node('moz-save').click();
+    assert.equal(h.bridge.saved.at(-1).id, a.id); assert.equal(h.bridge.records.get(a.id).sourceText, 'ORIGINAL A');
   } finally { h.cleanup(); }
 });
 

@@ -2,6 +2,7 @@ import { mkdir, mkdtemp } from 'node:fs/promises';
 import { createKeeperServer } from './keeper/server.mjs';
 import { createIngressServer } from './gateway.mjs';
 import { importMigration } from './migration.mjs';
+import { readMozCorpProviderOptions } from './mozcorp-options.mjs';
 process.umask(0o077);
 let keeper, gateway, stopping = false;
 async function shutdown(code = 0) {
@@ -19,7 +20,10 @@ try {
   // process, network capability, tunnel device or remote peer listener is used.
   await mkdir('/data/keeper', { recursive: true, mode: 0o700 });
   const lockDir = await mkdtemp('/run/doodletick-');
-  keeper = await createKeeperServer({ dataDir: '/data/keeper', lockDir });
+  // AI is optional. Invalid provider configuration must not take the Keeper offline.
+  let provider = { apiKey: '', model: 'gpt-5-mini' };
+  try { provider = await readMozCorpProviderOptions(); } catch (error) { console.error(error.message); }
+  keeper = await createKeeperServer({ dataDir: '/data/keeper', lockDir, mozcorpOptions: { provider } });
   gateway = createIngressServer({ keeperPort: keeper.port, control: { status: () => keeper.vpn.status() } });
   await new Promise((resolve, reject) => { gateway.once('error', reject); gateway.listen(8099, '0.0.0.0', resolve); });
   console.log('Doodle Tick is ready through authenticated Home Assistant ingress. Open Web UI to pair browsers directly.');

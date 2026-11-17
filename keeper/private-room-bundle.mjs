@@ -1,3 +1,3 @@
 // Only a fingerprint of the owner's private bundle is distributed with the app.
 // The private station source itself is installed separately into this Keeper.
-export const PRIVATE_ROOM_BUNDLE = Object.freeze({version:1, name:'MozCorp private stations', bytes:1078742, sha256:'1d58e49d834ecae67bb6e50ad634a877d68942c7d2b6168905ab436c5e8dafb9'});
+export const PRIVATE_ROOM_BUNDLE = Object.freeze({version:1, name:'MozCorp private stations', bytes:1083623, sha256:'7930708e04e6afcadb86e0d52f2c24e1ae11dc9f63d46ddd4375180458607dc6'});

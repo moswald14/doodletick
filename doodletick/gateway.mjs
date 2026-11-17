@@ -51,7 +51,8 @@ export function createIngressServer({ keeperPort, control, ingressIP = '172.30.3
         response.on('error', () => res.destroy());
       });
       let bytes = 0;
-      req.on('data', chunk => { bytes += chunk.length; if (bytes > 1200000) { upstream.destroy(); if (!res.headersSent) reply(413, { error: 'Request too large.' }); } });
+      const bodyLimit = req.url === '/api/mozcorp/cloud' ? 6200000 : 1200000;
+      req.on('data', chunk => { bytes += chunk.length; if (bytes > bodyLimit) { upstream.destroy(); if (!res.headersSent) reply(413, { error: 'Request too large.' }); } });
       upstream.setTimeout(30000, () => upstream.destroy());
       upstream.on('error', () => { if (!res.headersSent) reply(502, { error: 'Keeper is restarting. Try again shortly.' }); else res.destroy(); });
       req.on('aborted', () => upstream.destroy());

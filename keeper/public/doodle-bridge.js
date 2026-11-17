@@ -36,7 +36,7 @@
     const s = m.mozcorp;
     if (!s || Array.isArray(s) || s.version !== 1 || s.station !== (m.engine === 'mozcorp-v13' ? 'machine' : 'bug-world')) fail('Invalid MozCorp station snapshot.');
     stationData(s);
-    const allowed = ['version', 'station', 'cloud', 'world', 'controls', 'outputs', 'modules'];
+    const allowed = ['version', 'station', 'cloud', 'world', 'controls', 'outputs', 'modules', 'animal'];
     if (Object.keys(s).some(k => !allowed.includes(k))) fail('Unsupported MozCorp snapshot field.');
     if (m.engine === 'mozcorp-v13') {
       const c = s.cloud;
@@ -51,8 +51,15 @@
         for (const text of Object.values(s[key])) string(text, 250000, 'MozCorp literal field');
       }
       if (s.modules !== undefined && (!Array.isArray(s.modules) || s.modules.length > 50 || s.modules.some(x => !x || typeof x.on !== 'boolean' || !Number.isFinite(x.level) || x.level < 0 || x.level > 100))) fail('Invalid MozCorp patch bay.');
+      if (s.animal !== undefined) {
+        const a = s.animal;
+        if (!a || Array.isArray(a) || a.format !== 'btw-animal-animal-v1' || a.firewall !== 'FINAL STORY // EXIT EXCLUDED' || Object.keys(a).some(key => !['format','animals','rule','rounds','source','final','transcript','firewall'].includes(key)) || !Array.isArray(a.animals) || a.animals.length !== 2 || !Number.isInteger(a.rounds) || a.rounds < 1 || a.rounds > 8) fail('Invalid animal telephone snapshot.');
+        for (const name of a.animals) string(name, 100, 'Animal cast');
+        string(a.rule, 40, 'Animal rule');
+        for (const key of ['source','final','transcript']) string(a[key], 250000, 'Animal telephone text');
+      }
       if (s.world !== undefined) fail('A machine snapshot cannot replace a Bug World.');
-    } else if (s.world === undefined ? m.legacy === undefined : (!s.world || s.world.format !== 'mozcorp-new-bug-world-v2' || !s.world.state || Array.isArray(s.world.state))) fail('Invalid Bug World snapshot.');
+    } else if (s.animal !== undefined || (s.world === undefined ? m.legacy === undefined : (!s.world || s.world.format !== 'mozcorp-new-bug-world-v2' || !s.world.state || Array.isArray(s.world.state)))) fail('Invalid Bug World snapshot.');
     if (m.legacy !== undefined) {
       stationData(m.legacy, 2000000);
       if (m.engine !== 'mozcorp-bug-world-v2' || m.legacy.format !== 'mozcorp-bugworld-package-v1' || !m.legacy.state?.bugWorld) fail('Invalid legacy Bug World package.');

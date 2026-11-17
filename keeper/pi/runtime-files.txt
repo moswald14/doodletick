@@ -145,3 +145,9 @@ public/dvc-scrypt-miner.mjs
 public/scrypt.html
 public/scrypt.css
 public/scrypt-ui.mjs
+mozcorp-world.mjs
+mozcorp-world-validation.mjs
+mozcorp-world-provider.mjs
+mozcorp-world-http.mjs
+public/mozcorp-cloud.mjs
+public/mozcorp-upgrades.mjs

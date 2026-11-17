@@ -1,4 +1,6 @@
-# Doodle Tick Keeper · 0.11b
+# Doodle Tick Keeper · 0.12b
+
+**0.12b brings MozCorp’s cloud savepoints, fictional HOPE-LON feed and upgrade desk into Keeper.** Open **MozCorp → Keeper cloud** or **Upgrade desk**. Shared records live with this Keeper and survive restarts. AI drafts are optional and use a server-side key with explicit instruction-only consent. See [the MozCorp guide](../keeper/MOZCORP.md).
 
 **Shelf Defense** now opens from Keeper's sidebar. The original three-shelf battle game and the shared **Idle shelves** cookie bakery run inside the existing authenticated Web UI. Idle progress is stored in this app's data and included in its cold backups; browser battle saves remain separate. No additional integration, port, helper or API key is required. See [Shelf Defense](../keeper/SHELF-DEFENSE.md).
 
