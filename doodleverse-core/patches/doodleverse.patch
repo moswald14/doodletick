@@ -252,10 +252,10 @@ index e7cd29773137f5c175a51f79eba2bfc3795bbf5c..c85a920e78008df4c1714857699c0e0f
              // Daemonize
              if (daemon(1, 0)) { // don't chdir (1), do close FDs (0)
 diff --git a/src/chainparams.cpp b/src/chainparams.cpp
-index aabbbe368642f6b90d6ac83f188dc291b3673775..c39c893923d0fa2bcb5fc0b06211d31c879279e4 100644
+index aabbbe368642f6b90d6ac83f188dc291b3673775..1750e32875dae601d24a86208912c9c943ed7611 100644
 --- a/src/chainparams.cpp
 +++ b/src/chainparams.cpp
-@@ -1,433 +1,184 @@
+@@ -1,433 +1,186 @@
  // Copyright (c) 2010 Satoshi Nakamoto
  // Copyright (c) 2009-2016 The Bitcoin Core developers
  // Copyright (c) 2022 The Dogecoin Core developers
@@ -264,9 +264,9 @@ index aabbbe368642f6b90d6ac83f188dc291b3673775..c39c893923d0fa2bcb5fc0b06211d31c
  // file COPYING or http://www.opensource.org/licenses/mit-license.php.
  
  #include "chainparams.h"
++#include "arith_uint256.h"
  #include "consensus/merkle.h"
 -
-+#include "pow.h"
  #include "tinyformat.h"
  #include "util.h"
  #include "utilstrencodings.h"
@@ -515,7 +515,9 @@ index aabbbe368642f6b90d6ac83f188dc291b3673775..c39c893923d0fa2bcb5fc0b06211d31c
 +        consensus.hashGenesisBlock = genesis.GetHash();
 +        assert(consensus.hashGenesisBlock == uint256S(hash));
 +        assert(genesis.hashMerkleRoot == uint256S(merkle));
-+        assert(CheckProofOfWork(genesis.GetPoWHash(), genesis.nBits, consensus));
++        const arith_uint256 target = arith_uint256().SetCompact(bits);
++        assert(target > 0 && target <= UintToArith256(consensus.powLimit));
++        assert(UintToArith256(genesis.GetPoWHash()) <= target);
 +    }
  
 -        checkpointData = (CCheckpointData) {
