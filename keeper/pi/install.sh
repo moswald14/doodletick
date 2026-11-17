@@ -62,7 +62,7 @@ fi
 # Copy only the published runtime allowlist, never a local vault or witness key.
 install -d -m 0755 "$stage/release"
 while IFS= read -r file; do
-  [[ $file =~ ^(server\.mjs|private-rooms\.mjs|private-room-bundle\.mjs|shelf-idle-engine\.mjs|shelf-idle-store\.mjs|shelf-idle-http\.mjs|garden-ledger\.mjs|vpn-network\.mjs|rendezvous\.mjs|dvc-node\.mjs|dvc-http\.mjs|package\.json|LICENSE|THIRD_PARTY_NOTICES\.md|public/[a-z0-9.-]+|pi/check\.mjs)$ && $file != *..* ]] || die 'Invalid runtime file list.'
+  [[ $file =~ ^(server\.mjs|private-rooms\.mjs|private-room-bundle\.mjs|shelf-idle-engine\.mjs|shelf-idle-store\.mjs|shelf-idle-http\.mjs|garden-ledger\.mjs|vpn-network\.mjs|rendezvous\.mjs|dvc-node\.mjs|dvc-http\.mjs|dvc-scrypt-protocol\.mjs|dvc-scrypt-node\.mjs|dvc-scrypt-http\.mjs|package\.json|LICENSE|THIRD_PARTY_NOTICES\.md|public/[a-z0-9.-]+|pi/check\.mjs)$ && $file != *..* ]] || die 'Invalid runtime file list.'
   [[ -f $source_dir/$file && ! -L $source_dir/$file ]] || die 'Missing or linked runtime file.'
   install -D -m 0644 "$source_dir/$file" "$stage/release/$file"
 done < "$source_dir/pi/runtime-files.txt"

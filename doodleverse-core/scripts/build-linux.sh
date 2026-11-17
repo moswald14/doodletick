@@ -58,8 +58,11 @@ dvc_prepare() {
   cp "$DVC_SOURCE_DIR/COPYING" "$DVC_STAGE_DIR/licenses/Pepecoin-COPYING"
   cp "$DVC_REPO_ROOT/LICENSE" "$DVC_STAGE_DIR/licenses/build-integration-LICENSE"
   cp "$DVC_CORE_DIR/README-build.md" "$DVC_STAGE_DIR/README-build.md"
+  cp "$DVC_CORE_DIR/README.md" "$DVC_CORE_DIR/chain-manifest.json" "$DVC_STAGE_DIR/"
   mkdir -p "$DVC_STAGE_DIR/source/build-support"
   cp -R "$DVC_CORE_DIR/scripts" "$DVC_CORE_DIR/tests" "$DVC_STAGE_DIR/source/build-support/"
+  mkdir -p "$DVC_STAGE_DIR/source/keeper"
+  cp "$DVC_REPO_ROOT/keeper/dvc-scrypt-node.mjs" "$DVC_REPO_ROOT/keeper/dvc-scrypt-protocol.mjs" "$DVC_STAGE_DIR/source/keeper/"
   cp "$DVC_REPO_ROOT/.github/workflows/doodleverse-core.yml" "$DVC_STAGE_DIR/source/build-support/"
   printf '%s\n' 'Experimental test-chain build. No production founder allocation is configured.' > "$DVC_STAGE_DIR/EXPERIMENTAL.txt"
   printf '%s\n' "Build workspace: $DVC_WORK_DIR" "Upstream: $DVC_UPSTREAM_COMMIT" "Patched tree: $DVC_PATCHED_TREE"
@@ -123,13 +126,30 @@ dvc_build_linux() {
   [[ $# -eq 0 ]] || dvc_fail 'Usage: bash doodleverse-core/scripts/build-linux.sh'
   dvc_prepare linux-x86_64
   [[ "$(uname -m)" == x86_64 ]] || dvc_fail 'This script produces the Linux x86_64 build only.'
-  dvc_require gcc g++ ldd dpkg-query
+  dvc_require gcc g++ ccache ldd dpkg-query node
   dvc_record_tools
+  ccache --version >> "$DVC_STAGE_DIR/validation/build-tools.txt"
   dpkg-query -W -f='${Package}\t${Version}\n' libssl-dev libssl3 libevent-dev libdb5.3++-dev libboost-system-dev libboost-filesystem-dev libboost-chrono-dev libboost-program-options-dev libboost-test-dev libboost-thread-dev > "$DVC_STAGE_DIR/validation/system-libraries.txt"
   (
     cd "$DVC_SOURCE_DIR"
+    # Only compiler objects live here; runtime data and wallets use other paths.
+    export CCACHE_DIR="${CCACHE_DIR:-$DVC_WORK_DIR/compiler-cache}"
+    export CCACHE_CONFIGPATH="$DVC_WORK_DIR/ccache.conf"
+    export CCACHE_BASEDIR="$DVC_SOURCE_DIR"
+    export CCACHE_COMPILERCHECK=content
+    export CCACHE_NAMESPACE="doodleverse-$DVC_UPSTREAM_COMMIT"
+    export CCACHE_MAXSIZE=1G
+    printf '%s\n' 'sloppiness =' 'hard_link = false' > "$CCACHE_CONFIGPATH"
+    mkdir -p "$CCACHE_DIR"
+    ccache --zero-stats
+    trap 'build_status=$?; ccache --show-stats | tee "$DVC_STAGE_DIR/validation/ccache-stats.txt" || true; exit "$build_status"' EXIT
+    export CC='ccache gcc' CXX='ccache g++'
+    # Normalize fresh workspace paths without weakening compiler/header checks.
+    export CFLAGS="-O2 -g -fdebug-prefix-map=$DVC_SOURCE_DIR=. -ffile-prefix-map=$DVC_SOURCE_DIR=."
+    export CXXFLAGS="$CFLAGS"
     ./autogen.sh
-    ./configure --without-gui --enable-wallet --enable-tests --disable-bench --disable-man --disable-zmq --without-miniupnpc --disable-upnp-default --enable-hardening
+    # Wrappers are explicit above; disable the upstream automatic second wrapper.
+    ./configure --disable-ccache --without-gui --enable-wallet --enable-tests --disable-bench --disable-man --disable-zmq --without-miniupnpc --disable-upnp-default --enable-hardening
     make -j"$DVC_JOBS"
     # Pepecoin's original chain/genesis fixtures do not describe this new network.
     # Only the explicit Doodleverse consensus suite is represented as passing.

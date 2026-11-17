@@ -20,6 +20,62 @@ index 34c7811d6f6fca41a7903050a59ee28ea404e512..0f6052cbe00ab67c306946286677105d
  AC_CONFIG_SRCDIR([src/validation.cpp])
  AC_CONFIG_HEADERS([src/config/bitcoin-config.h])
  AC_CONFIG_AUX_DIR([build-aux])
+diff --git a/contrib/doodleverse/README.md b/contrib/doodleverse/README.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..d856336a5aac85bc9909c9ed7629714181d6cbf5
+--- /dev/null
++++ b/contrib/doodleverse/README.md
+@@ -0,0 +1,50 @@
++<!-- SPDX-License-Identifier: GPL-3.0-only -->
++
++# Doodleverse Core development fork
++
++This is an experimental independent Scrypt blockchain derived from Pepecoin
++Core v1.1.0, pinned to commit
++`4fb5a0cd930c0df82c88292e973a7b7cfa06c4e8`. It is development software for
++disposable test networks. Mainnet startup is disabled until a real native DVC
++founder receiving address is reviewed and pinned in consensus. The historical
++Ethereum-style `0x` address is not a native DVC destination.
++
++## Licensing
++
++Existing Bitcoin Core, Dogecoin Core and Pepecoin Core source retains its
++upstream MIT copyright and license notices, including the original root
++`COPYING` file. Those notices must be preserved when distributing the fork.
++
++New Doodleverse changes and the Doodle Tick build integration are published
++under the GNU General Public License, version 3 only (`GPL-3.0-only`). New
++Doodleverse-only files, including `genesis.py` and
++`src/test/doodleverse_tests.cpp`, carry that SPDX identifier. Retained upstream
++MIT notices do not constitute a new MIT grant for the Doodleverse additions.
++
++The complete GPLv3 text is in the Doodle Tick repository's root `LICENSE`
++and is included in its build artifacts. Distributions must include that text
++as well as the applicable upstream notices and corresponding source required
++by their licenses.
++
++## Network record and verification
++
++[chain-manifest.json](chain-manifest.json) records the protocol revision,
++genesis headers and hashes, Scrypt proofs, ports, network identifiers, address
++prefixes, supply limits and founder destination status. `mainnet_ready` is
++deliberately `false`. Testnet and regtest use a disclosed public test key for
++the founder allocation; anyone can spend those test coins. They are not a
++mainnet allocation or a claim of ownership.
++
++Run `python3 contrib/doodleverse/genesis.py --verify` from the source root to
++check the pinned genesis Scrypt proofs. Each genesis has a zero-value
++unspendable output. The exact founder allocation belongs to block 1 and is
++subject to normal coinbase maturity and chain rollback. Direct Scrypt mining
++is supported; AuxPoW is disabled.
++
++After compiling, run the `doodleverse_tests` and `scrypt_tests` Boost suites.
++The new suite checks supply, allocation rejection, maturity, fee limits,
++network isolation and founder UTXO rollback. The complete upstream test suite
++still contains Pepecoin-specific genesis, subsidy, address and AuxPoW
++expectations; its unchanged fixtures do not describe this fork. Source checks
++and genesis proof verification alone do not establish that a native build or
++network test passed.
 diff --git a/contrib/doodleverse/chain-manifest.json b/contrib/doodleverse/chain-manifest.json
 new file mode 100644
 index 0000000000000000000000000000000000000000..cedf1e1d69e4abefee2cfa131c3cda4164dd7641
@@ -121,16 +177,18 @@ index 0000000000000000000000000000000000000000..cedf1e1d69e4abefee2cfa131c3cda41
 +}
 diff --git a/contrib/doodleverse/genesis.py b/contrib/doodleverse/genesis.py
 new file mode 100644
-index 0000000000000000000000000000000000000000..02a7025871685e98d30888bb6acf2e081880615c
+index 0000000000000000000000000000000000000000..199dc1788cffb6dfb462e6e7669b02bd6088d56f
 --- /dev/null
 +++ b/contrib/doodleverse/genesis.py
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,60 @@
 +#!/usr/bin/env python3
++# SPDX-License-Identifier: GPL-3.0-only
 +"""Reproduce Doodleverse's zero-value genesis blocks using Scrypt(1024,1,1).
 +
 +This searches disposable, public header nonces; it does not create wallet keys.
 +Copyright (c) 2026 The Doodleverse developers
-+Distributed under the MIT software license; see COPYING.
++See the GPLv3 text in the Doodle Tick repository's root LICENSE and in the
++accompanying distribution. Upstream MIT notices remain unchanged.
 +"""
 +import argparse
 +import hashlib
@@ -183,8 +241,29 @@ index 0000000000000000000000000000000000000000..02a7025871685e98d30888bb6acf2e08
 +                                        ("test", 1794873660, 0x1f00ffff),
 +                                        ("regtest", 1794873720, 0x207fffff))]
 +    print(json.dumps(result, indent=2))
+diff --git a/src/Makefile.am b/src/Makefile.am
+index 4c3c5a0980794368322d8ca9830ae9f90284e1f1..f93182b742b656c537380bc730c5dfd54e1eaf93 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -390,12 +390,15 @@ if TARGET_WINDOWS
+ pepecoind_SOURCES += bitcoind-res.rc
+ endif
+ 
++# Wallet CMerkleTx helpers live in common's auxpow.o even when AuxPoW mining
++# is disabled. Link wallet before common, as the Qt executable already does,
++# so static archive extraction does not depend on a server AuxPoW reference.
+ pepecoind_LDADD = \
+   $(LIBPEPECOIN_SERVER) \
++  $(LIBPEPECOIN_WALLET) \
+   $(LIBPEPECOIN_COMMON) \
+   $(LIBUNIVALUE) \
+   $(LIBPEPECOIN_UTIL) \
+-  $(LIBPEPECOIN_WALLET) \
+   $(LIBPEPECOIN_ZMQ) \
+   $(LIBPEPECOIN_CONSENSUS) \
+   $(LIBPEPECOIN_CRYPTO) \
 diff --git a/src/Makefile.test.include b/src/Makefile.test.include
-index 6c586996e2cb004ba5516076c72a388b7c6a6d4a..a7e6dd82dcf6072f4d6aae28e08480c8ef8d4d9e 100644
+index 6c586996e2cb004ba5516076c72a388b7c6a6d4a..9a9dc2acdb5149f8b0c373696c5ee83a69708ee2 100644
 --- a/src/Makefile.test.include
 +++ b/src/Makefile.test.include
 @@ -97,6 +97,7 @@ BITCOIN_TESTS =\
@@ -195,6 +274,25 @@ index 6c586996e2cb004ba5516076c72a388b7c6a6d4a..a7e6dd82dcf6072f4d6aae28e08480c8
    test/getarg_tests.cpp \
    test/hash_tests.cpp \
    test/key_tests.cpp \
+@@ -152,12 +153,15 @@ endif
+ 
+ test_test_pepecoin_SOURCES = $(BITCOIN_TESTS) $(JSON_TEST_FILES) $(RAW_TEST_FILES)
+ test_test_pepecoin_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) -I$(builddir)/test/ $(TESTDEFS) $(EVENT_CFLAGS)
+-test_test_pepecoin_LDADD = $(LIBPEPECOIN_SERVER) $(LIBPEPECOIN_CLI) $(LIBPEPECOIN_COMMON) $(LIBPEPECOIN_UTIL) $(LIBPEPECOIN_CONSENSUS) $(LIBPEPECOIN_CRYPTO) $(LIBUNIVALUE) $(LIBLEVELDB) $(LIBMEMENV) \
+-  $(BOOST_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LIBSECP256K1) $(EVENT_LIBS)
+-test_test_pepecoin_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
++test_test_pepecoin_LDADD = $(LIBPEPECOIN_SERVER)
+ if ENABLE_WALLET
+ test_test_pepecoin_LDADD += $(LIBPEPECOIN_WALLET)
+ endif
++# Keep wallet before common: CMerkleTx must link even when a selected set of
++# test objects has no AuxPoW reference to pull in common's auxpow.o earlier.
++test_test_pepecoin_LDADD += $(LIBPEPECOIN_CLI) $(LIBPEPECOIN_COMMON) $(LIBPEPECOIN_UTIL) $(LIBPEPECOIN_CONSENSUS) $(LIBPEPECOIN_CRYPTO) $(LIBUNIVALUE) $(LIBLEVELDB) $(LIBMEMENV) \
++  $(BOOST_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LIBSECP256K1) $(EVENT_LIBS)
++test_test_pepecoin_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+ 
+ test_test_pepecoin_LDADD += $(LIBPEPECOIN_CONSENSUS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS)
+ test_test_pepecoin_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) -static
 diff --git a/src/amount.cpp b/src/amount.cpp
 index 702e65b56c1b58411810e2a7c45d6ff48c50bb97..b1874958c169eed047506bc3cc05b9daa2f9a217 100644
 --- a/src/amount.cpp
@@ -1225,13 +1323,14 @@ index f8272d846e8939c5cbf1479fdbbf6e49c04ba05f..ab836ba45b9832750004b20d93377908
  static UniValue AuxMiningCreateBlock(const CScript& scriptPubKey)
 diff --git a/src/test/doodleverse_tests.cpp b/src/test/doodleverse_tests.cpp
 new file mode 100644
-index 0000000000000000000000000000000000000000..70959be62d717fb01b9a76f223e0197bce449cee
+index 0000000000000000000000000000000000000000..b6adc5b0b647e60a9f554abe8f317468a371bf11
 --- /dev/null
 +++ b/src/test/doodleverse_tests.cpp
-@@ -0,0 +1,237 @@
+@@ -0,0 +1,242 @@
 +// Copyright (c) 2026 The Doodleverse developers
-+// Distributed under the MIT software license, see the accompanying
-+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
++// SPDX-License-Identifier: GPL-3.0-only
++// See the GPLv3 text in the Doodle Tick repository's root LICENSE and in
++// the accompanying distribution. Upstream MIT notices remain unchanged.
 +
 +#include "arith_uint256.h"
 +#include "chainparams.h"
@@ -1397,6 +1496,10 @@ index 0000000000000000000000000000000000000000..70959be62d717fb01b9a76f223e0197b
 +    while (!CheckProofOfWork(block.GetPoWHash(), block.nBits, params)) ++block.nNonce;
 +    BOOST_CHECK(CheckAuxPowProofOfWork(block, params));
 +    block.SetChainId(0x003f); // Pepecoin's chain ID
++    // Changing the version also changes its Scrypt hash. Re-solve so rejection
++    // proves chain-ID isolation rather than merely insufficient work.
++    while (!CheckProofOfWork(block.GetPoWHash(), block.nBits, params)) ++block.nNonce;
++    BOOST_REQUIRE(CheckProofOfWork(block.GetPoWHash(), block.nBits, params));
 +    BOOST_CHECK(!CheckAuxPowProofOfWork(block, params));
 +    block.SetChainId(params.nAuxpowChainId);
 +    block.SetAuxpowFlag(true);

@@ -187,8 +187,10 @@ def main():
             result = subprocess.run([cli, '-regtest', '-datadir=' + str(first.directory), '-rpcport=' + str(first.rpc_port), 'getblockcount'], capture_output=True, text=True, check=True)
             assert int(result.stdout) == 1
             assert first.rpc('getbalance') == 0, 'Immature coinbase is spendable'
+            bridge_check = Path(__file__).with_name('bridge-functional.mjs')
+            subprocess.run(['node', str(bridge_check), str(first.rpc_port), str(first.directory / 'regtest' / '.cookie'), address], check=True)
             first.rpc('generatetoaddress', 31, address)
-            wait_for(lambda: second.rpc('getblockcount') == 32)
+            wait_for(lambda: second.rpc('getblockcount') == first.rpc('getblockcount'))
             assert first.rpc('getbalance') >= 50
             first.rpc('settxfee', 0.01)
             payment = first.rpc('sendtoaddress', receiver, 7)
@@ -211,7 +213,7 @@ def main():
             print(json.dumps({'passed': True, 'network': 'disposable regtest', 'height': first.rpc('getblockcount'),
                               'checks': ['mainnet guard', 'isolated genesis', 'two peers', 'Scrypt proof', 'founder output',
                                          'overpayment rejection', 'founder redirection rejection', 'maturity', 'CLI',
-                                         'transfer', 'reorganization', 'restart persistence']}))
+                                         'Keeper mining bridge', 'transfer', 'reorganization', 'restart persistence']}))
         finally:
             first.stop()
             second.stop()

@@ -11,9 +11,12 @@ import { createDvcHttpHandler } from './dvc-http.mjs';
 import { KEEPER_TIME_FORMAT, validTimeNonce } from './public/keeper-clock.mjs';
 import { createShelfIdleStore } from './shelf-idle-store.mjs';
 import { createShelfIdleHttpHandler } from './shelf-idle-http.mjs';
+import { createScryptBridge, scryptBridgeFromEnvironment } from './dvc-scrypt-node.mjs';
+import { createScryptHttpHandler } from './dvc-scrypt-http.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
-export async function createKeeperServer({ dataDir = path.join(root, '.doodletick'), lockDir = dataDir, port = 4317, vpnOptions, gardenOptions, privateRoomOptions } = {}) {
+export async function createKeeperServer({ dataDir = path.join(root, '.doodletick'), lockDir = dataDir, port = 4317, vpnOptions, gardenOptions, privateRoomOptions, scryptOptions } = {}) {
+  const handleScrypt = createScryptHttpHandler({ bridge: scryptOptions ? createScryptBridge(scryptOptions) : scryptBridgeFromEnvironment() });
   await mkdir(dataDir, { recursive: true });
   // A managed Linux service keeps its lock in systemd's temporary runtime
   // directory. Its private identity and receipt ledger remain in dataDir.
@@ -64,6 +67,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
   for(const file of ['mozcorp-ui.mjs','mozcorp.css','creative-score-player.mjs'])allowedFiles.add(file);
   for (const file of ['shelfdefense.html', 'shelfdefense.css', 'shelfdefense-art.js', 'shelfdefense-waves.js', 'shelfdefense-audio.js', 'shelfdefense-game.js', 'shelfdefense-app.js', 'shelfdefense-wave-lab.js']) allowedFiles.add(file);
   for (const file of ['shelf-idle.html', 'shelf-idle.css', 'shelf-idle-card.js', 'shelf-idle-client.mjs', 'shelf-idle.mjs']) allowedFiles.add(file);
+  for (const file of ['scrypt.html', 'scrypt.css', 'scrypt-ui.mjs', 'dvc-scrypt-miner.mjs']) allowedFiles.add(file);
   const server = http.createServer(async (req, res) => {
     const address = server.address();
     const hostnames = [`127.0.0.1:${address.port}`, `localhost:${address.port}`];
@@ -78,6 +82,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
       const url = new URL(req.url, 'http://' + req.headers.host);
       if (await handlePrivateRooms(req,res,url)) return;
       if (await handleShelfIdle(req,res,url)) return;
+      if (await handleScrypt(req,res,url)) return;
       if (await handleDvc(req, res, url)) return;
       if (await vpn.handleLocal(req, res, url)) return;
       if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.11b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt(), nativeCoin: { available: !dvcUnavailable, error: dvcUnavailable ? 'DVC_STORAGE' : null } });

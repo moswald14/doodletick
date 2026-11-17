@@ -28,6 +28,8 @@ jobs:
     name: Linux wallet and isolated regtest checks
     runs-on: ubuntu-22.04
     timeout-minutes: 40
+    env:
+      CCACHE_DIR: ${{ runner.temp }}/doodleverse-ccache
     steps:
       - name: Check out build integration
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -36,9 +38,38 @@ jobs:
       - name: Install Linux compiler and distribution libraries
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends -y build-essential autoconf automake libtool pkg-config python3 git ca-certificates libssl-dev libevent-dev libdb5.3++-dev libboost-system-dev libboost-filesystem-dev libboost-chrono-dev libboost-program-options-dev libboost-test-dev libboost-thread-dev
+          sudo apt-get install --no-install-recommends -y build-essential ccache autoconf automake libtool pkg-config python3 git ca-certificates libssl-dev libevent-dev libdb5.3++-dev libboost-system-dev libboost-filesystem-dev libboost-chrono-dev libboost-program-options-dev libboost-test-dev libboost-thread-dev
+      - name: Identify the compiler cache scope
+        id: cache_identity
+        run: |
+          source_commit="$(python3 -c "import re; from pathlib import Path; print(re.search(r\"^readonly DVC_UPSTREAM_COMMIT='([0-9a-f]{40})'$\", Path('doodleverse-core/scripts/build-linux.sh').read_text(), re.M)[1])")"
+          tool_identity="$( { gcc --version; g++ --version; ccache --version; dpkg-query -W -f='${Package}\t${Version}\n' gcc g++ libc6-dev libstdc++-11-dev libssl-dev libevent-dev libdb5.3++-dev 'libboost*-dev'; } | sha256sum | cut -d ' ' -f 1)"
+          printf 'scope=dvc-ccache-v1-ubuntu22-x86_64-%s-%s\n' "$source_commit" "$tool_identity" >> "$GITHUB_OUTPUT"
+      - name: Restore compiler objects only
+        id: compiler_cache
+        continue-on-error: true
+        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ${{ steps.cache_identity.outputs.scope }}-${{ hashFiles('doodleverse-core/patches/doodleverse.patch', 'doodleverse-core/scripts/build-linux.sh') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            ${{ steps.cache_identity.outputs.scope }}-${{ hashFiles('doodleverse-core/patches/doodleverse.patch', 'doodleverse-core/scripts/build-linux.sh') }}-
+            ${{ steps.cache_identity.outputs.scope }}-
+      - name: Set up the Keeper bridge test runtime
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
       - name: Build fixed source and test disposable regtest
+        id: build
         run: bash doodleverse-core/scripts/build-linux.sh 2>&1 | tee doodleverse-core/build-linux.log
+      - name: Save compiler objects after the build attempt
+        if: ${{ always() && !cancelled() && steps.build.outcome != 'skipped' && steps.cache_identity.outcome == 'success' && steps.compiler_cache.outputs.cache-hit != 'true' }}
+        continue-on-error: true
+        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ${{ steps.cache_identity.outputs.scope }}-${{ hashFiles('doodleverse-core/patches/doodleverse.patch', 'doodleverse-core/scripts/build-linux.sh') }}-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Preserve the tested Linux package and corresponding source
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
