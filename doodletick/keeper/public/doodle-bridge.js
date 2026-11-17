@@ -12,6 +12,52 @@
     if (typeof value !== 'string' || value.length > limit) fail('Invalid ' + label + '.');
     return value;
   }
+  const mozcorpEngine = engine => ['mozcorp-v13', 'mozcorp-bug-world-v2'].includes(engine);
+  function stationData(value, limit = 4000000) {
+    let count = 0;
+    const visit = (v, depth) => {
+      if (++count > 100000 || depth > 20) fail('MozCorp snapshot is too complex.');
+      if (v === null || typeof v === 'boolean') return;
+      if (typeof v === 'string') return string(v, 250000, 'MozCorp text');
+      if (typeof v === 'number' && Number.isFinite(v)) return;
+      if (!v || typeof v !== 'object') fail('MozCorp snapshots contain JSON data only.');
+      if (Array.isArray(v)) { if (v.length > 5000) fail('MozCorp array is too large.'); }
+      else if (Object.prototype.toString.call(v) !== '[object Object]') fail('Invalid MozCorp snapshot object.');
+      for (const [key, item] of Object.entries(v)) {
+        if (['__proto__', 'constructor', 'prototype'].includes(key)) fail('Unsafe project property.');
+        visit(item, depth + 1);
+      }
+    };
+    visit(value, 0);
+    if (new TextEncoder().encode(JSON.stringify(value)).length > limit) fail('MozCorp snapshot exceeds its size limit.');
+  }
+  function validateStation(m) {
+    if (!mozcorpEngine(m.engine)) { if (m.mozcorp !== undefined || m.legacy !== undefined) fail('A MozCorp snapshot needs its original engine.'); return; }
+    const s = m.mozcorp;
+    if (!s || Array.isArray(s) || s.version !== 1 || s.station !== (m.engine === 'mozcorp-v13' ? 'machine' : 'bug-world')) fail('Invalid MozCorp station snapshot.');
+    stationData(s);
+    const allowed = ['version', 'station', 'cloud', 'world', 'controls', 'outputs', 'modules'];
+    if (Object.keys(s).some(k => !allowed.includes(k))) fail('Unsupported MozCorp snapshot field.');
+    if (m.engine === 'mozcorp-v13') {
+      const c = s.cloud;
+      if (!c || c.format !== 'btw-cloud-state-v1' || c.firewall !== 'FINAL STORY // EXIT EXCLUDED' || !MODES.includes(c.sourceHandling)) fail('Invalid MozCorp cloud snapshot.');
+      string(c.seed, 250000, 'MozCorp source');
+      if (typeof c.savedAt !== 'string' || c.savedAt.length > 80 || !Number.isFinite(Date.parse(c.savedAt)) || !['unhinged', 'cute but wrong', 'dead serious', 'cosmic bureaucratic', 'Saturday cartoon'].includes(c.tone) || !['interesting', 'majority', 'chaos'].includes(c.consensus) || !['open', 'gurl', 'manual'].includes(c.characterLens)) fail('Invalid MozCorp cloud settings.');
+      for (const [key, min, max] of [['calls', 1, 100], ['damage', 0, 100], ['brains', 3, 12], ['gens', 1, 12]]) if (!Number.isInteger(c[key]) || c[key] < min || c[key] > max) fail('Invalid MozCorp control.');
+      if (!c.preStory || Array.isArray(c.preStory)) fail('Invalid MozCorp pre-story outputs.');
+      for (const key of ['word', 'character', 'hive']) string(c.preStory[key], 250000, 'MozCorp pre-story output');
+      for (const key of ['controls', 'outputs']) if (s[key] !== undefined) {
+        if (!s[key] || Array.isArray(s[key]) || Object.keys(s[key]).length > 100) fail('Invalid MozCorp literal fields.');
+        for (const text of Object.values(s[key])) string(text, 250000, 'MozCorp literal field');
+      }
+      if (s.modules !== undefined && (!Array.isArray(s.modules) || s.modules.length > 50 || s.modules.some(x => !x || typeof x.on !== 'boolean' || !Number.isFinite(x.level) || x.level < 0 || x.level > 100))) fail('Invalid MozCorp patch bay.');
+      if (s.world !== undefined) fail('A machine snapshot cannot replace a Bug World.');
+    } else if (s.world === undefined ? m.legacy === undefined : (!s.world || s.world.format !== 'mozcorp-new-bug-world-v2' || !s.world.state || Array.isArray(s.world.state))) fail('Invalid Bug World snapshot.');
+    if (m.legacy !== undefined) {
+      stationData(m.legacy, 2000000);
+      if (m.engine !== 'mozcorp-bug-world-v2' || m.legacy.format !== 'mozcorp-bugworld-package-v1' || !m.legacy.state?.bugWorld) fail('Invalid legacy Bug World package.');
+    }
+  }
   function validate(value) {
     if (!value || value.kind !== KIND || value.version !== 1) fail('Choose a Telephone World project.');
     if (typeof value.id !== 'string' || !/^[a-zA-Z0-9_-]{8,80}$/.test(value.id)) fail('Invalid project identifier.');
@@ -21,6 +67,7 @@
     for (const field of ['sourceText', 'storyText', 'poemText', 'characterText', 'masterText', 'asciiText']) string(value[field], 250000, field);
     if (!value.machine || typeof value.machine !== 'object' || Array.isArray(value.machine)) fail('Invalid machine snapshot.');
     const m = value.machine;
+    validateStation(m);
     if (m.controls !== undefined) {
       if (!Array.isArray(m.controls) || m.controls.length > 400) fail('Too many machine controls.');
       for (const c of m.controls) {
@@ -47,7 +94,7 @@
     for (const field of ['lastSignal', 'lastPreHive', 'rootHumanSeed']) if (state[field] !== undefined) string(state[field], 250000, field);
     if (state.reiterationCount !== undefined && (!Number.isSafeInteger(state.reiterationCount) || state.reiterationCount < 0 || state.reiterationCount > 10000)) fail('Invalid saved reiteration count.');
     if (state.modules !== undefined) {
-      if (!Array.isArray(state.modules) || state.modules.length > 13) fail('Invalid saved module controls.');
+      if (!Array.isArray(state.modules) || state.modules.length > 15) fail('Invalid saved module controls.');
       for (const mod of state.modules) if (!mod || Array.isArray(mod) || typeof mod.on !== 'boolean' || typeof mod.level !== 'number' || !Number.isFinite(mod.level) || mod.level < 0 || mod.level > 100) fail('Invalid saved module controls.');
     }
     if (state.lastStoryContext !== undefined && state.lastStoryContext !== null) {
@@ -93,7 +140,7 @@
     const db = await open();
     return new Promise((resolve, reject) => {
       const request = db.transaction('projects').objectStore('projects').getAll();
-      request.onsuccess = () => { try { resolve(request.result.map(validate).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).map(p => ({ id: p.id, title: p.title, updatedAt: p.updatedAt, sourceMode: p.sourceMode, hasSoundtrack: !!p.soundtrack, revision: p.revision }))); } catch (error) { reject(error); } };
+      request.onsuccess = () => { try { resolve(request.result.map(validate).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).map(p => ({ id: p.id, title: p.title, updatedAt: p.updatedAt, sourceMode: p.sourceMode, hasSoundtrack: !!p.soundtrack, revision: p.revision, engine: p.machine.engine || 'telephone-v2', station: p.machine.mozcorp?.station || 'telephone' }))); } catch (error) { reject(error); } };
       request.onerror = () => reject(new Error('Could not read the project shelf.'));
     });
   }
@@ -123,7 +170,8 @@
   }
   function text(value) {
     const p = validate(value);
-    return [['TITLE', p.title], ['SOURCE HANDLING', p.sourceMode], ['ORIGINAL INPUT', p.sourceText], ['PRESERVED MASTER', p.masterText], ['CHARACTER', p.characterText], ['POEM', p.poemText], ['MACHINE STORY', p.storyText], ['ASCII', p.asciiText]].map(([label, content]) => label + '\n' + content).join('\n\n');
+    const output=id=>p.machine.mozcorp?.outputs?.[id]??p.machine.outputs?.find(x=>x.id===id)?.text??'';
+    return [['TITLE', p.title], ['SOURCE HANDLING', p.sourceMode], ['ORIGINAL INPUT', p.sourceText], ['PRESERVED MASTER', p.masterText], ['CHARACTER', p.characterText], ['POEM', p.poemText], ['MACHINE STORY', p.storyText], ['ASCII', p.asciiText]].concat([['CREDITS',output('creditsOut')],['BLOOPER REEL',output('blooperOut')]].filter(([,content])=>content!=='')).map(([label, content]) => label + '\n' + content).join('\n\n');
   }
   function download(value) {
     const p = validate(value), url = URL.createObjectURL(new Blob([JSON.stringify(p, null, 2)], { type: 'application/json' }));
@@ -131,10 +179,14 @@
     setTimeout(() => URL.revokeObjectURL(url), 30000);
   }
   function watch(callback) { listeners.add(callback); return () => listeners.delete(callback); }
+  function route(record) {
+    const p = validate(record);
+    return mozcorpEngine(p.machine.engine) ? './?mozcorp=' + encodeURIComponent(p.id) + '#mozcorp' : './telephone.html?project=' + encodeURIComponent(p.id);
+  }
   if (typeof root.BroadcastChannel === 'function' && typeof document !== 'undefined') {
     channel = new root.BroadcastChannel('doodleverse-creative-projects'); channel.onmessage = event => { if (typeof event.data === 'string') announce(event.data); };
   }
-  const api = { KIND, MAX_BYTES, MAX_PROJECTS, validate, make, get, list, save, watch, text, download };
+  const api = { KIND, MAX_BYTES, MAX_PROJECTS, validate, make, get, list, save, watch, text, download, route };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.DoodleBridge = api;
 })(globalThis);

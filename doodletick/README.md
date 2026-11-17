@@ -1,4 +1,6 @@
-# Doodle Tick Keeper · 0.9.3b
+# Doodle Tick Keeper · 0.10b
+
+MozCorp private rooms use a separately supplied, verified bundle. Install it from the app’s MozCorp page after this update. The public app does not include private station pages or site credentials.
 
 Creator arcade, hourly color clock, encrypted vault, mushroom garden and native Doodleverse Coin for Home Assistant OS (aarch64 and amd64).
 

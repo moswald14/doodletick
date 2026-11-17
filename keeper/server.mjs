@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { createPrivateRoomStore, createPrivateRoomHandler } from './private-rooms.mjs';
 import { createGardenLedger } from './garden-ledger.mjs';
 import { readFile, writeFile, mkdir, appendFile, open } from 'node:fs/promises';
 import path from 'node:path';
@@ -10,7 +11,7 @@ import { createDvcHttpHandler } from './dvc-http.mjs';
 import { KEEPER_TIME_FORMAT, validTimeNonce } from './public/keeper-clock.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
-export async function createKeeperServer({ dataDir = path.join(root, '.doodletick'), lockDir = dataDir, port = 4317, vpnOptions, gardenOptions } = {}) {
+export async function createKeeperServer({ dataDir = path.join(root, '.doodletick'), lockDir = dataDir, port = 4317, vpnOptions, gardenOptions, privateRoomOptions } = {}) {
   await mkdir(dataDir, { recursive: true });
   // A managed Linux service keeps its lock in systemd's temporary runtime
   // directory. Its private identity and receipt ledger remain in dataDir.
@@ -40,6 +41,8 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
   } catch (e) { await vpn?.close(); await garden?.idle(); await dvc?.close(); await lock.close(); await unlink(lockPath); throw e; }
   const unavailable = () => { throw Object.assign(new Error('DVC history needs recovery.'), { code: 'DVC_STORAGE' }); };
   const handleDvc = createDvcHttpHandler({ node: dvc || Object.fromEntries(['status', 'account', 'createJob', 'submitBlock', 'submitTransfer', 'getSegment', 'locate', 'locators', 'ingestSegment', 'getMempool'].map(name => [name, unavailable])), mutationLimit: 120 });
+  const privateRooms = await createPrivateRoomStore({...privateRoomOptions, dataDir});
+  const handlePrivateRooms = createPrivateRoomHandler({store:privateRooms});
   const types = { '.txt': 'text/plain; charset=utf-8', '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json' };
   const allowedFiles = new Set(['clock-wheel.mjs', 'index.html', 'app.mjs', 'core.mjs', 'style.css', 'logo.svg', 'files.css', 'files-ui.mjs', 'licenses.mjs', 'archive.mjs', 'file-store.mjs', 'peers.mjs', 'manifest.webmanifest', 'sw.mjs', 'theme.mjs', 'theme.css']);
   for (const file of ['spirograph.mjs', 'spirograph-auth.mjs', 'vpn-description.mjs', 'vpn-transport.mjs', 'vpn-ui.mjs', 'arcade.css', 'arcade-ui.mjs', 'arcade-canvas.mjs', 'arcade-room.mjs', 'arcade-store.mjs', 'arcade-link.mjs', 'game-engine.mjs', 'workshop.mjs']) allowedFiles.add(file);
@@ -50,8 +53,11 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
   for (const file of ['weather.mjs', 'weather-ui.mjs', 'weather.css', 'background-music.mjs', 'background-music-ui.mjs', 'background-music.css']) allowedFiles.add(file);
   for (const file of ['dvc-core.mjs', 'dvc-miner.mjs', 'dvc-wallet.mjs', 'dvc-ui.mjs', 'dvc-sync.mjs', 'dvc-peer-ui.mjs', 'dvc.css', 'dvc-console.mjs', 'dvc-console.css']) allowedFiles.add(file);
   for (const file of ['keeper-clock.mjs', 'sleep-ui.mjs', 'sleep-audio.mjs', 'sleep-mix.mjs', 'sleep-worker.mjs', 'sleep.css']) allowedFiles.add(file);
+  for (const file of ['phrase-core.mjs', 'phrase-store.mjs', 'phrase-ui.mjs', 'phrase.css', 'phrase-dictionary.json', 'phrase-attestations.json']) allowedFiles.add(file);
+  for (const file of ['phrase-notices.mjs', 'phrase-notices.txt']) allowedFiles.add(file);
   for (const file of ['jazz.html', 'jazz.css', 'jazz-core.mjs', 'jazz-player.mjs', 'jazz-worklet.mjs']) allowedFiles.add(file);
-  for (const file of ['doodle-bridge.js', 'telephone.html', 'telephone.css', 'telephone-1.js', 'telephone-2.js', 'telephone-session.js', 'telephone-integration.css', 'telephone-rhyme.html', 'telephone-rhyme.css', 'telephone-rhyme-1.js', 'telephone-keeper.mjs', 'telephone-keeper.css', 'studio.html', 'studio-app.js', 'studio-worker.js', 'studio.css', 'studio-classic.html', 'studio-notices.txt']) allowedFiles.add(file);
+  for (const file of ['doodle-bridge.js', 'telephone.html', 'telephone.css', 'telephone-1.js', 'telephone-2.js', 'telephone-session.js', 'telephone-post-roll.js', 'telephone-integration.css', 'telephone-rhyme.html', 'telephone-rhyme.css', 'telephone-rhyme-1.js', 'telephone-keeper.mjs', 'telephone-keeper.css', 'studio.html', 'studio-app.js', 'studio-worker.js', 'studio.css', 'studio-classic.html', 'studio-notices.txt']) allowedFiles.add(file);
+  for(const file of ['mozcorp-ui.mjs','mozcorp.css','creative-score-player.mjs'])allowedFiles.add(file);
   const server = http.createServer(async (req, res) => {
     const address = server.address();
     const hostnames = [`127.0.0.1:${address.port}`, `localhost:${address.port}`];
@@ -64,9 +70,10 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
     if (req.headers.origin && !hostnames.some(h => req.headers.origin === 'http://' + h)) return send(403, { error: 'Origin not allowed.' });
     try {
       const url = new URL(req.url, 'http://' + req.headers.host);
+      if (await handlePrivateRooms(req,res,url)) return;
       if (await handleDvc(req, res, url)) return;
       if (await vpn.handleLocal(req, res, url)) return;
-      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.9.3b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt(), nativeCoin: { available: !dvcUnavailable, error: dvcUnavailable ? 'DVC_STORAGE' : null } });
+      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.10b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt(), nativeCoin: { available: !dvcUnavailable, error: dvcUnavailable ? 'DVC_STORAGE' : null } });
       if (req.method === 'GET' && url.pathname === '/api/time') {
         const receivedAt = Date.now(), nonce = url.searchParams.get('nonce');
         if (!validTimeNonce(nonce) || url.searchParams.getAll('nonce').length !== 1) return send(400, { error: 'A fresh clock challenge is required.' });
@@ -97,7 +104,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
     } catch (e) { return send(e instanceof SyntaxError ? 400 : 500, { error: e instanceof SyntaxError ? 'Invalid JSON.' : 'The local witness could not complete this request.' }); }
   });
   await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); }).catch(async e => { await vpn.close(); await dvc?.close(); await garden.idle(); await lock.close(); await unlink(lockPath); throw e; });
-  const close = async () => { await vpn.close(); await new Promise(resolve => server.close(resolve)); await queue; await garden.idle(); await dvc?.close(); await lock.close(); await unlink(lockPath); };
+  const close = async () => { await vpn.close(); await new Promise(resolve => server.close(resolve)); await queue; await privateRooms.idle(); await garden.idle(); await dvc?.close(); await lock.close(); await unlink(lockPath); };
   return { server, close, vpn, dvc, port: server.address().port };
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

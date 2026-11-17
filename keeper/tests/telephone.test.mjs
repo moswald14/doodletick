@@ -220,7 +220,7 @@ test('saved module switches, numeric levels, narrative state and DOM identifiers
   }
   const switchType = fixture(); switchType.machine.state.modules = [{ on: 'true', level: 50 }];
   assert.throws(() => B.validate(switchType), /module controls/);
-  const modules = fixture(); modules.machine.state.modules = Array.from({ length: 14 }, () => ({ on: true, level: 50 }));
+  const modules = fixture(); modules.machine.state.modules = Array.from({ length: 16 }, () => ({ on: true, level: 50 }));
   assert.throws(() => B.validate(modules), /module controls/);
   const state = fixture(); state.machine.state.lastSignal = { toString: null };
   assert.throws(() => B.validate(state), /lastSignal/);
@@ -315,7 +315,7 @@ test('an edit during an awaited Save remains dirty and guarded until a subsequen
 });
 
 const assets = ['doodle-bridge.js', 'telephone.html', 'telephone.css', 'telephone-1.js', 'telephone-2.js',
-  'telephone-session.js', 'telephone-integration.css', 'telephone-rhyme.html', 'telephone-rhyme.css',
+  'telephone-session.js', 'telephone-post-roll.js', 'telephone-integration.css', 'telephone-rhyme.html', 'telephone-rhyme.css',
   'telephone-rhyme-1.js', 'telephone-keeper.mjs', 'telephone-keeper.css', 'studio.html', 'studio-app.js',
   'studio-worker.js', 'studio.css'];
 

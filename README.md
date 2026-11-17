@@ -1,8 +1,20 @@
-# Doodle Tick · 0.9.3b
+# Doodle Tick · 0.10b
 
 A creator arcade inspired by the loops of a telephone cord: an hourly color clock, Dot Wave sound mushrooms, an encrypted vault and direct peer connections. Run a Keeper on your computer or Home Assistant.
 
 [![Add Doodle Tick to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fmoswald14%2Fdoodletick)
+
+## Private MozCorp rooms
+
+**0.10b adds a private station bundle to Keeper.** Install your matching private bundle in **MozCorp**, then open the machine, Bug World, EVERYWHEN, Mozville and the related desks. Machine and Bug World projects share the creative shelf with Dot Studio. Legacy Bug World packages restore through their actual engine, preserve the original package as data and wait for manual play.
+
+The public app includes a generic loader and the approved bundle fingerprint. Private station pages are supplied separately and run in isolated frames. Story saves exclude EVERYWHEN personal receipts and Integrity notebooks. Shared cloud saves, HOPE-LON posts and the upgrade proposal desk continue at the original private site; follow the explicit link there. No login or private site permissions are copied into Keeper. Read [the MozCorp guide](keeper/MOZCORP.md).
+
+## Phrase lab
+
+**0.10b also adds a resumable word-and-phrase search with a Keeper posting queue.** Open **Phrase lab**, choose one to eight words and Friendly mode, and press **Start / resume search**. Known phrases first checks dictionary-attested expressions before single words. Literal brute force lazily enumerates ordered combinations with repeats and filters exact dictionary matches; the complete search is astronomically large, and meaningful new sentences can be missed.
+
+The pile and checkpoints are stored unencrypted in this browser. **Post queue to Keeper** seals up to 100 phrases at a time into the unlocked encrypted vault, preserves your open draft, and recovers committed batches without duplicate seals. A locked or full vault leaves pending work saved. Hiding, leaving or closing the page pauses work. See [the Phrase lab guide](keeper/PHRASE-LAB.md) and [dictionary sources](keeper/PHRASE-SOURCES.md).
 
 ## Telephone World and Dot Studio
 

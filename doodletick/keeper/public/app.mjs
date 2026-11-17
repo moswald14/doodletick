@@ -7,9 +7,12 @@ import { createDvcPeerUI } from './dvc-peer-ui.mjs';
 import { createClockWheel } from './clock-wheel.mjs';
 import { createWeatherUI } from './weather-ui.mjs';
 import { createBackgroundMusicUI } from './background-music-ui.mjs';
-import { createTelephoneKeeper } from './telephone-keeper.mjs';
+import { createMozCorpUI } from './mozcorp-ui.mjs';
+import { createTelephoneKeeper, telephoneWorld } from './telephone-keeper.mjs';
 import { createSleepUI } from './sleep-ui.mjs';
 import { createKeeperClock } from './keeper-clock.mjs';
+import { createPhraseLabUI } from './phrase-ui.mjs';
+import { createPhraseBatch } from './phrase-core.mjs';
 import { createVpnUI } from './vpn-ui.mjs';
 import { newIdentity, random, b64, deriveKey, encryptVault, decryptVault, sealEntry, verifyWitness, verifyEntry, receiptFor, verifyReceipt, tickAt, tetrachromaColor, EPOCH, MAX_TEXT, MAX_BACKUP, validateEnvelope } from './core.mjs';
 import { createFilesUI } from './files-ui.mjs';
@@ -22,9 +25,11 @@ let vault = null, key = null, salt = null, savedRaw = null, pendingBackup = null
 let saveTimer, toastTimer, queue = Promise.resolve(), generation = 0, busy = false, lastActive = Date.now();
 let changeId = 0;
 let arcadeUI;
+let mozcorpUI;
 let recipientUI;
 let nativePeerUI;
 let sleepUI;
+let phraseUI;
 function renderClockStatus(state) {
   $('keeper-clock-status').dataset.state = state.state;
   const corrected = state.lastCorrectionMs !== null && state.lastCorrectionAgeMs < 120000;
@@ -75,17 +80,20 @@ const backgroundMusicUI = createBackgroundMusicUI($('keeper-music'), { onBeforeP
   $('atmosphere-music-status').textContent = state.phase === 'playing' ? (state.muted || state.volume === 0 ? 'Music muted' : 'Music playing') : state.phase === 'starting' ? 'Starting music…' : 'Music paused';
 } });
 function showView(view) {
-  if (!['arcade', 'telephone', 'garden', 'sleep', 'coin', 'vault', 'files', 'verify', 'about'].includes(view)) view = 'arcade';
-  for (const section of ['arcade', 'telephone', 'garden', 'sleep', 'coin', 'vault', 'files', 'verify', 'about']) $('view-' + section).hidden = view !== section;
+  if (!['arcade', 'mozcorp', 'telephone', 'phrases', 'garden', 'sleep', 'coin', 'vault', 'files', 'verify', 'about'].includes(view)) view = 'arcade';
+  for (const section of ['arcade', 'mozcorp', 'telephone', 'phrases', 'garden', 'sleep', 'coin', 'vault', 'files', 'verify', 'about']) $('view-' + section).hidden = view !== section;
   for (const button of document.querySelectorAll('[data-view]')) { button.classList.toggle('active', button.dataset.view === view); button.setAttribute('aria-current', button.dataset.view === view ? 'page' : 'false'); }
-  $('page-name').textContent = { telephone: 'TELEPHONE WORLD', garden: 'MUSHROOM GARDEN', sleep: 'SLEEP GARDEN', coin: 'DOODLEVERSE COIN', arcade: 'THE DOODLEVERSE', vault: 'MY VAULT', files: 'FILES & PEERS', verify: 'CHECK A RECEIPT', about: 'THE IDEA' }[view];
+  $('page-name').textContent = { phrases: 'PHRASE LAB', mozcorp: 'MOZCORP LABS', telephone: 'TELEPHONE WORLD', garden: 'MUSHROOM GARDEN', sleep: 'SLEEP GARDEN', coin: 'DOODLEVERSE COIN', arcade: 'THE DOODLEVERSE', vault: 'MY VAULT', files: 'FILES & PEERS', verify: 'CHECK A RECEIPT', about: 'THE IDEA' }[view];
   arcadeUI?.setVisible(view === 'arcade');
+  mozcorpUI?.setVisible(view === 'mozcorp');
+  phraseUI?.setVisible(view === 'phrases');
   mushroomUI.setVisible(view === 'garden');
   updateCoinVisibility(view === 'coin');
   history.replaceState(null, '', location.search + '#' + view);
   window.dispatchEvent(new CustomEvent('keeper-viewchange', {detail:view}));
 }
 const fileUI = createFilesUI({ toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); } });
+phraseUI = createPhraseLabUI($('view-phrases'), { postBatch: postPhraseBatch, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); } });
 arcadeUI = createArcadeUI({ toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); }, onPackStored: () => fileUI.refresh() });
 const mushroomUI = createMushroomUI({ toast, clock: keeperClock, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); }, onBeforeListen: () => { backgroundMusicUI.pause(); sleepUI?.stop('Paused for a recipe preview.'); } });
 sleepUI = createSleepUI($('view-sleep'), { getOwnedMushrooms: () => mushroomUI.listeningMushrooms(), onActivity: () => { lastActive = Date.now(); }, onBeforePlay: () => { backgroundMusicUI.pause(); mushroomUI.stopListening(); } });
@@ -186,6 +194,7 @@ function renderEntries() {
   }
 }
 function showUnlocked() {
+  phraseUI.setUnlocked(true);
   $('onboarding').hidden = true; $('workspace').hidden = false; $('lock').hidden = false; $('lock-top').hidden = false;
   $('save-status').textContent = 'Encrypted & saved';
   $('greeting').textContent = 'A LITTLE SPACE FOR @' + vault.identity.username.toUpperCase();
@@ -199,6 +208,7 @@ function showUnlocked() {
   arcadeUI.unlock(vault.identity, key).catch(error => toast(error.message));
 }
 function clearSession() {
+  phraseUI.setUnlocked(false);
   mushroomUI.lock(); sleepUI.forgetOwned();
   coinUI.lock();
   recipientUI.lock();
@@ -268,6 +278,44 @@ async function requestWitness(entry) {
     if (!await verifyWitness(witness, entry.proof.id)) return false;
     entry.witness = witness; return true;
   } catch { return false; }
+}
+async function postPhraseBatch(batch) {
+  if (!vault) throw new Error('Your Keeper is locked. Unlock it, then resume posting; the queue is saved.');
+  if (busy) throw new Error('Your Keeper is finishing another save. The queue is saved; resume posting in a moment.');
+  if (!batch || typeof batch.dictionaryId !== 'string') throw new Error('The phrase batch is missing its dictionary identity.');
+  const serial = generation, session = vault;
+  const checked = await createPhraseBatch(batch.phrases, { dictionaryId: batch.dictionaryId });
+  if (checked.id !== batch.id || checked.title !== batch.title || checked.body !== batch.body) throw new Error('The phrase batch changed. Export the queue before continuing.');
+  // Recheck after the asynchronous digest, before owning the vault operation.
+  if (vault !== session || generation !== serial || busy) throw new Error('The Keeper changed while preparing this batch. Resume posting after unlocking.');
+  const fields = ['entry-title', 'entry-body', 'entry-kind', 'open-text'];
+  busy = true; fields.forEach(id => { $(id).disabled = true; });
+  try {
+    await flushDraft();
+    if (vault !== session || generation !== serial) throw new Error('Keeper locked before sealing. This batch remains queued.');
+    // A crash after a saved seal but before the queue acknowledgement must not
+    // create another seal. The content-derived batch title identifies retries.
+    const earlier = vault.entries.find(entry => entry.payload.title === checked.title && entry.payload.body === checked.body);
+    if (earlier) return { proofId: earlier.proof.id, witnessed: !!earlier.witness, existing: true };
+    if (vault.entries.length >= 10000) throw new Error('This Keeper has reached its seal limit. Export your pile; pending phrases remain saved.');
+    const payload = { title: checked.title, body: checked.body, kind: 'Note', revisionOf: null };
+    const entry = await sealEntry(vault.identity, vault.entries, payload);
+    if (vault !== session || generation !== serial) throw new Error('Keeper locked before saving the seal. This batch remains queued.');
+    vault.entries.push(entry); markDirty();
+    try { await persist(); }
+    catch (error) { if (vault === session && generation === serial && vault.entries.at(-1) === entry) vault.entries.pop(); throw error; }
+    if (vault !== session || generation !== serial) throw new Error('Keeper changed before the queue could confirm the seal. Resume to recover its receipt.');
+    renderEntries();
+    const witnessed = await requestWitness(entry);
+    if (vault !== session || generation !== serial) throw new Error('Keeper locked after sealing. Resume posting to recover this batch without a duplicate.');
+    if (witnessed) {
+      markDirty();
+      // The local seal is already durable. A witness-save error is recoverable
+      // through the same saved batch and must never cause another signed entry.
+      await persist(); renderEntries();
+    }
+    return { proofId: entry.proof.id, witnessed };
+  } finally { busy = false; fields.forEach(id => { $(id).disabled = false; }); }
 }
 $('seal').addEventListener('click', () => withButton($('seal'), async () => {
   if (!vault) return;
@@ -446,7 +494,7 @@ showView(location.hash.slice(1) || 'arcade');
 window.addEventListener('hashchange', () => showView(location.hash.slice(1)));
 // Offline service worker is disabled inside authenticated Home Assistant ingress.
 
-const telephoneUI = createTelephoneKeeper($('view-telephone'), {
+const creativeActions = {
   navigate: showView,
   async stageDraft(project) {
     if (!vault) { toast('Unlock your vault, then return to Telephone World and copy the story.'); showView('vault'); return; }
@@ -469,4 +517,7 @@ const telephoneUI = createTelephoneKeeper($('view-telephone'), {
     if (!confirm('Open this generated map in the workshop? Save or export any current workshop edits before replacing them.')) return;
     showView('arcade'); await arcadeUI.importTelephoneWorld(pack);
   }
-});
+};
+const telephoneUI=createTelephoneKeeper($('view-telephone'),creativeActions);
+mozcorpUI=createMozCorpUI($('view-mozcorp'),{navigate:showView,onVault:creativeActions.stageDraft,onWorld:async project=>creativeActions.stageWorld(telephoneWorld(project))});
+mozcorpUI.setVisible(!$('view-mozcorp').hidden);

@@ -12,14 +12,16 @@
       ["TELEPHONE","#70ff8d","Misremembers what just happened."],
       ["GET-IT : GOT-IT","#ff8a34","Implication becomes canon. No appeals."],
       ["HIVEMIND","#70ff8d","Many wrong brains merge into one stronger wrong brain."],
-      ["STORY // EXIT","#ffe12c","Everything becomes one story. Nothing comes back out except the story."]
+      ["STORY // EXIT","#ffe12c","Everything becomes one story. Nothing comes back out except the story."],
+      ["CREDITS","#70ff8d","Roll the fictional cast and the machine stages that made this story."],
+      ["BLOOPER REEL","#ff8a34","Replay actual pre-story takes. The ending stays finished."]
     ];
     const chain=document.querySelector("#chain");
     moduleDefs.forEach((m,i)=>{
       const d=document.createElement("div"); d.className="module on"; d.style.setProperty("--c",m[1]);
       d.innerHTML='<div class="module-title"><span><span class="num">'+String(i+1).padStart(2,"0")+'</span> '+m[0]+'</span><button class="toggle" aria-label="Toggle '+m[0]+'" aria-pressed="true"><span></span></button></div><p>'+m[2]+'</p><input class="tiny-range" aria-label="'+m[0]+' intensity" type="range" min="0" max="100" value="'+(50+(i*7)%49)+'">';
       const toggle=d.querySelector(".toggle");
-      if(i===moduleDefs.length-1){toggle.disabled=true;toggle.title="HARDWIRED EXIT";toggle.setAttribute("aria-label","STORY EXIT is hardwired on")}
+      if(m[0]==="STORY // EXIT"){toggle.disabled=true;toggle.title="HARDWIRED EXIT";toggle.setAttribute("aria-label","STORY EXIT is hardwired on")}
       else toggle.onclick=e=>{d.classList.toggle("on");e.currentTarget.setAttribute("aria-pressed",d.classList.contains("on"))};
       chain.appendChild(d);
     });
@@ -480,6 +482,7 @@
       const thought=thoughtQueue.shift();renderEconomy();
       lastSignal=renderHive(lastPreHive+" HUMAN THOUGHT ["+thought.score+"/100]: "+thought.text+" // FOUR-WAY: "+(thought.four||interpretFour(thought.text).bus));
       document.querySelector("#storyOut").textContent=finishStory({...lastStoryContext,signal:lastSignal});
+      renderPostRoll();
       document.querySelector("#canonOut").textContent="GOT-IT: Human thought consumed as Hivemind fuel. STORY was regenerated from the pre-story signal + that thought. Nothing was fed back after it.";
       document.querySelectorAll(".panel").forEach(x=>{x.classList.remove("blink");void x.offsetWidth;x.classList.add("blink")});return true;
     }
@@ -547,6 +550,17 @@
       ];
       return pick(openings)+"\\n\\n"+pick(middles)+"\\n\\n"+pick(endings)+"\\n\\n[ EXIT // STORY COMPLETE // "+tone.toUpperCase()+" ]";
     }
+    function renderPostRoll(){
+      const mode=document.querySelector("#sourceHandling").value;
+      if(mode!=="fiction"){const cards=TelephonePostRoll.make({mode});document.querySelector("#creditsOut").textContent=cards.credits;document.querySelector("#blooperOut").textContent=cards.bloopers;return;}
+      const fiction=true;
+      const clips=[];
+      if(fiction&&moduleOn(3))clips.push({stage:"POEM GEN",text:document.querySelector("#poemOut").textContent});
+      if(fiction&&moduleOn(9))clips.push({stage:"TELEPHONE",text:lastPreHive});
+      if(fiction&&moduleOn(11))for(const el of [...document.querySelector("#hiveLog").children].slice(-6))clips.push({stage:"HIVEMIND",text:el.textContent});
+      const cards=TelephonePostRoll.make({mode:document.querySelector("#sourceHandling").value,name:document.querySelector("#nameOut").textContent,job:fiction?lastStoryContext?.job:"",activeStages:moduleDefs.filter((m,i)=>moduleOn(i)).map(m=>m[0]),clips,creditsOn:moduleOn(13),bloopersOn:moduleOn(14),creditsLevel:Number(chain.children[13]?.querySelector("input")?.value??50),bloopersLevel:Number(chain.children[14]?.querySelector("input")?.value??50)});
+      document.querySelector("#creditsOut").textContent=cards.credits;document.querySelector("#blooperOut").textContent=cards.bloopers;
+    }
     function holdSource(seed,calls,tone){
       const mode=document.querySelector("#sourceHandling").value,observer=mode==="observer"||mode==="talky",label=mode==="talky"?"TALKY TALK KNOW GEN // ONE OBSERVER":mode==="observer"?"ONE OBSERVER":"PERSONAL / PAST";
       const held=mode==="talky"?"TALKY TALK KNOW GEN // ONE OBSERVER\n\nI heard your words:\n“"+seed+"”\n\nWhat I know: those are the words you gave me.\nWhat I do not know: missing history, cause, intent, or details you did not enter.\nOne question: What should I understand next?":"PERSONAL / PAST SOURCE HELD // exact words, no machine additions:\n\n"+seed+"\n\nNo character, cause, motive, canon, symbol, or ending was generated.";
@@ -559,6 +573,7 @@
       const canvas=document.querySelector("#desire"),ctx=canvas.getContext("2d");ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle="#05070a";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle="#f4f7fb";ctx.font="800 30px ui-monospace,monospace";ctx.textAlign="center";ctx.fillText("SOURCE HELD",canvas.width/2,canvas.height/2);
       document.querySelector("#desireCaption").textContent=label+" // no desire or image invented.";document.querySelector("#runid").textContent=label+" // "+calls+" CALLS SKIPPED // "+tone.toUpperCase();
       lastPreHive=seed;lastSignal=seed;lastStoryContext=null;rootHumanSeed=seed;reiterationCount=0;
+      renderPostRoll();
       document.querySelector("#reiterateStatus").innerHTML="<strong>SOURCE HOLD</strong> // story and telephone mutations paused // "+(observer?"ONE OBSERVER; no group consensus.":"personal / past account preserved.");
     }
     function run(extra=false,seedOverride=null){
@@ -610,6 +625,7 @@
       document.querySelector("#canonOut").textContent=moduleOn(10)?canon:"[ GET-IT : GOT-IT BYPASSED — reality temporarily safe ]";
       document.querySelector("#runid").textContent="RUN // "+String(Math.floor(Math.random()*999999)).padStart(6,"0")+" // "+calls+" CALLS";
       document.querySelector("#desireCaption").textContent=name.toUpperCase()+" DESIRES: "+want+". The Desire-O-Vision turns that into a symbolic dream image and feeds the result forward as story canon.";
+      renderPostRoll();
       drawVision(name,want,seed+Date.now());
       document.querySelectorAll(".panel").forEach(x=>{x.classList.remove("blink");void x.offsetWidth;x.classList.add("blink")});
     }
@@ -811,7 +827,7 @@
           if(Number.isInteger(input?.brains))document.querySelector("#brains").value=input.brains;
           if(Number.isInteger(input?.generations))document.querySelector("#gens").value=input.generations;
           if(input?.consensus)document.querySelector("#consensus").value=input.consensus;
-          if(!lastSignal)run(false); else {lastSignal=renderHive(lastPreHive);document.querySelector("#storyOut").textContent=finishStory({...lastStoryContext,signal:lastSignal})}
+          if(!lastSignal)run(false); else {lastSignal=renderHive(lastPreHive);document.querySelector("#storyOut").textContent=finishStory({...lastStoryContext,signal:lastSignal});renderPostRoll()}
           return {consensus:lastSignal,generations:+document.querySelector("#gens").value,brains:+document.querySelector("#brains").value};
         }
       })).catch(()=>{});
@@ -1479,7 +1495,7 @@
 
 // This adapter is appended inside the original machine script, sharing its narrative state.
 const DV_FIELDS = ['seed', 'sourceHandling', 'tone', 'calls', 'characterLens', 'manualName', 'manualPronouns', 'manualRole', 'damage', 'brains', 'gens', 'consensus', 'thoughtInput', 'masterStoryText', 'sheetName', 'sheetKind', 'sheetState', 'sheetTone', 'sheetOrigin', 'sheetWant', 'sheetTrouble', 'sheetFelt', 'sheetContinuity', 'sheetVoices', 'sheetPattern', 'sheetClock', 'sheetAnchor', 'sheetCast', 'sheetChoice', 'paintTool', 'paintSymbol', 'paintColor', 'paintSize', 'asciiPictureText'];
-const DV_OUTPUTS = ['wordOut', 'wordMeta', 'nameOut', 'characterOut', 'fourLiteral', 'fourSubjective', 'fourSymbolic', 'fourBack', 'poemOut', 'storyOut', 'emojiOut', 'asciiOut', 'canonOut', 'hiveOut', 'hiveLog', 'runid', 'desireCaption', 'reiterateStatus'];
+const DV_OUTPUTS = ['wordOut', 'wordMeta', 'nameOut', 'characterOut', 'fourLiteral', 'fourSubjective', 'fourSymbolic', 'fourBack', 'poemOut', 'storyOut', 'creditsOut', 'blooperOut', 'emojiOut', 'asciiOut', 'canonOut', 'hiveOut', 'hiveLog', 'runid', 'desireCaption', 'reiterateStatus'];
 window.TelephoneMachine = {
   capture() {
     const controls = DV_FIELDS.map(id => document.getElementById(id)).filter(Boolean).map(el => ({id:el.id,tag:el.tagName.toLowerCase(),value:el.value,checked:!!el.checked}));
@@ -1507,6 +1523,7 @@ window.TelephoneMachine = {
       if (el && el.tagName.toLowerCase() === c.tag) { el.value = c.value; el.checked = c.checked; }
     }
     for (const [id, value] of Object.entries({seed:project.sourceText,masterStoryText:project.masterText,asciiPictureText:project.asciiText})) document.getElementById(id).value = value;
+    for(const id of ['creditsOut','blooperOut'])if(document.getElementById(id))document.getElementById(id).textContent='No '+(id==='creditsOut'?'credits':'blooper reel')+' saved in this older session. Run fiction to make them.';
     for (const out of machine.outputs || []) if (DV_OUTPUTS.includes(out.id)) document.getElementById(out.id).textContent = out.text;
     for (const [id, value] of Object.entries({storyOut:project.storyText,poemOut:project.poemText,characterOut:project.characterText})) document.getElementById(id).textContent = value;
     const state = machine.state || {};
@@ -1517,9 +1534,13 @@ window.TelephoneMachine = {
     const context = state.lastStoryContext;
     lastStoryContext = context && ['seed','name','job','want','word','rule','tone'].every(key => typeof context[key] === 'string' && context[key].length <= 250000) && Number.isInteger(context.calls) && context.calls >= 1 && context.calls <= 100 ? Object.fromEntries(['seed','name','job','want','word','rule','tone','calls'].map(key => [key,context[key]])) : null;
     if (project.sourceMode !== 'fiction') { lastStoryContext = null; lastSignal = lastPreHive = rootHumanSeed = project.sourceText; }
+    for(const i of [12,13,14]){
+      const el=chain.children[i];if(!el)continue;el.classList.toggle('on',true);el.querySelector('.toggle').setAttribute('aria-pressed','true');
+      if(i>12)el.querySelector('input').value=String(50+(i*7)%49);
+    }
     if (Array.isArray(state.modules)) for (const [i, mod] of state.modules.slice(0,moduleDefs.length).entries()) {
       const el=chain.children[i]; if (!el || !mod) continue;
-      const on = i === moduleDefs.length-1 || mod.on === true;
+      const on = i === 12 || mod.on === true;
       el.classList.toggle('on',on); el.querySelector('.toggle').setAttribute('aria-pressed',String(on));
       el.querySelector('input').value = String(Math.max(0,Math.min(100,Number(mod.level)||0)));
     }

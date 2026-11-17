@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { privateFramePolicy } from './keeper/private-rooms.mjs';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 const publicRoot = fileURLToPath(new URL('./public/', import.meta.url));
@@ -36,7 +37,12 @@ export function createIngressServer({ keeperPort, control, ingressIP = '172.30.3
       const headers = { host: `127.0.0.1:${keeperPort}` };
       for (const name of ['content-type', 'authorization']) if (req.headers[name]) headers[name] = req.headers[name];
       const upstream = http.request({ hostname: '127.0.0.1', port: keeperPort, path: req.url, method: req.method, headers }, response => {
-        const pageSecurity = req.url.split('?')[0] === '/telephone.html' ? { ...security, 'Content-Security-Policy': security['Content-Security-Policy'].replace("connect-src 'self'", "connect-src 'self' https://api.gdeltproject.org") } : security;
+        let pageSecurity = req.url.split('?')[0] === '/telephone.html' ? { ...security, 'Content-Security-Policy': security['Content-Security-Policy'].replace("connect-src 'self'", "connect-src 'self' https://api.gdeltproject.org") } : security;
+        if(response.statusCode===200 && /^\/mozcorp\/frame\/[a-z][a-z0-9-]{0,49}$/.test(req.url.split('?')[0])) {
+          const policy=response.headers['content-security-policy']||'', match=policy.match(/^default-src 'none'; script-src 'nonce-([A-Za-z0-9+/=]{24,40})';/);
+          if(!match || privateFramePolicy(match[1])!==policy) {response.resume();reply(502,{error:'The private station isolation policy is unavailable.'});return;}
+          pageSecurity={...security,'Content-Security-Policy':policy};
+        }
         res.writeHead(response.statusCode, { 'Content-Type': response.headers['content-type'] || 'application/octet-stream', ...pageSecurity });
         response.pipe(res);
         response.on('error', () => res.destroy());

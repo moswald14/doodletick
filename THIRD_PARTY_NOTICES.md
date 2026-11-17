@@ -10,6 +10,12 @@ The project owner authorized the copies included here for distribution under GPL
 
 This repository also includes the project owner’s Bullshit Telephone World 2 narrative interface, the Dot Wave Studio 2.3 editor and their Doodleverse project bridge. The included project code is distributed under GPL-3.0-only with this repository. This does not change the separate rights to writing, drawings, sounds or projects imported or created by users.
 
+## Phrase lab dictionary data
+
+Phrase lab includes processed word lists and recorded expressions from ESDB/SCOWL, Kaikki/Wiktionary and dwyl. Their source-specific licenses, copyrights, pinned provenance and extraction notes are preserved in `keeper/PHRASE-SOURCES.md` (or `PHRASE-SOURCES.md` in desktop/Pi downloads). The browser ships the complete notices in `keeper/public/phrase-notices.txt` and `phrase-notices.mjs`; exported piles retain those notices. The app's code license does not replace these data licenses.
+
+The reproducible dictionary builder is included at `scripts/build-phrase-dictionary.py` in the repository and full Home Assistant source archive. Use that complete source download for rebuilding the data.
+
 ## Runtime components
 
 The desktop distribution contains project source, not a bundled Node.js installer. The Home Assistant Dockerfile refers to a pinned official Node.js image and installs Debian certificate authorities. Version 0.3b does not bundle or run Tailscale. Runtime components retain their own licenses and notices:

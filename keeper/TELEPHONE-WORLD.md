@@ -25,6 +25,14 @@ The session preserves input, the protected master, source handling and generated
 
 A narrative snapshot includes the character, poem, story, selected narrative settings, module settings, protected master and drawings. It is not a save state for every running arcade minigame. Typing-practice entries, match profiles, corruptor passwords and volatile minigame state are excluded.
 
+## Credits and Blooper Reel
+
+Classic Telephone World's patch bay includes **14 · Credits** and **15 · Blooper Reel**, alongside the existing **13 · Story / Exit**. Each added module has an on/off switch and intensity control.
+
+Credits name the fictional cast and role, then credit the machine stages that were active for the run. Blooper Reel shows actual pre-story excerpts from **Poem Gen**, **Telephone** and **Hivemind**. It does not invent quotations or alternate endings. Its intensity controls the number and length of excerpts; bypassed, empty and duplicate takes are skipped. A run with no contributing takes has no outtakes to show.
+
+Both cards are skipped in personal, observer and talky source modes. The cards are kept as separate saved outputs. They do not rewrite the final story, feed the hopper, change the protected master or alter an attached Studio soundtrack.
+
 ## Keep a copy in the vault
 
 The shared project shelf is **unencrypted browser storage**. It is not the creator vault, and locking the vault does not encrypt or remove that shelf. Avoid saving material to it that should exist only in an encrypted vault.

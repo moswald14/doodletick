@@ -41,6 +41,7 @@
     if (dirty && !confirm('Open another session? Export or save your current edits first. Unsaved edits will be replaced.')) return;
     const loadingGeneration=editGeneration;
     const record=await B.get(id); if(!record) throw new Error('That session is not on this browser’s shelf. Import its .telephone.json file to open it here.');
+    if (record.machine.mozcorp) { if(editGeneration!==loadingGeneration)throw new Error('Opening canceled because this session changed. Save or export it before switching.');stopMusic();dirty=false;location.href=B.route(record);return; }
     stopMusic();
     try { await TelephoneMachine.restore(record,()=>{if(editGeneration!==loadingGeneration)throw new Error('Loading canceled because you edited this session. Your current story is unchanged.');restoring=true;}); current=record; $('dv-title').value=record.title; clean(); }
     finally { restoring=false; }
