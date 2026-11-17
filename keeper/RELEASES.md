@@ -1,3 +1,7 @@
+## Unreleased — Jazz titles and listener beats
+
+The Jazz room has a Name this song button for a listener-confirmed payment of about $0.02 in original Ethereum PEPE, followed by an OpenAI title and bounded drum groove at the next bar. Includes exact invoice validation, replay prevention, private recovery receipts, restart recovery, bounded retries and server-only API access. Off by default pending owner account setup. See JAZZ-NAMING.md for network fees, configuration, storage and validation limits. No existing vault, garden, DVC or signature format changes.
+
 ## 0.13b — Native Scrypt coin, wallet and Windows miner
 
 Adds a separate Pepecoin-derived Doodleverse Core chain with Scrypt 1024/1/1 proof of work, a fixed 21,000,000 DVC maximum, a publicly disclosed 1,000,000 DVC founder allocation and 20,000,000 mineable DVC. The native founder address is recorded in the public signed enrollment record. The allocation belongs in the first mined block; importing that record does not issue funds. Coinbase rewards mature after 30 confirmations. Ethereum, PEPE, Pepecoin, legacy Keeper DVC and garden balances remain separate.

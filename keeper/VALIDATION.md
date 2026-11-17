@@ -96,6 +96,23 @@ Not verified: installation in an existing physical Home Assistant app, use of a 
 
 # Validation — Doodle Tick 0.9.3b
 
+## Unreleased Jazz naming development · 2026-11-17
+
+This isolated development change adds listener-paid Jazz titles and beats. It is based on 0.9.3b and has not been published or installed. Naming is disabled by default, and the owner chose to connect OpenAI later.
+
+| Check | Observed evidence |
+| --- | --- |
+| Complete Keeper and Home Assistant suite | **567/567 passed**, zero failures or skips, in 17.95 seconds after the final functional changes. All payment, persistence and ingress checks used disposable data and mocked external services. |
+| Existing public contracts | Reinstalled pinned dependencies with scripts disabled, verified reproducible contract output, then **10/10 contract tests passed** in 76.25 seconds. No contract, garden accounting or DVC format was changed. |
+| Payment and recovery | Tests reject wrong chain/token/sender/recipient/amount/calldata, reverted/removed transfers, duplicate logs, inconsistent blocks, old/expired inclusion and fewer than three confirmations. Concurrent claims generate once. Durable receipts survive restart, interrupted generation requires explicit retry, disk failure disables new collection, unknown wallet outcomes do not resend, and daily reservations and per-payment retries are bounded. |
+| Music | Tests capture the audible final bar rather than advanced composer counters, replace only percussion at a bar boundary, retain swing/bossa timing and drum mute, reject malformed patterns and clear custom parts on fresh styles or natural set changes. |
+| Actual Chrome rehearsal | A conspicuously labeled test preview with a disposable provider completed Play → quote review → simulated transfer → saved title → next-bar beat. The player displayed the title, the new-beat confirmation and a moving output meter. Pause and Resume worked. A browser-only fetch receiver error discovered during this check was fixed and given a regression test. A saved screenshot shows the rehearsal result. |
+| Source and adapter | **364 source files and 113 generated runtime files** passed repository checks. All modules are same-origin; the authenticated HA adapter forwards the validated mutation marker. Direct ingress clients, foreign origins, missing markers and public access to private records are rejected. |
+
+No real PEPE was transferred, no OpenAI generation was charged, no live wallet was signed and no owner credentials were read. The public Coinbase PEPE/USD endpoint was checked separately for availability; canonical Ethereum PEPE was verified against Coinbase’s network/address listing. Mainnet payment confirmation, a funded OpenAI result, physical Home Assistant installation, speakers and overnight playback remain unverified. Chrome’s automation connection detached during the later reload check; visible reload/back-navigation recovery was not established, although client receipt restoration passed automated tests. This is not an independent security audit or a new numbered release.
+
+The historical release evidence follows.
+
 ## Combined Telephone World, Studio and Jazz · 2026-11-17
 
 The combined release includes the corrected Telephone integration and the separately reviewed Jazz phrasing update in one source tree. Existing vault, witness, garden and native DVC formats remain unchanged.

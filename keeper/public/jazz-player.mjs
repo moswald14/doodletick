@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import { DJ_NOTES, DJ_STYLES, DJRandom, djClamp, djMakeBank } from './jazz-core.mjs';
+import { createJazzNamingUI } from './jazz-name-ui.mjs';
 'use strict';
 (() => {
   const $ = id => document.getElementById(id), storageKey = 'doodle-jazz-v1';
@@ -21,6 +22,18 @@ import { DJ_NOTES, DJ_STYLES, DJRandom, djClamp, djMakeBank } from './jazz-core.
   let context = null, node = null, master = null, wet = null, analyser = null, bank = null;
   let state = 'idle', busy = false, sessionToken = 0, seed = freshSeed(), meterData;
   let pendingChange = false;
+  let lastInfo = null;
+  const snapshots = new Map();
+  const naming = createJazzNamingUI({
+    getPlayback: () => ({ session: sessionToken, state, info: state === 'playing' ? lastInfo : null }),
+    getSnapshot: () => new Promise((resolve, reject) => {
+      if (!node || state !== 'playing') { reject(new Error('Play jazz before naming this set.')); return; }
+      const id = crypto.randomUUID(), token = sessionToken;
+      const timer = setTimeout(() => { snapshots.delete(id); reject(new Error('The trio is still warming up. Try again in a moment.')); }, 3000);
+      snapshots.set(id, { resolve, reject, timer, token }); node.port.postMessage({ nameSnapshot: id });
+    }),
+    applyResult: (requestId, result, info) => node?.port.postMessage({ jazzPart: { requestId, result, targetSet: info.set, targetSeed: info.seed } })
+  });
   function freshSeed() { const n = new Uint32Array(1); crypto.getRandomValues(n); return n[0] || 1; }
   function notice(text, error = false) { $('status').textContent = text; $('status').classList.toggle('error', error); }
   function paintState(next) {
@@ -35,6 +48,7 @@ import { DJ_NOTES, DJ_STYLES, DJRandom, djClamp, djMakeBank } from './jazz-core.
     $('live-label').textContent = playing ? 'ON & ON' : next === 'paused' ? 'TAKING FIVE' : next === 'starting' ? 'TUNING UP' : 'TAKE A SEAT';
     if (!playing) { $('signal').value = 0; document.querySelectorAll('.beat-dots i').forEach(e => e.classList.remove('active')); }
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = playing ? 'playing' : next === 'paused' ? 'paused' : 'none';
+    naming.playbackChanged();
   }
   function paintPrefs() {
     for (const id of ['volume', 'tempo', 'swing', 'room', 'piano', 'bass', 'drums']) $(id).value = prefs[id];
@@ -84,12 +98,21 @@ import { DJ_NOTES, DJ_STYLES, DJRandom, djClamp, djMakeBank } from './jazz-core.
   }
   function receive(info, token) {
     if (token !== sessionToken || !context) return;
+    if (info.nameSnapshot) {
+      const pending = snapshots.get(info.nameSnapshot);
+      if (pending) { clearTimeout(pending.timer); snapshots.delete(info.nameSnapshot);
+        if (pending.token === sessionToken && info.context) pending.resolve(info.context);
+        else pending.reject(new Error('Play jazz before naming this set.')); }
+      return;
+    }
+    if (naming.receive(info)) return;
+    lastInfo = info; naming.playbackChanged();
     if (pendingChange && info.beat === 0 && info.style === prefs.style && info.tempo === prefs.tempo && Math.abs(info.swing - prefs.swing / 100) < 0.001) {
       pendingChange = false;
       notice('The trio is finding a new way. Stay awhile.');
     }
     $('chord').textContent = info.chord;
-    $('track-name').textContent = DJ_STYLES[info.style].name + ' · ' + info.key;
+    $('track-name').textContent = info.namedTitle || DJ_STYLES[info.style].name + ' · ' + info.key;
     $('track-info').textContent = info.phase + ' / ' + info.tempo + ' BPM';
     $('position').textContent = 'BAR ' + info.bar + '/' + info.bars + ' · CHORUS ' + info.chorus;
     const s = Math.floor(info.seconds), h = Math.floor(s / 3600);
@@ -162,6 +185,9 @@ import { DJ_NOTES, DJ_STYLES, DJRandom, djClamp, djMakeBank } from './jazz-core.
   }
   function stop() {
     sessionToken++;
+    lastInfo = null;
+    for (const pending of snapshots.values()) { clearTimeout(pending.timer); pending.reject(new Error('The session stopped. Play jazz and try again.')); }
+    snapshots.clear();
     const old = context;
     if (node) { node.port.onmessage = null; node.port.close(); node.disconnect(); }
     context = node = master = wet = analyser = null;
@@ -207,7 +233,8 @@ import { DJ_NOTES, DJ_STYLES, DJRandom, djClamp, djMakeBank } from './jazz-core.
   if ('mediaSession' in navigator) for (const [action, handler] of [['play', play], ['pause', pause], ['stop', stop], ['nexttrack', newSet]]) {
     try { navigator.mediaSession.setActionHandler(action, handler); } catch (_) {}
   }
-  window.addEventListener('pagehide', stop);
+  window.addEventListener('pagehide', () => { naming.dispose(); stop(); });
+  window.addEventListener('pageshow', event => { if (event.persisted) naming.resume(); });
   function meterTick() {
     if (state === 'playing' && analyser && !document.hidden) {
       analyser.getFloatTimeDomainData(meterData);

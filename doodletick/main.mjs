@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile } from 'node:fs/promises';
 import { createKeeperServer } from './keeper/server.mjs';
 import { createIngressServer } from './gateway.mjs';
 import { importMigration } from './migration.mjs';
@@ -6,6 +6,7 @@ import { readMozCorpProviderOptions } from './mozcorp-options.mjs';
 import { readCoreOptions } from './core-options.mjs';
 import { startCoreProcess } from './core-process.mjs';
 import { createCoreRpc } from './keeper/dvc-scrypt-node.mjs';
+import { jazzConfigFromAddonOptions } from './jazz-options.mjs';
 process.umask(0o077);
 let keeper, gateway, core, stopping = false;
 const startupAbort = new AbortController();
@@ -46,7 +47,8 @@ try {
     console.error('The native Doodleverse node could not start. Review its app options and local log. Existing Keeper data was preserved.');
   }
   if (stopping) throw Error('App stopped during startup.');
-  keeper = await createKeeperServer({ dataDir: '/data/keeper', lockDir, mozcorpOptions: { provider }, scryptOptions });
+  const addonOptions = JSON.parse(await readFile('/data/options.json', 'utf8'));
+  keeper = await createKeeperServer({ dataDir: '/data/keeper', lockDir, mozcorpOptions: { provider }, scryptOptions, jazzOptions: { config: jazzConfigFromAddonOptions(addonOptions) } });
   if (stopping) throw Error('App stopped during startup.');
   gateway = createIngressServer({ keeperPort: keeper.port, control: { status: () => keeper.vpn.status() }, healthy: () => !core || core.healthy() });
   await new Promise((resolve, reject) => { gateway.once('error', reject); gateway.listen(8099, '0.0.0.0', resolve); });

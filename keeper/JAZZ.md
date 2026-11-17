@@ -42,6 +42,8 @@ Closing or reloading the page, device sleep, browser suspension or an audio-devi
 
 ## Loading and privacy
 
+The optional **Name this song** control adds an OpenAI title and a new drum beat after a listener-confirmed PEPE payment. It is off until owner account setup is complete; ordinary playback remains free and local. See [JAZZ-NAMING.md](JAZZ-NAMING.md) for the separate Ethereum fee, server-side API access, shared musical summary and private receipt recovery. This is an unreleased development addition.
+
 The integrated room loads external same-origin scripts, styles and its audio worklet from the Keeper. Relative URLs retain the Home Assistant ingress path. It uses the existing authenticated-ingress and script policy, with no remote music service or audio upload. The original standalone Doodle Jazz download is separate from this integrated loading path.
 
 Jazz listening does not sign records, modify the garden, transfer funds or start mining. Existing Keeper identities, vaults, signed formats, balances and native-chain rules retain their own behavior. See [VALIDATION.md](VALIDATION.md) for completed checks and remaining limits, and [RELEASES.md](RELEASES.md) for release status.

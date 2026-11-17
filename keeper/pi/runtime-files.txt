@@ -2,6 +2,8 @@ package.json
 LICENSE
 THIRD_PARTY_NOTICES.md
 server.mjs
+jazz-name.mjs
+jazz-name-network.mjs
 garden-ledger.mjs
 vpn-network.mjs
 rendezvous.mjs
@@ -90,6 +92,9 @@ public/jazz.css
 public/jazz-core.mjs
 public/jazz-player.mjs
 public/jazz-worklet.mjs
+public/jazz-name-contract.mjs
+public/jazz-name-client.mjs
+public/jazz-name-ui.mjs
 public/doodle-bridge.js
 public/telephone.html
 public/telephone.css

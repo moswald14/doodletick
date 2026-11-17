@@ -19,7 +19,7 @@ COPY --from=core-builder /out/validation/ /usr/share/doodleverse-validation/
 COPY --from=core-builder /out/SHA256SUMS /usr/share/doodleverse-validation/PACKAGE-SHA256SUMS
 WORKDIR /opt/doodletick
 COPY keeper/ ./keeper/
-COPY gateway.mjs main.mjs migration.mjs mozcorp-options.mjs core-options.mjs core-process.mjs ./
+COPY gateway.mjs main.mjs migration.mjs mozcorp-options.mjs core-options.mjs core-process.mjs jazz-options.mjs ./
 COPY core-source/chain-manifest.json ./core-source/chain-manifest.json
 COPY public/ ./public/
 LABEL io.hass.name="Doodle Tick Keeper" io.hass.description="Private Doodleverse Keeper" \

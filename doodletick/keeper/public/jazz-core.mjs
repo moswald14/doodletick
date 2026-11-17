@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 /* Doodle Jazz. Original procedural composition and synthesized instruments. */
+import { validateJazzContext, validateJazzResult } from './jazz-name-contract.mjs';
 const DJ_NOTES = ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'G♭', 'G', 'A♭', 'A', 'B♭', 'B'];
 const DJ_CHORDS = {
   maj9: [0, 4, 7, 11, 14], m9: [0, 3, 7, 10, 14], '13': [0, 4, 7, 10, 14, 21],
@@ -143,7 +144,7 @@ class DJComposer {
     if (!this.pending) return;
     const change = this.pending; this.pending = null;
     const reset = (change.style && change.style !== this.config.style) || change.newSet;
-    if (change.seed) this.rng = new DJRandom(change.seed);
+    if (change.seed) { this.rng = new DJRandom(change.seed); this.config.seed = change.seed; }
     if (change.style && DJ_STYLES[change.style]) this.config.style = change.style;
     if (Number.isFinite(change.tempo)) this.config.tempo = djClamp(change.tempo, 55, 180);
     if (Number.isFinite(change.swing)) this.config.swing = djClamp(change.swing, 0.5, 0.72);
@@ -268,7 +269,7 @@ class DJComposer {
     }
     [0, 2].forEach(beat => add('kick', 0, beat, 0.2, 0.28, 'drums'));
     events.sort((a, b) => a.time - b.time);
-    const info = { style: this.config.style, tempo: this.config.tempo, swing: this.config.swing,
+    const info = { seed: this.config.seed || 7, style: this.config.style, tempo: this.config.tempo, swing: this.config.swing,
       phase: phase + ' · ' + phraseRole, phraseRole,
       key: DJ_NOTES[this.tonic] + (bossa ? ' minor' : ' major'), bar: this.bar + 1, bars: chart.length,
       chorus: this.chorus + 1, set: this.set,
@@ -294,12 +295,28 @@ class DJRenderer {
     this.nextBeat = 0; this.beat = 0; this.info = null;
     this.levels = { piano: 0.82, bass: 0.9, drums: 0.68 };
     this.targets = { ...this.levels }; this.maxVoices = 0;
+    this.pendingPart = null; this.activePart = null;
   }
   configure(data) {
     if (data.levels) for (const role of ['piano', 'bass', 'drums']) {
       if (Number.isFinite(data.levels[role])) this.targets[role] = djClamp(data.levels[role], 0, 1);
     }
     if (data.composition) this.composer.configure(data.composition);
+    if (typeof data.nameSnapshot === 'string' && /^[a-z0-9-]{1,64}$/i.test(data.nameSnapshot)) {
+      let context = null;
+      if (this.info) try { context = validateJazzContext({ ...this.info,
+        motif: this.events.filter(e => e.role === 'melody').map(e => e.note).slice(0, 8) }); } catch {}
+      this.notify({ nameSnapshot: data.nameSnapshot, context, error: context ? null : 'NOT_READY' });
+    }
+    if (data.jazzPart) {
+      const part = data.jazzPart;
+      try {
+        if (typeof part.requestId !== 'string' || !/^[a-z0-9-]{1,64}$/i.test(part.requestId) || !this.info
+          || part.targetSet !== this.info.set || part.targetSeed !== this.info.seed) throw new Error('SET_CHANGED');
+        const result = validateJazzResult(part.result);
+        this.pendingPart = { requestId: part.requestId, targetSet: part.targetSet, targetSeed: part.targetSeed, result };
+      } catch { this.notify({ partRejected: typeof part.requestId === 'string' ? part.requestId.slice(0, 64) : '', reason: 'SET_CHANGED_OR_INVALID' }); }
+    }
   }
   trigger(e) {
     let data, speed = this.bank.rate / this.rate;
@@ -322,6 +339,24 @@ class DJRenderer {
     for (let i = 0; i < left.length; i++, this.frame++) {
       if (this.frame >= this.nextBar) {
         const bar = this.composer.nextBar();
+        const matches = part => part.targetSet === bar.info.set && part.targetSeed === bar.info.seed;
+        if (this.activePart && !matches(this.activePart)) this.activePart = null;
+        if (this.pendingPart) {
+          const part = this.pendingPart; this.pendingPart = null;
+          if (matches(part)) { this.activePart = part; this.notify({ partApplied: part.requestId, set: bar.info.set }); }
+          else this.notify({ partRejected: part.requestId, reason: 'SET_CHANGED' });
+        }
+        if (this.activePart) {
+          const seconds = 60 / bar.info.tempo, swing = bar.info.swing;
+          bar.events = bar.events.filter(e => e.role !== 'drums');
+          for (const hit of this.activePart.result.pattern) {
+            const beat = hit.step / 4, whole = Math.floor(beat), frac = beat - whole;
+            const time = (whole + (frac <= 0.5 ? frac * 2 * swing : swing + (frac - 0.5) * 2 * (1 - swing))) * seconds;
+            bar.events.push({ instrument: hit.instrument, role: 'drums', note: 0, beat, time, duration: 0.25 * seconds, velocity: hit.velocity });
+          }
+          bar.events.sort((a, b) => a.time - b.time);
+          bar.info.namedTitle = this.activePart.result.title;
+        }
         this.events = bar.events; this.eventIndex = 0; this.barStart = this.nextBar;
         this.nextBar += bar.duration * this.rate; this.info = bar.info;
         this.beat = 0; this.nextBeat = this.frame;
