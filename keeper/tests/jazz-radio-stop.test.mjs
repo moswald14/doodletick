@@ -23,16 +23,18 @@ async function fixture(t) {
     assert(path.basename(absolute).startsWith('doodletick-jazz-stop-'));
     await rm(absolute, { recursive: true, force: true });
   });
-  const open = async () => {
+  const open = async ({ failMonitorDuringStart = false } = {}) => {
+    let monitorFailure;
     const radio = await createJazzRadio({ dataDir, signer, enabled: true, automatic: false,
       // These tests never render. The fixture has no native audio, process or network dependency.
       bankFactory: () => ({ piano: [], bass: [], drums: {} }),
       transportFactory: () => {
-        const transport = { stops: 0, async start({ onstate }) { onstate({ phase: 'advertised' }); },
+        const transport = { stops: 0, async start({ onstate }) { if (failMonitorDuringStart) monitorFailure(); onstate({ phase: 'advertised' }); },
           writeFrame: () => true, async stop() { this.stops++; } };
         transports.push(transport); return transport;
       },
-      monitorFactory: async () => {
+      monitorFactory: async ({ onFailure }) => {
+        monitorFailure = onFailure;
         const monitor = { closes: 0, writeFrame: () => true, async close() { this.closes++; } };
         monitors.push(monitor); return monitor;
       },
@@ -86,4 +88,11 @@ test('a station that was unreadable at startup is preserved by Stop and unlock a
   assert.equal(await readFile(env.station, 'utf8'), original);
   assert.equal(env.transports.length, 0); assert.equal(env.monitors.length, 0);
   assert.equal(radio.status().running, false);
+});
+
+test('an encoder failure during pending signaling cannot declare a working broadcast', async t => {
+  const env = await fixture(t), radio = await env.open({ failMonitorDuringStart: true });
+  await assert.rejects(radio.start(), error => error.status === 503);
+  assert.equal(radio.status().running, false);
+  assert.equal(env.transports[0].stops, 1); assert.equal(env.monitors[0].closes, 1);
 });

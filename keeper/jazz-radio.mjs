@@ -200,14 +200,18 @@ export async function createJazzRadio({ dataDir, signer, enabled = false, now = 
         if (info.chords.some(c => c.beat === info.beat)) infoEvents.push({ frame: Math.round(info.seconds * rate), info });
       });
       renderer.configure({ levels: Object.fromEntries(['piano', 'bass', 'drums'].map(key => [key, saved.settings[key] / 100])) });
-      const token = ++generation;
-      monitor = await monitorFactory({ onFailure: () => { if (running && generation === token) remember(recover('The listening encoder is restarting.')); } });
+      const token = ++generation; let monitorFailed = false;
+      monitor = await monitorFactory({ onFailure: () => {
+        if (generation !== token) return; monitorFailed = true;
+        if (running) remember(recover('The listening encoder is restarting.'));
+      } });
       transport = transportFactory({ invitation: saved.invitation });
       await transport.start({ onstate: state => {
         if (generation !== token) return;
         transportState = state;
         if (running && state.phase === 'error') remember(recover('Jazz is reconnecting its listener stream.'));
       } });
+      if (monitorFailed) throw new Error('The listening encoder stopped during startup.');
       running = true; startedAt = now(); nextFrameAt = performance.now();
       saved.running = true; if (saved.neverStop && saved.nextShuffleAt === null) saved.nextShuffleAt = now() + JAZZ_HOUR;
       await persist(); schedule(token); if (saved.voice) worldAnnouncement();
