@@ -173,6 +173,7 @@ jazz-radio-http.mjs
 jazz-library.mjs
 jazz-media.mjs
 jazz-node-cast.mjs
+jazz-node-native.mjs
 jazz-world.mjs
 jazz-voice.mjs
 jazz-stream-deps/package-lock.json

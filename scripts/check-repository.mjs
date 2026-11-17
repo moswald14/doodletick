@@ -45,6 +45,7 @@ try {
   if (!/^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(scalar(repository, 'url'))) fail('repository.yaml needs the public GitHub repository URL.');
   const config = await read('doodletick/config.yaml');
   if (scalar(config, 'version') !== release || scalar(config, 'slug') !== 'doodletick') fail('Home Assistant release metadata differs from Keeper.');
+  if (scalar(config, 'image') !== 'ghcr.io/moswald14/doodletick-{arch}') fail('Home Assistant must pull the checked public image for its own architecture.');
   if (scalar(config, 'ingress') !== 'true' || scalar(config, 'host_network') !== 'false' || scalar(config, 'apparmor') !== 'true') fail('Review the Home Assistant access configuration.');
   if (/^(?:full_access|docker_api|hassio_api|homeassistant_api|privileged|devices):/m.test(config)) fail('The release must not add network capabilities, devices or administrative API access.');
   // Only opt-in block/transaction gossip is exposed; wallet RPC and ingress

@@ -18,6 +18,7 @@ export async function initializeJazzRadioUI() {
   document.body.classList.add('radio-mode'); $('radio-tools').hidden = false; $('chord-library').hidden = false;
   document.querySelector('.hero-note').lastChild.textContent = 'ALWAYS IMPROVISING · HOME ASSISTANT RADIO';
   document.querySelector('.volume label').textContent = 'LOCAL OUTPUT';
+  $('stop').setAttribute('aria-label', 'Stop Home Assistant broadcast');
   document.querySelector('.signal-wrap > span').textContent = 'LOCAL MONITOR';
   $('signal').hidden = true;
   document.querySelector('.jazz-tool #cast-jazz').textContent = 'Start broadcast';
@@ -67,7 +68,7 @@ export async function initializeJazzRadioUI() {
     $('cast-jazz').hidden = s.running; $('cast-jazz').disabled = busy; $('stop-cast').hidden = true;
     $('cast-link-row').hidden = !s.listenerUrl; if (s.listenerUrl) { $('cast-link').value = s.listenerUrl; $('cast-listen').href = s.listenerUrl; }
     $('cast-status').textContent = s.running ? (s.transport.message || 'Home Assistant is broadcasting. You can close this browser.') : 'Start a broadcast for your free VDO.Ninja listener link.';
-    $('cast-meter').textContent = s.running ? `${s.transport.peers || 0} connected listener${s.transport.peers === 1 ? '' : 's'} · ${s.transport.bytesSent || 0} audio bytes sent` : '';
+    $('cast-meter').textContent = s.running ? `${s.transport.peers || 0} connected listener${s.transport.peers === 1 ? '' : 's'} · ${s.transport.phase === 'live' ? 'Audio is reaching listeners' : 'Waiting for a listener to play'}` : '';
     $('never-stop').setAttribute('aria-pressed', String(s.neverStop)); $('never-stop').textContent = s.neverStop ? 'Never stop: ON · unlock' : 'Never stop'; $('never-stop').disabled = busy;
     $('never-stop-status').textContent = s.neverStop ? `Stop is locked. Next player shuffle: ${new Date(s.nextShuffleAt).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}. Turn this off to stop intentionally.` : 'Keep broadcasting, guard Stop, and shuffle the players every hour. You can always unlock it.';
     $('voice-updates').checked = s.voice; $('voice-updates').disabled = busy;

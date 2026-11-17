@@ -3,10 +3,10 @@ name: Build Doodleverse Home Assistant nodes
 on:
   workflow_dispatch:
   push:
-    branches: [main, feature/dvc-scrypt]
-    paths: ['doodletick/**', 'doodleverse-core/home-assistant/**', '.github/workflows/doodleverse-ha.yml']
+    branches: [main, feature/dvc-scrypt, 'release/**']
+    paths: ['doodletick/**', 'doodleverse-core/home-assistant/**', 'scripts/check-jazz-*.mjs', 'scripts/ha-image-release.mjs', '.github/workflows/doodleverse-ha.yml', '.github/workflows/publish-ha.yml']
   pull_request:
-    paths: ['doodletick/**', 'doodleverse-core/home-assistant/**', '.github/workflows/doodleverse-ha.yml']
+    paths: ['doodletick/**', 'doodleverse-core/home-assistant/**', 'scripts/check-jazz-*.mjs', 'scripts/ha-image-release.mjs', '.github/workflows/doodleverse-ha.yml', '.github/workflows/publish-ha.yml']
 
 permissions:
   contents: read
@@ -14,6 +14,10 @@ permissions:
 concurrency:
   group: doodleverse-ha-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   image:
@@ -33,10 +37,18 @@ jobs:
         with:
           persist-credentials: false
       - name: Build and run native consensus checks
-        run: docker build --progress=plain --build-arg BUILD_ARCH=${{ matrix.arch }} -t doodleverse-ha:check ./doodletick
+        run: |
+          docker build --progress=plain --build-arg BUILD_ARCH=${{ matrix.arch }} \
+            --label "org.opencontainers.image.source=https://github.com/moswald14/doodletick" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            -t doodleverse-ha:check ./doodletick
       - name: Verify node startup, restart and data isolation
         run: |
           docker run --rm --network none --mount type=bind,src="$PWD/doodleverse-core/home-assistant",target=/checks,readonly --entrypoint node doodleverse-ha:check /checks/container-check.mjs
+      - name: Require real isolated audio and a clean Keeper exit
+        run: timeout 120s docker run --rm --volume "$PWD/scripts:/opt/doodletick/scripts:ro" --entrypoint node doodleverse-ha:check scripts/check-jazz-native.mjs
+      - name: Require the real monitor, keepsake encoder and offline voice
+        run: timeout 120s docker run --rm --network none --volume "$PWD/scripts:/opt/doodletick/scripts:ro" --entrypoint node doodleverse-ha:check scripts/check-jazz-media.mjs
       - name: Preserve the checked image with its source and licenses
         run: docker save doodleverse-ha:check | gzip -n > doodleverse-home-assistant-${{ matrix.arch }}.tar.gz
       - name: Hash the image archive
@@ -51,3 +63,60 @@ jobs:
           if-no-files-found: error
           retention-days: 14
           compression-level: 0
+
+  stage:
+    name: Stage checked image · ${{ matrix.arch }}
+    needs: image
+    if: ${{ github.event_name == 'push' && github.repository == 'moswald14/doodletick' && github.event.repository.fork == false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, aarch64]
+    concurrency:
+      group: ha-commit-${{ github.sha }}-${{ matrix.arch }}
+      cancel-in-progress: false
+    steps:
+      - name: Check out the exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up the release guard runtime
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Download only this run's checked image
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE_ARCH: ${{ matrix.arch }}
+        run: gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "doodleverse-home-assistant-$IMAGE_ARCH" --dir checked-image
+      - name: Verify and load the preserved image
+        working-directory: checked-image
+        env:
+          IMAGE_ARCH: ${{ matrix.arch }}
+        run: |
+          sha256sum --check "SHA256SUMS-$IMAGE_ARCH"
+          gzip -dc "doodleverse-home-assistant-$IMAGE_ARCH.tar.gz" | docker load
+      - name: Sign in using the ephemeral workflow token
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          export DOCKER_CONFIG="$RUNNER_TEMP/doodletick-docker"
+          printf 'DOCKER_CONFIG=%s\n' "$DOCKER_CONFIG" >> "$GITHUB_ENV"
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+      - name: Publish only the checked immutable commit tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE_ARCH: ${{ matrix.arch }}
+        run: node scripts/ha-image-release.mjs stage "$IMAGE_ARCH"
+      - name: Remove the temporary registry login
+        if: ${{ always() }}
+        env:
+          DOCKER_CONFIG: ${{ runner.temp }}/doodletick-docker
+        run: docker logout ghcr.io

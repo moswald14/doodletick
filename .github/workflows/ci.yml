@@ -47,27 +47,3 @@ jobs:
       - name: Test the public garden in a local EVM
         working-directory: contracts
         run: npm test
-
-  jazz-native:
-    name: Jazz audio · ${{ matrix.arch }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner: ubuntu-latest
-            arch: amd64
-          - runner: ubuntu-24.04-arm
-            arch: aarch64
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 45
-    steps:
-      - name: Check out source
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Build the Home Assistant image with pinned native audio
-        run: docker build --build-arg BUILD_ARCH=${{ matrix.arch }} --tag doodletick-jazz-check doodletick
-      - name: Send and decode original PCM through native Opus and check offline voice
-        run: timeout 120s docker run --rm --volume "$PWD/scripts:/opt/doodletick/scripts:ro" --entrypoint node doodletick-jazz-check scripts/check-jazz-native.mjs
-      - name: Check the real monitor encoder, keepsake audio and offline voice
-        run: timeout 120s docker run --rm --volume "$PWD/scripts:/opt/doodletick/scripts:ro" --entrypoint node doodletick-jazz-check scripts/check-jazz-media.mjs
