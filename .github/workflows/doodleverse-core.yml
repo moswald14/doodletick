@@ -3,7 +3,7 @@ name: Build experimental Doodleverse Core
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, feature/dvc-scrypt]
     paths:
       - 'doodleverse-core/**'
       - '.github/workflows/doodleverse-core.yml'
