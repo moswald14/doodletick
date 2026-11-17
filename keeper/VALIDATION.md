@@ -96,6 +96,24 @@ Not verified: installation in an existing physical Home Assistant app, use of a 
 
 # Validation — Doodle Tick 0.9.3b
 
+## Unreleased Jazz casting and coherent shuffle · 2026-11-17
+
+The development Jazz player now includes Shuffle the trio, Undo and an explicit audio-only VDO.Ninja cast. This source is based on the preceding paid-naming development commit; paid naming remains off pending owner setup. No numbered release or Home Assistant installation was performed for these additions.
+
+| Check | Observed evidence |
+| --- | --- |
+| Complete application suite | **594/594 passed**, zero failures or skips, in 35.33 seconds on the final functional source. Tests used disposable Keeper data and mocked network services. |
+| Shuffle | Six deterministic/bounds/family tests and three renderer tests cover style consistency, straight bossa, balanced levels, master-volume/mute preservation, no immediate repeats, next-bar application, coalesced clicks and newer manual level changes. |
+| Casting lifecycle | Eight checks cover one-live-audio-track validation, mixed-media rejection, explicit start/stop, duplicate starts, cancellation during creation/connect/publish, timeout, track-ended cleanup, truthful audio counters and listener counts after failure. |
+| Actual service interoperability | The first stock SDK connection established its initial data channel but the VDO.Ninja viewer rejected the subsequent media offer because it lacked a stream ID. The documented local SDK correction retains the existing password-hashed identity on renegotiation and ICE restart. Ten regressions cover both transports, private encrypted SDP, passwords disabled, stock-viewer identity validation and cancellation during hashing. No receiver checks were weakened. |
+| Actual Chrome and VDO.Ninja | The corrected publisher sent the current Jazz mix to an external VDO.Ninja listener page. That receiver’s statistics reported **127 kbps audio, Opus with FEC, 48,000 / 2 clock/channels, Audio Stream, 0% packet loss**, using a host-to-host connection on this computer/network. This verifies audio transport, rather than only signaling. A quiet receiver check used the site’s volume parameter to avoid a second local playback copy. |
+| User controls and continuity | Chrome showed coordinated shuffle changes at the next bar, retained master volume, restored prior musical settings with Undo, and kept the worklet clock/output meter advancing in background. Pause displayed listener-silence guidance and Resume continued. Stop/restart, reload and Back to Keeper were exercised; returning showed an idle player with no active cast or stale listener link. A fresh final cast was started and the broadcaster tab was retained for the user. |
+| Source, permission and license boundaries | **376 source files and 117 generated runtime files** passed repository checks. The locally served SDK and integration contain no microphone/camera/display-capture calls or dynamic code execution. Only Jazz HTML permits the two casting-service connection origins; the other pages and authenticated HA ingress keep their previous boundaries. The exact modified SDK digest and MPL source/license notices are included. |
+
+The broadcasting mix and API remain in the listening PC’s browser. There is no always-on server audio renderer, station directory, archive or guaranteed audience capacity. This verification used two browser pages on the same machine/network, not a separate phone, cellular network or prolonged Internet audience. Physical speakers, decoded waveform energy, overnight continuity and service availability were not independently verified. Receiver audio level was zero while playback was blocked or muted during the quiet check; reception evidence is the receiver’s media/codec/bitrate statistics together with the nonzero local synthesized-audio meter and renderer tests. No microphone, camera, screen capture, live wallet operation, OpenAI generation or owner key was used. This is not a security certification.
+
+The live listener invitation is generated in browser memory and is intentionally excluded from this source record. A stopped cast invalidates its live invitation, and starting another cast generates a new one. Keep the publishing Jazz tab open and the device awake.
+
 ## Unreleased Jazz naming development · 2026-11-17
 
 This isolated development change adds listener-paid Jazz titles and beats. It is based on 0.9.3b and has not been published or installed. Naming is disabled by default, and the owner chose to connect OpenAI later.

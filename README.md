@@ -6,6 +6,8 @@ A creator arcade inspired by the loops of a telephone cord: an hourly color cloc
 
 Development: Jazz now includes **Name this song**, a two-cent PEPE payment for an OpenAI title and a new beat. It stays disabled until the owner connects their account. See [setup, payment and recovery details](keeper/JAZZ-NAMING.md). This addition has not been published or installed as part of 0.9.3b.
 
+Jazz development also adds **Shuffle the trio**, with coordinated musical settings and Undo, plus **Cast Jazz live** for a free, audio-only VDO.Ninja listener link. Casting shares only the synthesized Jazz mix and does not capture devices or the screen. Read [the Jazz guide](keeper/JAZZ.md#cast-jazz-live) for controls and connection limits.
+
 [![Add Doodle Tick to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fmoswald14%2Fdoodletick)
 
 ## Native Scrypt mining and payments

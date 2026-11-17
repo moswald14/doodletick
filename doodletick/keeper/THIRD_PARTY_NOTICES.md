@@ -58,6 +58,16 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+## VDO.Ninja audio casting
+
+The browser source `public/vdoninja-sdk.js` is VDO.Ninja SDK 1.6.2, copyright 2025–2026 Steve Seguin, under MPL-2.0, with a local interoperability fix described below. The complete license is included in `public/vdoninja-sdk-license.txt`. Corresponding source is shipped in full, without minification. Project integration code remains GPL-3.0-only.
+
+Source revision: `c0f326583b96de8278f8ce0d60f2898af7945cd8` at <https://github.com/steveseguin/ninjasdk>. SHA-256 of the original upstream bytes: `2b9ddec56ef68ea5ef91cd1f494d65646cc7fa17e726a8bafebfe6ea8a0e0258`. SHA-256 of the included modified source: `80c0ab876661c4f2f34b1c9b3df4317663dd2bd4e3b22d0cc95c42d4f4dca141`.
+
+Local modification on 2026-11-17: include the existing, password-hashed stream identity on media-renegotiation and data-channel ICE-restart offers, retaining encryption and cancellation guards. Current VDO.Ninja viewers require this field; the original initial data connection succeeded but the audio renegotiation was rejected without it. The receiver's validation is not changed. Functional interoperability regressions live in `tests/jazz-sdk-interop.test.mjs` in the source downloads.
+
+Casting uses VDO.Ninja's public signaling and TURN discovery services only after the listener explicitly starts a cast. The integration supplies its own synthesized audio stream. It does not request a microphone, camera, display capture or remote control. Service availability and bandwidth limits are separate from the source license.
+
 ## Recipient wallet signature verification
 
 The browser contains a pinned, unminified ethers 6.17.0 signature/encoding bundle, including Noble curve and hash primitives. These components retain their MIT licenses; full component versions, copyrights and license texts are in `keeper/public/recipient-crypto-notices.txt` (or `public/recipient-crypto-notices.txt` in desktop/Pi downloads). The bundle contains no wallet connection or provider API.

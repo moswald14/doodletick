@@ -8,13 +8,13 @@ import { createKeeperServer } from '../server.mjs';
 import { createKeeperServer as createHaKeeper } from '../../doodletick/keeper/server.mjs';
 import { createIngressServer } from '../../doodletick/gateway.mjs';
 
-const names = ['jazz.html', 'jazz.css', 'jazz-core.mjs', 'jazz-player.mjs', 'jazz-worklet.mjs'];
+const names = ['jazz.html', 'jazz.css', 'jazz-core.mjs', 'jazz-player.mjs', 'jazz-worklet.mjs', 'jazz-settings.mjs', 'jazz-cast.mjs', 'vdoninja-sdk.js', 'vdoninja-sdk-license.txt'];
 async function checkAssets(base) {
   const before = await (await fetch(base + '/api/status')).json();
   for (const name of names) {
     const response = await fetch(base + '/' + name);
     assert.equal(response.status, 200, name);
-    assert.match(response.headers.get('content-type'), name.endsWith('.html') ? /text\/html/ : name.endsWith('.css') ? /text\/css/ : /javascript/);
+    assert.match(response.headers.get('content-type'), name.endsWith('.html') ? /text\/html/ : name.endsWith('.css') ? /text\/css/ : name.endsWith('.txt') ? /text\/plain/ : /javascript/);
     const csp = response.headers.get('content-security-policy');
     assert.match(csp, /script-src 'self';/);
     assert.match(csp, /worker-src 'self';/);
@@ -28,6 +28,11 @@ async function checkAssets(base) {
         assert.equal(inline.trim(), '');
       }
       assert.doesNotMatch(body, /http-equiv="Content-Security-Policy"/);
+      assert.match(csp, /connect-src[^;]*wss:\/\/apibackup\.vdo\.ninja/);
+      assert.match(csp, /connect-src[^;]*https:\/\/turnservers\.vdo\.ninja/);
+      assert.match(body, /id="shuffle-settings"/); assert.match(body, /id="cast-jazz"/);
+    } else {
+      assert.doesNotMatch(csp, /apibackup\.vdo\.ninja|turnservers\.vdo\.ninja/);
     }
     if (name === 'jazz-player.mjs') {
       assert.match(body, /new URL\('\.\/jazz-worklet\.mjs', import\.meta\.url\)/);
@@ -39,6 +44,7 @@ async function checkAssets(base) {
   const after = await (await fetch(base + '/api/status')).json();
   assert.equal(after.publicKey, before.publicKey); assert.equal(after.receipts, before.receipts);
   assert.equal((await fetch(base + '/witness-key.json')).status, 404);
+  const api = await fetch(base + '/api/status'); assert.doesNotMatch(api.headers.get('content-security-policy'), /apibackup\.vdo\.ninja|turnservers\.vdo\.ninja/);
 }
 
 test('desktop serves the complete jazz page under the existing strict script policy', async () => {

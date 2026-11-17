@@ -81,6 +81,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
   for (const file of ['phrase-notices.mjs', 'phrase-notices.txt']) allowedFiles.add(file);
   for (const file of ['jazz.html', 'jazz.css', 'jazz-core.mjs', 'jazz-player.mjs', 'jazz-worklet.mjs']) allowedFiles.add(file);
   for (const file of ['jazz-name-contract.mjs', 'jazz-name-client.mjs', 'jazz-name-ui.mjs']) allowedFiles.add(file);
+  for (const file of ['jazz-settings.mjs', 'jazz-cast.mjs', 'vdoninja-sdk.js', 'vdoninja-sdk-license.txt']) allowedFiles.add(file);
   for (const file of ['doodle-bridge.js', 'telephone.html', 'telephone.css', 'telephone-1.js', 'telephone-2.js', 'telephone-session.js', 'telephone-post-roll.js', 'telephone-integration.css', 'telephone-rhyme.html', 'telephone-rhyme.css', 'telephone-rhyme-1.js', 'telephone-keeper.mjs', 'telephone-keeper.css', 'studio.html', 'studio-app.js', 'studio-worker.js', 'studio.css', 'studio-classic.html', 'studio-notices.txt']) allowedFiles.add(file);
   for(const file of ['mozcorp-ui.mjs','mozcorp-cloud.mjs','mozcorp-upgrades.mjs','mozcorp.css','creative-score-player.mjs'])allowedFiles.add(file);
   for (const file of ['shelfdefense.html', 'shelfdefense.css', 'shelfdefense-art.js', 'shelfdefense-waves.js', 'shelfdefense-audio.js', 'shelfdefense-game.js', 'shelfdefense-app.js', 'shelfdefense-wave-lab.js']) allowedFiles.add(file);
@@ -129,6 +130,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
         return send(200, await job);
       }
       if (url.pathname === '/telephone.html') res.setHeader('Content-Security-Policy', res.getHeader('Content-Security-Policy').replace("connect-src 'self'", "connect-src 'self' https://api.gdeltproject.org"));
+      if (url.pathname === '/jazz.html') res.setHeader('Content-Security-Policy', res.getHeader('Content-Security-Policy').replace("connect-src 'self'", "connect-src 'self' wss://apibackup.vdo.ninja https://turnservers.vdo.ninja"));
       if (url.pathname === '/telephone-rhyme.html') res.setHeader('Content-Security-Policy', res.getHeader('Content-Security-Policy').replace("frame-ancestors 'none'", "frame-ancestors 'self'"));
       if (req.method !== 'GET') return send(405, { error: 'Method not supported.' });
       const file = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);

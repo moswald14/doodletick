@@ -12,6 +12,7 @@ ASSETS.push('/phrase-core.mjs', '/phrase-store.mjs', '/phrase-ui.mjs', '/phrase.
 ASSETS.push('/phrase-notices.mjs', '/phrase-notices.txt');
 const DICTIONARIES = ['/phrase-dictionary.json', '/phrase-attestations.json'];
 ASSETS.push('/jazz.html', '/jazz.css', '/jazz-core.mjs', '/jazz-player.mjs', '/jazz-worklet.mjs');
+ASSETS.push('/jazz-name-contract.mjs', '/jazz-name-client.mjs', '/jazz-name-ui.mjs', '/jazz-settings.mjs', '/jazz-cast.mjs', '/vdoninja-sdk.js', '/vdoninja-sdk-license.txt');
 ASSETS.push('/doodle-bridge.js','/telephone.html','/telephone.css','/telephone-1.js','/telephone-2.js','/telephone-session.js', '/telephone-post-roll.js','/telephone-integration.css','/telephone-rhyme.html','/telephone-rhyme.css','/telephone-rhyme-1.js','/telephone-keeper.mjs','/telephone-keeper.css','/studio.html','/studio-app.js','/studio-worker.js','/studio.css','/studio-classic.html','/studio-notices.txt');
 ASSETS.push('/mozcorp-cloud.mjs','/mozcorp-upgrades.mjs','/mozcorp-ui.mjs','/mozcorp.css','/creative-score-player.mjs');
 ASSETS.push('/shelfdefense.html', '/shelfdefense.css', '/shelfdefense-art.js', '/shelfdefense-waves.js', '/shelfdefense-audio.js', '/shelfdefense-game.js', '/shelfdefense-app.js', '/shelfdefense-wave-lab.js');

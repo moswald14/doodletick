@@ -296,12 +296,25 @@ class DJRenderer {
     this.levels = { piano: 0.82, bass: 0.9, drums: 0.68 };
     this.targets = { ...this.levels }; this.maxVoices = 0;
     this.pendingPart = null; this.activePart = null;
+    this.pendingScene = null;
   }
   configure(data) {
     if (data.levels) for (const role of ['piano', 'bass', 'drums']) {
-      if (Number.isFinite(data.levels[role])) this.targets[role] = djClamp(data.levels[role], 0, 1);
+      if (Number.isFinite(data.levels[role])) {
+        this.targets[role] = djClamp(data.levels[role], 0, 1);
+        if (this.pendingScene) this.pendingScene.levels[role] = this.targets[role];
+      }
     }
     if (data.composition) this.composer.configure(data.composition);
+    if (data.scene && typeof data.scene.id === 'string' && /^[a-z0-9-]{1,64}$/i.test(data.scene.id)) {
+      const scene = data.scene, c = scene.composition, levels = scene.levels;
+      if (c && Object.hasOwn(DJ_STYLES, c.style) && Number.isFinite(c.tempo) && c.tempo >= 55 && c.tempo <= 180
+        && Number.isFinite(c.swing) && c.swing >= 0.5 && c.swing <= 0.72 && levels
+        && ['piano', 'bass', 'drums'].every(role => Number.isFinite(levels[role]) && levels[role] >= 0 && levels[role] <= 1)) {
+        this.composer.configure({ style: c.style, tempo: c.tempo, swing: c.swing });
+        this.pendingScene = { id: scene.id, levels: { piano: levels.piano, bass: levels.bass, drums: levels.drums } };
+      }
+    }
     if (typeof data.nameSnapshot === 'string' && /^[a-z0-9-]{1,64}$/i.test(data.nameSnapshot)) {
       let context = null;
       if (this.info) try { context = validateJazzContext({ ...this.info,
@@ -338,6 +351,10 @@ class DJRenderer {
   render(left, right) {
     for (let i = 0; i < left.length; i++, this.frame++) {
       if (this.frame >= this.nextBar) {
+        if (this.pendingScene) {
+          this.targets = { ...this.targets, ...this.pendingScene.levels };
+          this.notify({ sceneApplied: this.pendingScene.id }); this.pendingScene = null;
+        }
         const bar = this.composer.nextBar();
         const matches = part => part.targetSet === bar.info.set && part.targetSeed === bar.info.seed;
         if (this.activePart && !matches(this.activePart)) this.activePart = null;

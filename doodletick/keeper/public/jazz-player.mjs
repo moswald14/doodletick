@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import { DJ_NOTES, DJ_STYLES, DJRandom, djClamp, djMakeBank } from './jazz-core.mjs';
 import { createJazzNamingUI } from './jazz-name-ui.mjs';
+import { djShuffleSettings } from './jazz-settings.mjs';
+import { createJazzCastUI } from './jazz-cast.mjs';
 'use strict';
 (() => {
   const $ = id => document.getElementById(id), storageKey = 'doodle-jazz-v1';
@@ -23,6 +25,13 @@ import { createJazzNamingUI } from './jazz-name-ui.mjs';
   let state = 'idle', busy = false, sessionToken = 0, seed = freshSeed(), meterData;
   let pendingChange = false;
   let lastInfo = null;
+  let pendingShuffle = null, previousSettings = null;
+  const casting = createJazzCastUI({ getPlayback: () => state, getSource: () => {
+    if (!context || !analyser || state !== 'playing') throw new Error('Play Jazz before casting.');
+    const sourceNode = analyser, destination = context.createMediaStreamDestination();
+    sourceNode.connect(destination);
+    return { stream: destination.stream, release() { try { sourceNode.disconnect(destination); } catch {} } };
+  } });
   const snapshots = new Map();
   const naming = createJazzNamingUI({
     getPlayback: () => ({ session: sessionToken, state, info: state === 'playing' ? lastInfo : null }),
@@ -49,6 +58,7 @@ import { createJazzNamingUI } from './jazz-name-ui.mjs';
     if (!playing) { $('signal').value = 0; document.querySelectorAll('.beat-dots i').forEach(e => e.classList.remove('active')); }
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = playing ? 'playing' : next === 'paused' ? 'paused' : 'none';
     naming.playbackChanged();
+    casting.playbackChanged();
   }
   function paintPrefs() {
     for (const id of ['volume', 'tempo', 'swing', 'room', 'piano', 'bass', 'drums']) $(id).value = prefs[id];
@@ -98,6 +108,14 @@ import { createJazzNamingUI } from './jazz-name-ui.mjs';
   }
   function receive(info, token) {
     if (token !== sessionToken || !context) return;
+    if (info.sceneApplied) {
+      if (info.sceneApplied === pendingShuffle) {
+        pendingShuffle = null; pendingChange = false;
+        wet?.gain.setTargetAtTime(prefs.room / 100 * 0.45, context.currentTime, 0.05);
+        notice('The trio has picked up your new settings.');
+      }
+      return;
+    }
     if (info.nameSnapshot) {
       const pending = snapshots.get(info.nameSnapshot);
       if (pending) { clearTimeout(pending.timer); snapshots.delete(info.nameSnapshot);
@@ -185,6 +203,7 @@ import { createJazzNamingUI } from './jazz-name-ui.mjs';
   }
   function stop() {
     sessionToken++;
+    void casting.stop(); pendingShuffle = null;
     lastInfo = null;
     for (const pending of snapshots.values()) { clearTimeout(pending.timer); pending.reject(new Error('The session stopped. Play jazz and try again.')); }
     snapshots.clear();
@@ -204,6 +223,26 @@ import { createJazzNamingUI } from './jazz-name-ui.mjs';
     else notice('A fresh improvisation is ready. Press Play jazz.');
   }
   $('new-set').addEventListener('click', newSet);
+  const musicalSettings = () => Object.fromEntries(['style', 'tempo', 'swing', 'room', 'piano', 'bass', 'drums'].map(key => [key, prefs[key]]));
+  function applySettings(settings, label) {
+    for (const key of ['style', 'tempo', 'swing', 'room', 'piano', 'bass', 'drums']) prefs[key] = settings[key];
+    paintPrefs(); save(); $('shuffle-info').textContent = label + ' · ' + prefs.tempo + ' BPM';
+    if (node) {
+      const levels = Object.fromEntries(['piano', 'bass', 'drums'].map(role => [role, prefs.trackMutes[role] ? 0 : prefs[role] / 100]));
+      pendingShuffle = crypto.randomUUID(); pendingChange = true;
+      node.port.postMessage({ scene: { id: pendingShuffle, composition: { style: prefs.style, tempo: prefs.tempo, swing: prefs.swing / 100 }, levels } });
+      notice(label + ' will join on the next bar.');
+    } else notice(label + ' is ready. Press Play jazz.');
+  }
+  $('shuffle-settings').addEventListener('click', () => {
+    previousSettings = musicalSettings();
+    const shuffled = djShuffleSettings(prefs, freshSeed()); applySettings(shuffled, shuffled.label);
+    $('undo-shuffle').hidden = false;
+  });
+  $('undo-shuffle').addEventListener('click', () => {
+    if (!previousSettings) return;
+    applySettings(previousSettings, 'Your previous settings'); previousSettings = null; $('undo-shuffle').hidden = true;
+  });
   $('mute').addEventListener('click', () => { prefs.muted = !prefs.muted; masterVolume(); paintPrefs(); save(); });
   $('night').addEventListener('click', () => { prefs.night = !prefs.night; paintPrefs(); save(); });
   for (const id of ['volume', 'tempo', 'swing', 'room', 'piano', 'bass', 'drums']) $(id).addEventListener('input', () => {

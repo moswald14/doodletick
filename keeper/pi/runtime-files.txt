@@ -95,6 +95,10 @@ public/jazz-worklet.mjs
 public/jazz-name-contract.mjs
 public/jazz-name-client.mjs
 public/jazz-name-ui.mjs
+public/jazz-settings.mjs
+public/jazz-cast.mjs
+public/vdoninja-sdk.js
+public/vdoninja-sdk-license.txt
 public/doodle-bridge.js
 public/telephone.html
 public/telephone.css

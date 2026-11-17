@@ -1,3 +1,7 @@
+## Unreleased — Jazz casting and coherent shuffle
+
+Shuffle the trio chooses correlated tempo, swing, room and instrumental balance, with an Undo button; the change joins on a bar boundary and preserves master volume and mutes. Cast Jazz live sends only the synthesized Jazz output through VDO.Ninja and produces an audio-only listener link, with no camera, microphone or screen capture. Includes explicit start/stop, bounded connection recovery, media cleanup, live audio-send counters and page-specific service permissions. A pinned, locally served MPL-2.0 SDK includes a documented interoperability correction for current viewer renegotiation. Existing Keeper authentication, vault, garden, DVC and paid-naming opt-in are preserved.
+
 ## Unreleased — Jazz titles and listener beats
 
 The Jazz room has a Name this song button for a listener-confirmed payment of about $0.02 in original Ethereum PEPE, followed by an OpenAI title and bounded drum groove at the next bar. Includes exact invoice validation, replay prevention, private recovery receipts, restart recovery, bounded retries and server-only API access. Off by default pending owner account setup. See JAZZ-NAMING.md for network fees, configuration, storage and validation limits. No existing vault, garden, DVC or signature format changes.

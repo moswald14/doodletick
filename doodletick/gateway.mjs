@@ -40,7 +40,10 @@ export function createIngressServer({ keeperPort, control, ingressIP = '172.30.3
       if (req.headers['x-keeper-request'] === '1') headers['x-keeper-request'] = '1';
       for (const name of ['content-type', 'authorization']) if (req.headers[name]) headers[name] = req.headers[name];
       const upstream = http.request({ hostname: '127.0.0.1', port: keeperPort, path: req.url, method: req.method, headers }, response => {
-        let pageSecurity = req.url.split('?')[0] === '/telephone.html' ? { ...security, 'Content-Security-Policy': security['Content-Security-Policy'].replace("connect-src 'self'", "connect-src 'self' https://api.gdeltproject.org") } : security;
+        const page = req.url.split('?')[0];
+        let pageSecurity = security;
+        if (page === '/telephone.html') pageSecurity = { ...security, 'Content-Security-Policy': security['Content-Security-Policy'].replace("connect-src 'self'", "connect-src 'self' https://api.gdeltproject.org") };
+        if (page === '/jazz.html') pageSecurity = { ...security, 'Content-Security-Policy': security['Content-Security-Policy'].replace("connect-src 'self'", "connect-src 'self' wss://apibackup.vdo.ninja https://turnservers.vdo.ninja") };
         if(response.statusCode===200 && /^\/mozcorp\/frame\/[a-z][a-z0-9-]{0,49}$/.test(req.url.split('?')[0])) {
           const policy=response.headers['content-security-policy']||'', match=policy.match(/^default-src 'none'; script-src 'nonce-([A-Za-z0-9+/=]{24,40})';/);
           if(!match || privateFramePolicy(match[1])!==policy) {response.resume();reply(502,{error:'The private station isolation policy is unavailable.'});return;}

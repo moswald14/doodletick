@@ -10,6 +10,8 @@ Audio uses the speakers or headphones selected for this browser. Keeping the Kee
 
 ## Choose a feel
 
+**Shuffle the trio** chooses a coherent variation of the musical settings: a mellow room, a warm trio or a brighter conversation. Tempo, swing, room and instrument balance move together on the next bar. It usually continues the current style, sometimes moves into another style, and keeps bossa straight. Master volume and your mutes are preserved. **Undo shuffle** restores the preceding musical settings.
+
 | Style | Arrangement |
 | --- | --- |
 | **Velvet swing** | Piano, walking bass and swinging percussion over changing jazz harmony. |
@@ -39,6 +41,18 @@ When focus is outside a control, **Space** plays or pauses, **M** toggles mute a
 After starting, you can switch windows or minimize the browser while leaving the jazz page open. Keep the device awake. **Back to Keeper** leaves the jazz page and stops its sound; returning to Jazz room requires Play again. Opening Jazz room also leaves the main Keeper page, so its current page's sound players end through their normal page-exit cleanup.
 
 Closing or reloading the page, device sleep, browser suspension or an audio-device interruption can stop playback. Mobile screen-lock playback and uninterrupted overnight operation are not guaranteed. If the browser interrupts the session, use the displayed Play or Resume control when ready. No device sleep or audio-output settings are changed by the player.
+
+## Cast Jazz live
+
+Press **Play Jazz**, then **Cast Jazz live**. Jazz sends its own synthesized audio directly to the free, account-free VDO.Ninja service and shows a listener link. Copy that link or open its listener page; anyone with the link can listen while this player remains open and the device stays awake. There is no station directory, recording archive or server-generated radio stream.
+
+Only the Jazz mix is supplied to the casting library. No microphone, camera, display/tab capture, wallet connection or OpenAI account is needed. Your current mix, shuffle changes, master volume and Mute affect the cast. Pause sends silence; **Stop casting** ends the network cast while Jazz continues locally. **Stop Jazz**, reload or leaving the Jazz page ends the cast. Starting again creates a new link; a stopped link does not resume automatically.
+
+The page shows connected listeners and audio bytes actually sent, rather than treating a signaling connection as evidence that a listener receives music. Browsers can require a click on the listener page before sound plays. Cast audio is Opus, with a 128-kbps target and a stereo-capable source; actual delivery depends on browser negotiation and network conditions. This is intended for a small audience: each listener needs a peer connection and outgoing bandwidth. It is not an unlimited always-on hosting service.
+
+VDO.Ninja’s public signaling and TURN discovery services are contacted only when you start casting. Direct WebRTC connections may reveal network addresses to listening peers; relays can carry encrypted traffic if a direct connection is unavailable. No Keeper address, identity, saved content, vault, payment receipt or API key is sent by this integration. Treat the generated listener URL as an access link and stop casting to end its access.
+
+The library is bundled locally, including its source and MPL-2.0 license. Script restrictions stay in place; only the Jazz page is permitted to contact its two casting-service origins. Home Assistant keeps its existing authentication and offline-shell restrictions. See [the casting library API](https://sdk.vdo.ninja/docs/api-reference.html) and [connection guide](https://sdk.vdo.ninja/docs/connecting.html).
 
 ## Loading and privacy
 
