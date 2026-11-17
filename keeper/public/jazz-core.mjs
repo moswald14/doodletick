@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-/* Doodle Jazz 1.0.1. Original procedural composition and synthesized instruments. */
+/* Doodle Jazz. Original procedural composition and synthesized instruments. */
 const DJ_NOTES = ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'G♭', 'G', 'A♭', 'A', 'B♭', 'B'];
 const DJ_CHORDS = {
   maj9: [0, 4, 7, 11, 14], m9: [0, 3, 7, 10, 14], '13': [0, 4, 7, 10, 14, 21],
@@ -13,6 +13,33 @@ const DJ_STYLES = {
 };
 const djClamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const djFreq = n => 440 * Math.pow(2, (n - 69) / 12);
+const DJ_MOTIFS = [[0, 2, 4, 2], [0, 3, 5, 3], [0, -2, -3, 0], [0, 2, 0, -2], [0, -1, 2, 0]];
+const DJ_CALL_RHYTHMS = [[0, 0.5, 1.5, 2], [0, 1, 1.5, 2.5], [0.5, 1, 2, 2.5]];
+
+// Thirds and sevenths (sixths on sixth chords) carry the harmony. Enumerate
+// nearby rootless shapes and keep common tones instead of jumping to fixed
+// registers. One color tone leaves room for the bass and the melody.
+function djVoiceLead(root, quality, previous = []) {
+  const intervals = DJ_CHORDS[quality];
+  if (!intervals) throw new Error('Unknown jazz chord quality.');
+  const pitchClass = n => (n % 12 + 12) % 12;
+  const candidates = interval => Array.from({ length: 25 }, (_, i) => i + 52)
+    .filter(note => pitchClass(note) === pitchClass(root + interval));
+  const colors = quality === '13' ? [14, 21] : [intervals[4] ?? intervals[2]];
+  const target = previous.length === 3 ? previous : [55, 60, 65];
+  let best = null, bestCost = Infinity;
+  for (const third of candidates(intervals[1])) for (const seventh of candidates(intervals[3])) {
+    for (const color of colors) for (const extension of candidates(color)) {
+      const notes = [third, seventh, extension].sort((a, b) => a - b);
+      if (notes[1] - notes[0] < 2 || notes[2] - notes[1] < 2 || notes[2] - notes[0] > 17) continue;
+      const motion = notes.reduce((sum, note, i) => sum + Math.abs(note - target[i]), 0);
+      const cost = motion + Math.abs(notes[1] - 61) * 0.08 + (notes[2] - notes[0]) * 0.025;
+      if (cost < bestCost) { best = notes; bestCost = cost; }
+    }
+  }
+  if (!best) throw new Error('No playable jazz voicing.');
+  return best;
+}
 
 class DJRandom {
   constructor(seed) { this.state = (seed >>> 0) || 1; }
@@ -108,7 +135,8 @@ class DJComposer {
     this.pending = null;
     this.bar = 0; this.chorus = 0; this.set = 1; this.lastMelody = 72; this.lastBass = 41;
     this.tonic = DJ_STYLES[this.config.style].tonic;
-    this.motif = [0, 2, 4, 7, 4, 2, 0, -1];
+    this.motif = [...DJ_MOTIFS[0]];
+    this.phrase = null; this.lastVoicing = [];
   }
   configure(change) { this.pending = { ...this.pending, ...change }; }
   applyPending() {
@@ -122,7 +150,8 @@ class DJComposer {
     if (reset) {
       this.bar = 0; this.chorus = 0; this.set++;
       this.tonic = (DJ_STYLES[this.config.style].tonic + this.rng.pick([0, 0, 2, 5, 7])) % 12;
-      this.motif = Array.from({ length: 8 }, () => this.rng.pick([-2, 0, 2, 3, 4, 5, 7]));
+      this.motif = [...this.rng.pick(DJ_MOTIFS)];
+      this.phrase = null; this.lastVoicing = [];
     }
   }
   chart() {
@@ -156,23 +185,37 @@ class DJComposer {
     const phase = ['The melody', 'Piano wandering', 'A little breathing room', 'All together'][this.chorus % 4];
     const events = [], rng = this.rng, bossa = this.config.style === 'bossa';
     const seconds = 60 / this.config.tempo, swing = this.config.swing;
+    const phraseBar = this.bar % 4, phraseRole = ['call', 'repeat', 'answer', 'cadence'][phraseBar];
+    if (phraseBar === 0 || !this.phrase) {
+      const rhythm = rng.pick(DJ_CALL_RHYTHMS);
+      this.phrase = { rhythm: [...rhythm], callNotes: [], anchor: djClamp(this.lastMelody + rng.pick([-2, 0, 2]), 65, 75),
+        delay: Math.min(0.018, seconds * (0.018 + rng.next() * 0.012)), level: 0.92 + rng.next() * 0.08 };
+    }
     const when = beat => {
       const whole = Math.floor(beat), frac = beat - whole;
       return (whole + (frac <= 0.5 ? frac * 2 * swing : swing + (frac - 0.5) * 2 * (1 - swing))) * seconds;
     };
-    const add = (instrument, note, beat, beats, velocity, role = instrument) => {
-      events.push({ instrument, role, note, time: when(beat) + rng.next() * 0.007,
-        duration: Math.max(0.05, beats * seconds), velocity: velocity * (0.9 + rng.next() * 0.2) });
+    const add = (instrument, note, beat, beats, velocity, role = instrument, roll = 0) => {
+      // The rhythm section anchors the pulse. Swing/blues melody downbeats sit
+      // a little behind it, consistently through a phrase; offbeats line up.
+      // Bossa keeps its straight grid. These are compositional choices, not a
+      // claim that one timing offset reproduces every musician's swing.
+      const delay = !bossa && role === 'melody' && Number.isInteger(beat) ? this.phrase.delay : 0;
+      events.push({ instrument, role, note, beat, time: when(beat) + delay + roll,
+        duration: Math.max(0.05, beats * seconds), velocity });
     };
     const at = beat => chords.findLast(c => c.start <= beat) || chords[0];
-    // Rootless guide-tone voicings: thirds, sevenths, ninths and a fifth/sixth.
+    // Sparse accompaniment answers in the lead's rests. The bossa pattern
+    // retains its own interlocking rhythm rather than borrowing swing comping.
+    const compRhythm = bossa ? [0, 0.75, 1.5, 2.5, 3.25] : [[0.5, 3], [1, 3.5], [0, 2.75], [2, 3]][phraseBar];
     for (const c of chords) {
-      const intervals = DJ_CHORDS[c.quality], tones = [intervals[1], intervals[3], intervals[4] ?? intervals[2], intervals[2]];
-      const voicing = tones.map((v, i) => this.nearestPitch(c.root + v, 53 + i * 5, 49, 75)).sort((a, b) => a - b);
-      const rhythm = bossa ? [0, 0.75, 1.5, 2.5, 3.25] : this.bar % 2 ? [0.5, 2, 3.5] : [0, 1.5, 2.75];
-      for (const beat of rhythm.filter(b => b >= c.start && b < c.start + c.beats)) {
-        if (rng.next() < 0.18 && beat !== c.start) continue;
-        voicing.forEach((note, i) => add('piano', note, beat + i * 0.009, bossa ? 0.65 : 0.9, 0.22 + rng.next() * 0.055));
+      const rhythm = compRhythm.filter(b => b >= c.start && b < c.start + c.beats);
+      if (!rhythm.length) continue;
+      const voicing = djVoiceLead(c.root, c.quality, this.lastVoicing);
+      this.lastVoicing = voicing;
+      for (const beat of rhythm) {
+        const level = (beat >= 3 ? 0.21 : 0.16) * (this.chorus % 4 === 2 ? 0.8 : 1);
+        voicing.forEach((note, i) => add('piano', note, beat, bossa ? 0.56 : 0.72, level * [0.88, 1, 0.8][i], 'piano', i * 0.003));
       }
     }
     // A walking line approaches each following harmony; bossa uses a two-feel.
@@ -187,28 +230,34 @@ class DJComposer {
       let note = this.nearestPitch(pc, i === 0 ? 38 : this.lastBass, 33, 52);
       if (i === 0 && note > 45) note -= 12;
       this.lastBass = note;
-      add('bass', note, beat, bossa ? 1.12 : 0.9, 0.75);
+      add('bass', note, beat, bossa ? 1.12 : 0.9, [0.76, 0.58, 0.68, 0.56][i]);
     });
-    const density = [0.68, 0.87, 0.34, 0.78][this.chorus % 4];
-    const phraseRest = this.bar % 4 === 3 ? rng.pick([2, 2.5, 3, 4]) : 4;
-    for (let i = 0; i < 8 && i * 0.5 < phraseRest; i++) {
-      if (rng.next() > density || (i === 0 && this.bar % 2 === 1 && rng.next() < 0.5)) continue;
-      const beat = i * 0.5, c = at(beat), intervals = DJ_CHORDS[c.quality];
-      let note;
-      if (this.chorus % 4 === 0) {
-        const target = 67 + this.motif[(i + this.bar * 2) % this.motif.length];
-        const choices = intervals.map(t => this.nearestPitch(c.root + t, target, 60, 83));
-        note = choices.sort((a, b) => Math.abs(a - target) - Math.abs(b - target))[0];
-      } else {
-        const step = rng.pick([-4, -2, -1, 1, 2, 3, 5]);
-        const target = djClamp(this.lastMelody + step, 61, 82);
-        let choices = intervals.map(t => this.nearestPitch(c.root + t, target, 60, 84));
-        if (i % 2 && rng.next() < 0.38) choices = [target];
-        note = choices.sort((a, b) => Math.abs(a - target) - Math.abs(b - target))[0];
+    // Four related bars: call, repeat its rhythm with a new ending, answer in
+    // another direction/register, then a guide-tone cadence and real silence.
+    // The motif remains recognizable during the solo and sparse choruses too.
+    let leadBeats = [...this.phrase.rhythm];
+    if (phraseRole === 'answer') leadBeats = [...DJ_CALL_RHYTHMS[(DJ_CALL_RHYTHMS.findIndex(r => r.every((b, i) => b === leadBeats[i])) + 1) % DJ_CALL_RHYTHMS.length]];
+    if (phraseRole === 'cadence') leadBeats = leadBeats.filter(b => b <= 1.5).slice(0, 2);
+    else if (this.chorus % 4 === 2) leadBeats = leadBeats.slice(0, 3);
+    leadBeats.forEach((beat, i) => {
+      const c = at(beat), intervals = DJ_CHORDS[c.quality], last = i === leadBeats.length - 1;
+      const answer = phraseRole === 'answer';
+      const contour = (answer ? -1 : 1) * this.motif[i % this.motif.length];
+      const target = djClamp(this.phrase.anchor + (answer ? 3 : 0) + contour, 60, 82);
+      const tones = last && (phraseRole === 'repeat' || phraseRole === 'cadence') ? [intervals[1], intervals[3]] : intervals;
+      let choices = tones.map(t => this.nearestPitch(c.root + t, target, 60, 84));
+      if (phraseRole === 'repeat' && last) {
+        const endings = choices.filter(note => note !== this.phrase.callNotes[i]);
+        if (endings.length) choices = endings;
       }
+      const note = choices.sort((a, b) => Math.abs(a - target) - Math.abs(b - target) || a - b)[0];
+      if (phraseRole === 'call') this.phrase.callNotes[i] = note;
       this.lastMelody = note;
-      add('piano', note, beat, i % 2 ? 0.43 : rng.pick([0.45, 0.8]), 0.45 + rng.next() * 0.11, 'melody');
-    }
+      const energy = [0.94, 1, 0.72, 0.9][this.chorus % 4];
+      const accent = [1, 0.72, 0.9, 0.64][i];
+      const length = phraseRole === 'cadence' && last ? 0.65 : Number.isInteger(beat) ? 0.46 : 0.32;
+      add('piano', note, beat, length, 0.52 * energy * accent * this.phrase.level * (phraseRole === 'cadence' ? 0.82 : 1), 'melody');
+    });
     if (bossa) {
       [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5].forEach((beat, i) => add('hat', 0, beat, 0.2, i % 2 ? 0.34 : 0.48, 'drums'));
       [0, 1.5, 2.5, 3].forEach(beat => add('stick', 0, beat, 0.2, 0.36, 'drums'));
@@ -219,7 +268,8 @@ class DJComposer {
     }
     [0, 2].forEach(beat => add('kick', 0, beat, 0.2, 0.28, 'drums'));
     events.sort((a, b) => a.time - b.time);
-    const info = { style: this.config.style, tempo: this.config.tempo, swing: this.config.swing, phase,
+    const info = { style: this.config.style, tempo: this.config.tempo, swing: this.config.swing,
+      phase: phase + ' · ' + phraseRole, phraseRole,
       key: DJ_NOTES[this.tonic] + (bossa ? ' minor' : ' major'), bar: this.bar + 1, bars: chart.length,
       chorus: this.chorus + 1, set: this.set,
       chords: chords.map(c => ({ beat: c.start, text: DJ_NOTES[c.root] + c.quality })) };
@@ -229,7 +279,7 @@ class DJComposer {
       if (this.chorus % 4 === 0) {
         this.tonic = (this.tonic + rng.pick([0, 5, 7])) % 12;
         this.set++;
-        this.motif = Array.from({ length: 8 }, () => rng.pick([-2, 0, 2, 3, 4, 5, 7]));
+        this.motif = [...rng.pick(DJ_MOTIFS)];
       }
     }
     return { events, info, duration: seconds * 4 };
@@ -302,4 +352,4 @@ class DJRenderer {
   }
 }
 
-export { DJ_NOTES, DJ_STYLES, DJRandom, DJComposer, DJRenderer, djClamp, djMakeBank };
+export { DJ_NOTES, DJ_STYLES, DJRandom, DJComposer, DJRenderer, djVoiceLead, djClamp, djMakeBank };

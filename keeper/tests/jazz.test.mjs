@@ -16,9 +16,11 @@ test('each jazz style keeps composing bounded, changing phrases across complete 
         assert(e.time >= 0 && e.time < bar.duration && e.duration > 0);
         assert(Number.isFinite(e.velocity));
       }
-      phrases.add(JSON.stringify(bar.events.filter(e => e.role === 'melody')));
+      phrases.add(JSON.stringify(bar.events.filter(e => e.role === 'melody').map(e => [e.beat, e.note])));
     }
-    assert(phrases.size > 950);
+    // Repetition is intentional. Check real pitch/rhythm variety, not tiny
+    // random performance differences that can hide an unchanging melody.
+    assert(phrases.size > 16);
     assert(composer.set > 8 && composer.chorus > 16);
   }
 });
