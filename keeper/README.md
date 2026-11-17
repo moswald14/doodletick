@@ -1,4 +1,6 @@
-# Doodle Tick Keeper 0.10b
+# Doodle Tick Keeper 0.11b
+
+Open **Shelf Defense** for the original tower-defense game, or **Idle shelves** for a shared Keeper cookie bakery. Battles save in this browser; idle progress saves with Keeper. Both use fictional game currency separate from DVC and garden coins. See [Shelf Defense](SHELF-DEFENSE.md).
 
 Doodle Tick is an experimental creator vault, social arcade, file library and shared mushroom garden. Spirographs help people compare signed creator keys when pairing. Your writing and files remain in your browser; Keepers provide signed receipts, a local directory and a shared garden scorekeeper.
 

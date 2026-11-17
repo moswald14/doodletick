@@ -10,6 +10,10 @@ The project owner authorized the copies included here for distribution under GPL
 
 This repository also includes the project owner’s Bullshit Telephone World 2 narrative interface, the Dot Wave Studio 2.3 editor and their Doodleverse project bridge. The included project code is distributed under GPL-3.0-only with this repository. This does not change the separate rights to writing, drawings, sounds or projects imported or created by users.
 
+## Included ShelfDEFENSE games
+
+ShelfDEFENSE and ShelfDEFENSE Idle are original project code by Matthew Oswald / mozWORLD. The Keeper edition includes their procedural artwork, local synthesized audio, battle engine, waveform attack lab and idle-game rules under GPL-3.0-only. No external asset or hosted script is required. User-created game sounds and other creative content retain their separate rights.
+
 ## Phrase lab dictionary data
 
 Phrase lab includes processed word lists and recorded expressions from ESDB/SCOWL, Kaikki/Wiktionary and dwyl. Their source-specific licenses, copyrights, pinned provenance and extraction notes are preserved in `keeper/PHRASE-SOURCES.md` (or `PHRASE-SOURCES.md` in desktop/Pi downloads). The browser ships the complete notices in `keeper/public/phrase-notices.txt` and `phrase-notices.mjs`; exported piles retain those notices. The app's code license does not replace these data licenses.

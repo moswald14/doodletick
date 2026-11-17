@@ -35,6 +35,9 @@ export function createIngressServer({ keeperPort, control, ingressIP = '172.30.3
       // Ingress must remain authenticated: no service worker or offline shell here.
       if (req.url.split('?')[0] === '/sw.mjs') return reply(404, { error: 'Offline shell is disabled for ingress.' });
       const headers = { host: `127.0.0.1:${keeperPort}` };
+      // This header has already passed ingress authentication and mutation checks.
+      // Keep the same protection when the local game handler receives the request.
+      if (req.headers['x-keeper-request'] === '1') headers['x-keeper-request'] = '1';
       for (const name of ['content-type', 'authorization']) if (req.headers[name]) headers[name] = req.headers[name];
       const upstream = http.request({ hostname: '127.0.0.1', port: keeperPort, path: req.url, method: req.method, headers }, response => {
         let pageSecurity = req.url.split('?')[0] === '/telephone.html' ? { ...security, 'Content-Security-Policy': security['Content-Security-Policy'].replace("connect-src 'self'", "connect-src 'self' https://api.gdeltproject.org") } : security;

@@ -10,6 +10,7 @@ dist/
 *.doodletick-receipt.json
 witness-key.json
 garden-ledger.json
+shelf-idle.json
 receipts.jsonl
 server.lock
 tailscaled.state

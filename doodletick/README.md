@@ -1,4 +1,6 @@
-# Doodle Tick Keeper · 0.10b
+# Doodle Tick Keeper · 0.11b
+
+**Shelf Defense** now opens from Keeper's sidebar. The original three-shelf battle game and the shared **Idle shelves** cookie bakery run inside the existing authenticated Web UI. Idle progress is stored in this app's data and included in its cold backups; browser battle saves remain separate. No additional integration, port, helper or API key is required. See [Shelf Defense](../keeper/SHELF-DEFENSE.md).
 
 MozCorp private rooms use a separately supplied, verified bundle. Install it from the app’s MozCorp page after this update. The public app does not include private station pages or site credentials.
 

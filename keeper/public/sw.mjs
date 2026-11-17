@@ -1,4 +1,4 @@
-const CACHE = 'doodletick-shell-v0.10b-r2';
+const CACHE = 'doodletick-shell-v0.11b-r1';
 const ASSETS = ['/clock-wheel.mjs', '/', '/index.html', '/app.mjs', '/core.mjs', '/style.css', '/logo.svg', '/files.css', '/files-ui.mjs', '/licenses.mjs', '/archive.mjs', '/file-store.mjs', '/peers.mjs', '/manifest.webmanifest', '/theme.mjs', '/theme.css'];
 ASSETS.push('/spirograph.mjs', '/spirograph-auth.mjs', '/vpn-description.mjs', '/vpn-transport.mjs', '/vpn-ui.mjs', '/arcade.css', '/arcade-ui.mjs', '/arcade-canvas.mjs', '/arcade-room.mjs', '/arcade-store.mjs', '/arcade-link.mjs', '/game-engine.mjs', '/workshop.mjs');
 ASSETS.push('/mushroom-core.mjs', '/mushroom-ui.mjs', '/mushroom-art.mjs', '/mushroom.css', '/dot-effects-dsp.mjs', '/dot-amp-tone.mjs', '/dot-studio-dsp.mjs', '/dot-collision-audio.mjs', '/dot-wave-export.mjs', '/dot-mushroom-dsp.mjs', '/dot-mushroom-motion.mjs');
@@ -14,6 +14,8 @@ const DICTIONARIES = ['/phrase-dictionary.json', '/phrase-attestations.json'];
 ASSETS.push('/jazz.html', '/jazz.css', '/jazz-core.mjs', '/jazz-player.mjs', '/jazz-worklet.mjs');
 ASSETS.push('/doodle-bridge.js','/telephone.html','/telephone.css','/telephone-1.js','/telephone-2.js','/telephone-session.js', '/telephone-post-roll.js','/telephone-integration.css','/telephone-rhyme.html','/telephone-rhyme.css','/telephone-rhyme-1.js','/telephone-keeper.mjs','/telephone-keeper.css','/studio.html','/studio-app.js','/studio-worker.js','/studio.css','/studio-classic.html','/studio-notices.txt');
 ASSETS.push('/mozcorp-ui.mjs','/mozcorp.css','/creative-score-player.mjs');
+ASSETS.push('/shelfdefense.html', '/shelfdefense.css', '/shelfdefense-art.js', '/shelfdefense-waves.js', '/shelfdefense-audio.js', '/shelfdefense-game.js', '/shelfdefense-app.js', '/shelfdefense-wave-lab.js');
+ASSETS.push('/shelf-idle.html', '/shelf-idle.css', '/shelf-idle-card.js', '/shelf-idle-client.mjs', '/shelf-idle.mjs');
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting())));
 self.addEventListener('activate', event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('doodletick-shell-') && key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', event => {
