@@ -1,3 +1,9 @@
+# 0.17b — Doodleverse paper wallet
+
+- Download the standalone paper wallet maker from the Doodleverse Coin miner or wallet.
+- Generate a main-network receiving address and print it alongside the private key. Both have QR codes.
+- Recover the printed key offline into an encrypted backup you can restore in Keeper.
+
 # 0.16b — Jazz band voices, rhythm and feedback
 
 - Select speed, two through seven beats per bar, phrase length, drum groove and key. Suggested keys follow the genre and Beat only plays the percussion.

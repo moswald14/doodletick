@@ -13,7 +13,7 @@ import path from 'node:path';
 import { createKeeperServer } from '../../keeper/server.mjs';
 import { createCoreRpc } from '../../keeper/dvc-scrypt-node.mjs';
 import { createScryptWork, solveScryptCandidate, SCRYPT_NETWORKS, compactSize, sha256d } from '../../keeper/dvc-scrypt-protocol.mjs';
-import { generatePrivateKey, privateKeyIdentity, encryptWallet, decryptWallet, createTransactionPlan, signTransactionPlan, verifyPlanStillSpendable } from '../../keeper/public/scrypt-wallet-core.mjs';
+import { generatePrivateKey, privateKeyIdentity, privateKeyFromWif, privateKeyToWif, encryptWallet, decryptWallet, createTransactionPlan, signTransactionPlan, verifyPlanStillSpendable } from '../../keeper/public/scrypt-wallet-core.mjs';
 
 const args = process.argv.slice(2);
 assert.equal(args.length, 4, 'Usage: node site-wallet-functional.mjs --daemon PATH --cli PATH');
@@ -104,7 +104,10 @@ try {
   assert.equal(await rawRpc('getblockhash', [0]), SCRYPT_NETWORKS.regtest.genesis);
   assert.equal((await rawRpc('getblockchaininfo')).chain, 'regtest');
   assert.match((await rawRpc('getnetworkinfo')).subversion, /^\/DoodleverseCore:/);
-  ownerKey = generatePrivateKey(); recipientKey = generatePrivateKey();
+  const paperKey = generatePrivateKey();
+  try { ownerKey = privateKeyFromWif(privateKeyToWif(paperKey, 'regtest'), 'regtest'); }
+  finally { paperKey.fill(0); }
+  recipientKey = generatePrivateKey();
   const owner = privateKeyIdentity(ownerKey, 'regtest'), recipient = privateKeyIdentity(recipientKey, 'regtest');
   const password = randomBytes(32).toString('hex'), receiverPassword = randomBytes(32).toString('hex');
   const backup = JSON.parse(JSON.stringify(await encryptWallet(ownerKey, 'regtest', password)));
@@ -177,7 +180,7 @@ try {
   assert.equal(restoredBalance.confirmedAtoms, (4400000000n - BigInt(signed.feeAtoms)).toString());
   const cliResult = await promisify(execFile)(cli, ['-regtest', '-datadir=' + nodeData, '-rpcport=' + rpcPort, 'getblockcount'], { windowsHide: true, timeout: 10000 });
   assert.equal(Number(cliResult.stdout.trim()), 32);
-  report = { passed: true, network: 'disposable regtest', height: 32, largeCoinbase: { outputs: regression.outputs, scriptBytes: regression.scriptBytes, blockBytes: regression.blockBytes }, firstPayment: signed.expectedTxid, returnPayment: returned.expectedTxid, firstFeeAtoms: signed.feeAtoms, returnFeeAtoms: returned.feeAtoms, finalOwnerAtoms: restoredBalance.confirmedAtoms, finalRecipientAtoms: (600000000n - BigInt(returned.feeAtoms)).toString(), checks: ['full Keeper HTTP protection', 'client-generated encrypted backups', 'wrong-password rejection', 'restored browser keys', 'Core-validated large coinbase', 'large previous transaction authentication and signing', 'maturity exclusion', 'client-reviewed native signing', 'Core signature acceptance', 'exact payment and change', 'mempool spent-output exclusion', 'idempotent pending and confirmed retries', 'identifier tamper rejection', 'double-spend rejection', 'received coins spent from second browser wallet', 'active-chain rollback and restore', 'persistent index restart', 'native CLI'] };
+  report = { passed: true, network: 'disposable regtest', height: 32, largeCoinbase: { outputs: regression.outputs, scriptBytes: regression.scriptBytes, blockBytes: regression.blockBytes }, firstPayment: signed.expectedTxid, returnPayment: returned.expectedTxid, firstFeeAtoms: signed.feeAtoms, returnFeeAtoms: returned.feeAtoms, finalOwnerAtoms: restoredBalance.confirmedAtoms, finalRecipientAtoms: (600000000n - BigInt(returned.feeAtoms)).toString(), checks: ['full Keeper HTTP protection', 'paper key round trip', 'client-generated encrypted backups', 'wrong-password rejection', 'restored browser keys', 'Core-validated large coinbase', 'large previous transaction authentication and signing', 'maturity exclusion', 'client-reviewed native signing', 'Core signature acceptance', 'exact payment and change', 'mempool spent-output exclusion', 'idempotent pending and confirmed retries', 'identifier tamper rejection', 'double-spend rejection', 'received coins spent from second browser wallet', 'active-chain rollback and restore', 'persistent index restart', 'native CLI'] };
 } finally {
   clearTimeout(timeout);
   ownerKey?.fill(0); restoredKey?.fill(0); recipientKey?.fill(0); recipientRestoredKey?.fill(0);

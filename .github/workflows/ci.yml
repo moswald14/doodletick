@@ -36,6 +36,7 @@ jobs:
         run: |
           npm run check
           node build-scrypt-wallet.mjs --check
+          node build-paper-wallet.mjs --check
       - name: Run Keeper and Home Assistant tests
         run: node scripts/test.mjs
       - name: Install pinned contract verification tools

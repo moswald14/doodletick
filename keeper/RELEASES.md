@@ -1,3 +1,7 @@
+## 0.17b — Doodleverse paper wallet
+
+Select **Paper wallet maker** next to **Your mining patch**. The standalone HTML creates a main-network DVC address offline and prints the receiving address and private key with QR codes. It can also recover a printed key into an encrypted Keeper wallet backup. [Paper wallet guide](paper-wallet/README.md)
+
 ## 0.16b — Jazz band voices, rhythm and feedback
 
 - Select speed, two through seven beats per bar, phrase length, drum groove and key. Suggested keys follow the genre and Beat only plays the percussion.

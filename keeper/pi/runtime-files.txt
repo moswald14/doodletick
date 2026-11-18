@@ -158,6 +158,7 @@ public/scrypt-wallet-core.mjs
 public/scrypt-wallet-crypto.mjs
 public/scrypt-wallet-crypto-notices.txt
 public/scrypt-wallet-ui.mjs
+public/scrypt-paper-wallet.html
 public/dvc-scrypt-miner.mjs
 public/scrypt.html
 public/scrypt.css

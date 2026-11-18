@@ -1,3 +1,7 @@
+# Validation — Doodle Tick 0.17b
+
+The paper wallet tests check the native address and private-key prefixes against the Doodleverse Core manifest. They reject damaged keys and verify that a key restored from paper can reopen an encrypted Keeper backup. The Windows Core site-wallet test mines and spends on a disposable chain through the existing browser-wallet protocol. The Home Assistant test verifies that the miner and wallet links deliver the offline file as an attachment.
+
 # Validation — Doodle Tick 0.16b
 
 Focused checks cover legacy scores, selectable beats and measures, drums-only output, weighted progression feedback, persisted voice recipes, next-bar bank swaps, naming receipt recovery, and signed long passages. Voice and MP3 canaries run in each candidate Home Assistant image. A local protected endpoint or fixture does not establish a configured live API account or installation.

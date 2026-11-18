@@ -5,9 +5,9 @@ import { ripemd160 } from './scrypt-wallet-crypto.mjs';
 import { parseStrictJSON } from './dvc-core.mjs';
 
 export const WALLET_NETWORKS = Object.freeze({
-  main: Object.freeze({ prefix: 31, genesis: '0307d627595365a02cbcfd7c2614be41b1f38989ac550f5499343226f1d2d9bb' }),
-  test: Object.freeze({ prefix: 65, genesis: '99e61f98fedac138dfb311d88779023b60aa9601f87d1c35d94e9a837f75ce05' }),
-  regtest: Object.freeze({ prefix: 112, genesis: 'e410039c6dc7111cf8b680962a2fc7fdafec5878f96dce4e79043d754417a44e' }),
+  main: Object.freeze({ prefix: 31, wifPrefix: 159, genesis: '0307d627595365a02cbcfd7c2614be41b1f38989ac550f5499343226f1d2d9bb' }),
+  test: Object.freeze({ prefix: 65, wifPrefix: 193, genesis: '99e61f98fedac138dfb311d88779023b60aa9601f87d1c35d94e9a837f75ce05' }),
+  regtest: Object.freeze({ prefix: 112, wifPrefix: 240, genesis: 'e410039c6dc7111cf8b680962a2fc7fdafec5878f96dce4e79043d754417a44e' }),
 });
 export const MAX_ATOMS = 21000000n * 100000000n;
 export const FEE_ATOMS_PER_BYTE = 1000n, MIN_OUTPUT_ATOMS = 1000000n, MAX_FEE_ATOMS = 100000000n;
@@ -32,23 +32,41 @@ export function parseCoins(value) {
 }
 export function formatAtoms(value) { const amount = typeof value === 'bigint' ? value : atomValue(value); if (amount < 0n || amount > MAX_ATOMS) fail('Invalid amount.'); return `${amount / 100000000n}.${(amount % 100000000n).toString().padStart(8, '0')}`; }
 function encodeBase58(bytes) { let number = BigInt('0x' + hex(bytes)), result = ''; while (number) { result = BASE58[Number(number % 58n)] + result; number /= 58n; } for (const byte of bytes) { if (byte) break; result = '1' + result; } return result; }
-function decodeBase58(value) {
-  if (typeof value !== 'string' || value.length < 26 || value.length > 35 || [...value].some(character => !BASE58.includes(character))) fail('Enter a native Doodleverse receiving address.');
+function base58Text(value, minimum, maximum) {
+  return typeof value === 'string' && value.length >= minimum && value.length <= maximum &&
+    [...value].every(character => BASE58.includes(character));
+}
+function encodeBase58Check(payload) {
+  const bytes = join(payload, doubleDigest(payload).subarray(0, 4));
+  try { return encodeBase58(bytes); }
+  finally { bytes.fill(0); }
+}
+function decodeBase58Check(value, payloadLength) {
   let number = 0n; for (const character of value) number = number * 58n + BigInt(BASE58.indexOf(character));
   let text = number.toString(16); if (text.length % 2) text = '0' + text;
-  const zeroes = value.match(/^1*/)[0].length, decoded = join(new Uint8Array(zeroes), unhex(text));
-  if (decoded.length !== 25 || encodeBase58(decoded) !== value || !equal(decoded.slice(21), doubleDigest(decoded.slice(0, 21)).slice(0, 4))) fail('The receiving address checksum is incorrect.');
-  return decoded;
+  const zeroes = value.match(/^1*/)[0].length;
+  const bytes = number === 0n ? new Uint8Array() : unhex(text);
+  const decoded = join(new Uint8Array(zeroes), bytes);
+  bytes.fill(0);
+  try {
+    const payload = decoded.subarray(0, payloadLength);
+    if (decoded.length !== payloadLength + 4 || encodeBase58(decoded) !== value ||
+        !equal(decoded.subarray(payloadLength), doubleDigest(payload).subarray(0, 4))) return null;
+    return payload.slice();
+  } finally { decoded.fill(0); }
 }
 export function addressScript(address, network) {
-  const decoded = decodeBase58(address); if (decoded[0] !== networkInfo(network).prefix) fail('The receiving address belongs to another network.');
-  return '76a914' + hex(decoded.slice(1, 21)) + '88ac';
+  if (!base58Text(address, 26, 35)) fail('Enter a native Doodleverse receiving address.');
+  const payload = decodeBase58Check(address, 21);
+  if (!payload) fail('The receiving address checksum is incorrect.');
+  if (payload[0] !== networkInfo(network).prefix) fail('The receiving address belongs to another network.');
+  return '76a914' + hex(payload.subarray(1)) + '88ac';
 }
 export function publicKeyAddress(publicKey, network) {
   const key = unhex(publicKey, 33); if (![2, 3].includes(key[0])) fail('A compressed public key is required.');
   try { if (SigningKey.computePublicKey('0x' + publicKey, true).slice(2) !== publicKey) fail('Invalid public key.'); } catch { fail('Invalid public key.'); }
   const payload = join(Uint8Array.of(networkInfo(network).prefix), ripemd160(digest(key)));
-  return encodeBase58(join(payload, doubleDigest(payload).slice(0, 4)));
+  return encodeBase58Check(payload);
 }
 export function privateKeyIdentity(secret, network) {
   if (!(secret instanceof Uint8Array) || secret.length !== 32) fail('Invalid native wallet key.');
@@ -57,8 +75,33 @@ export function privateKeyIdentity(secret, network) {
 }
 export function generatePrivateKey() {
   if (!globalThis.crypto?.getRandomValues) fail('A secure browser is required to create a wallet.');
-  for (let attempt = 0; attempt < 100; attempt++) { const key = crypto.getRandomValues(new Uint8Array(32)); try { new SigningKey(key); return key; } catch { key.fill(0); } }
+  for (let attempt = 0; attempt < 100; attempt++) {
+    const key = crypto.getRandomValues(new Uint8Array(32));
+    const scalar = BigInt('0x' + hex(key));
+    if (scalar > 0n && scalar < CURVE_ORDER) return key;
+    key.fill(0);
+  }
   fail('The browser could not create a secure wallet.');
+}
+export function privateKeyToWif(secret, network) {
+  privateKeyIdentity(secret, network);
+  const payload = join(Uint8Array.of(networkInfo(network).wifPrefix), secret, Uint8Array.of(1));
+  try { return encodeBase58Check(payload); }
+  finally { payload.fill(0); }
+}
+export function privateKeyFromWif(wif, network) {
+  const prefix = networkInfo(network).wifPrefix;
+  const value = typeof wif === 'string' ? wif.trim() : '';
+  if (!base58Text(value, 52, 52)) fail('Enter the 52-character private key from the paper wallet.');
+  const payload = decodeBase58Check(value, 34);
+  if (!payload) fail('The private key checksum is incorrect.');
+  try {
+    if (payload[0] !== prefix) fail('The private key belongs to another network.');
+    if (payload[33] !== 1) fail('The private key must use the compressed wallet format.');
+    const secret = payload.slice(1, 33);
+    try { privateKeyIdentity(secret, network); return secret; }
+    catch (error) { secret.fill(0); throw error; }
+  } finally { payload.fill(0); }
 }
 function passwordBytes(password) { if (typeof password !== 'string' || [...password].length < 12 || toUtf8Bytes(password).length > 1024) fail('Use a password of at least 12 characters, up to 1024 UTF-8 bytes.'); return toUtf8Bytes(password); }
 function aad(record) { return toUtf8Bytes(JSON.stringify({ format: record.format, version: record.version, network: record.network, genesis: record.genesis, address: record.address, publicKey: record.publicKey, kdf: { name: record.kdf.name, hash: record.kdf.hash, iterations: record.kdf.iterations, salt: record.kdf.salt }, cipher: { name: record.cipher.name, iv: record.cipher.iv } })); }

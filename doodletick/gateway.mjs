@@ -51,6 +51,9 @@ export function createIngressServer({ keeperPort, control, ingressIP = '172.30.3
           pageSecurity={...security,'Content-Security-Policy':policy};
         }
         const mediaHeaders = {};
+        if (page === '/scrypt-paper-wallet.html' && response.statusCode === 200 && response.headers['content-disposition']) {
+          mediaHeaders['content-disposition'] = response.headers['content-disposition'];
+        }
         if (/^\/api\/jazz-radio\/(?:stream|audio\/[a-f0-9]{64}\.mp3)$/.test(req.url)) {
           for (const name of ['content-length', 'content-range', 'accept-ranges', 'x-accel-buffering']) if (response.headers[name]) mediaHeaders[name] = response.headers[name];
         }

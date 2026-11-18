@@ -6,9 +6,12 @@
 <section class="intro"><p class="eyebrow">DOODLEVERSE COIN • Pepecoin-derived Core</p><h1>A mushroom.<br>A miner. <em>Your node.</em></h1>
 <p id="network-description">Real Scrypt proofs, checked by your own Doodleverse node. Check the connected network below before mining.</p></section>
 <div class="garden" aria-hidden="true"><div class="stars">✧ · ✧ · ✧</div><div class="mushroom"><div class="cap">✦</div><div class="stem"></div></div><div class="soil"></div></div>
-<section class="panel"><h2>Your mining patch</h2><p id="network" role="status">Checking your node…</p>
+<section class="panel"><div class="mining-panel-heading">
+<h2>Your mining patch</h2>
+<a class="paper-wallet-download" href="./scrypt-paper-wallet.html" download="Doodleverse-Paper-Wallet.html">Paper wallet maker <span aria-hidden="true">↓</span></a>
+</div><p id="network" role="status">Checking your node…</p>
 <form id="mining-form"><label for="address">Doodleverse receiving address</label><input id="address" name="address" autocomplete="off" spellcheck="false" maxlength="35" placeholder="Address from your native Doodleverse wallet" required>
-<p class="hint">A receiving address is enough to mine. Coins go directly to that address. <a href="./scrypt-wallet.html">Create or restore your native wallet</a> to receive rewards and spend them after 30 confirmations.</p>
+<p class="hint">A receiving address is enough to mine. Open the downloaded paper wallet maker offline, or <a href="./scrypt-wallet.html">create or restore a wallet in Keeper</a>. Mined rewards mature after 30 confirmations.</p>
 <div class="settings"><div><label for="algorithm">Algorithm</label><select id="algorithm"><option value="scrypt">Scrypt 1024/1/1</option></select></div><div><label for="intensity">GPU intensity</label><select id="intensity"><option value="eco">Eco — 64 nonces per batch</option><option value="balanced">Balanced — 128 nonces per batch</option></select></div></div>
 <label class="toggle"><input type="checkbox" id="keep-mining" role="switch"><span>Keep mining and submit found blocks automatically</span></label>
 <p class="hint">Starts only when you press MINE NOW or run the mine command. Pauses when this tab is hidden; start again to resume. Scrypt is the chain’s fixed algorithm.</p>

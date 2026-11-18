@@ -5,3 +5,5 @@
 *.gz binary
 # Unified patches require a leading space even on empty context lines.
 *.patch -whitespace
+# Preserve the pinned upstream QR encoder byte for byte.
+keeper/paper-wallet/qrcodegen.ts -whitespace
