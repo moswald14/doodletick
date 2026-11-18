@@ -1,3 +1,25 @@
+# Validation — Doodle Tick 0.17b
+
+The paper wallet tests check the native address and private-key prefixes against the Doodleverse Core manifest. They reject damaged keys and verify that a key restored from paper can reopen an encrypted Keeper backup. The Windows Core site-wallet test mines and spends on a disposable chain through the existing browser-wallet protocol. The Home Assistant test verifies that the miner and wallet links deliver the offline file as an attachment.
+
+# Validation — Doodle Tick 0.16b
+
+Focused checks cover legacy scores, selectable beats and measures, drums-only output, weighted progression feedback, persisted voice recipes, next-bar bank swaps, naming receipt recovery, and signed long passages. Voice and MP3 canaries run in each candidate Home Assistant image. A local protected endpoint or fixture does not establish a configured live API account or installation.
+
+# Validation - Doodle Tick 0.15b
+
+## Telephone World story paragraphs - 2026-11-17
+
+The candidate is based on the checked 0.14b source cut `d4f2e9c3a7777ef786177103a957112d6db2752b`. Runtime changes are the approved private bundle fingerprint and release labels. Documentation and HTTP fixture response cleanup are also updated. Service formats are retained.
+
+- A regression executing the actual delivered private story generator first reproduced one collapsed paragraph instead of four. The candidate produces four real paragraphs and preserves literal backslash sequences supplied in source or machine signals.
+- The private bundle verifier passed all existing boundary checks and compiled all 41 scripts. The other seven private frames and all adapters remain byte-identical to the previous bundle.
+- The actual public host loader accepted the candidate ZIP and its complete inventory with the new fingerprint. The previous fingerprint continues rejecting it.
+- All **1,012 combined Keeper/Home Assistant checks passed** with zero failures or skips in 30.91 seconds, using disposable identities and local test services. HTTP fixtures now consume their responses before reusing connections and retain request context if a fetch fails; their existing rejection assertions remain unchanged.
+- Post-install Home Assistant acceptance is pending for this candidate. Existing mock provider checks do not establish a successful live AI proposal.
+
+---
+
 # Validation - Doodle Tick 0.14b
 
 ## Home Assistant Jazz radio - 2026-11-17

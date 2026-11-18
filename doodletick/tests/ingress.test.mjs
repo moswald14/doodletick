@@ -58,6 +58,15 @@ test('authenticated ingress serves relative UI, protects mutations, signs proofs
     }
     assert.equal((await fetch(base + '/sw.mjs')).status, 404);
     assert.equal((await fetch(base + '/clock-wheel.mjs')).status, 200);
+    for (const name of ['scrypt.html', 'scrypt-wallet.html']) {
+      const source = await (await fetch(base + '/' + name)).text();
+      assert.match(source, /href="\.\/scrypt-paper-wallet\.html" download=/);
+    }
+    const paper = await fetch(base + '/scrypt-paper-wallet.html');
+    assert.equal(paper.status, 200);
+    assert.equal(paper.headers.get('content-disposition'), 'attachment; filename="Doodleverse-Paper-Wallet.html"');
+    assert.equal(paper.headers.get('cache-control'), 'no-store');
+    assert.equal(await paper.text(), await readFile(new URL('../keeper/public/scrypt-paper-wallet.html', import.meta.url), 'utf8'));
     for (const name of ['doodleverse-rpc.mjs', 'weather.mjs', 'weather-ui.mjs', 'weather.css', 'background-music.mjs', 'background-music-ui.mjs', 'background-music.css']) {
       const asset = await fetch(base + '/' + name);
       assert.equal(asset.status, 200, name);

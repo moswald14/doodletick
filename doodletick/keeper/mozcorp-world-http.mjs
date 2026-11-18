@@ -1,6 +1,30 @@
 // SPDX-License-Identifier: GPL-3.0-only
 const failure = (message, status = 400, code = 'MOZCORP_INVALID') => Object.assign(new Error(message), { status, code });
 const LIMITS = { cloud: 6200000, hope: 20000, upgrades: 128000 };
+const REJECT_DISCARD_BYTES = 64 * 1024;
+const REJECT_DISCARD_TIMEOUT_MS = 250;
+function finishRejected(req, res) {
+  // A close immediately after an early rejection can reset an uploading peer
+  // before it receives the response. Discard a bounded tail without retaining it.
+  let remaining = REJECT_DISCARD_BYTES, done = false;
+  const cleanup = () => { clearTimeout(timer); req.off('readable', drain); req.off('end', finish); req.off('error', finish); req.off('aborted', finish); res.off('close', finish); };
+  const finish = () => {
+    if (done) return;
+    done = true; cleanup(); req.pause();
+    if (!res.destroyed && !res.writableEnded) res.end();
+  };
+  const drain = () => {
+    while (remaining > 0) {
+      const chunk = req.read(Math.min(remaining, req.readableLength || remaining));
+      if (chunk === null) break;
+      remaining -= chunk.length;
+    }
+    if (remaining === 0 || req.complete) finish();
+  };
+  const timer = setTimeout(finish, REJECT_DISCARD_TIMEOUT_MS); timer.unref?.();
+  req.on('readable', drain); req.once('end', finish); req.once('error', finish); req.once('aborted', finish); res.once('close', finish);
+  if (req.destroyed) finish(); else drain();
+}
 function sameOrigin(req) {
   if (req.headers['sec-fetch-site'] && !['same-origin', 'none'].includes(req.headers['sec-fetch-site'])) return false;
   if (!req.headers.origin) return true;
@@ -42,9 +66,10 @@ export function createMozCorpWorldHttpHandler({ store, now = Date.now, bodyTimeo
     const send = (status, value) => {
       if (res.destroyed || res.writableEnded) return;
       const close = status >= 400 && !req.complete;
-      res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...(close ? { Connection: 'close' } : {}) });
-      if (close) req.resume();
-      res.end(JSON.stringify(value));
+      const body = JSON.stringify(value);
+      res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...(close ? { Connection: 'close', 'Content-Length': Buffer.byteLength(body) } : {}) });
+      if (close) { res.write(body); finishRejected(req, res); }
+      else res.end(body);
     };
     let writing = false;
     try {

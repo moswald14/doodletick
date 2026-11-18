@@ -3,7 +3,7 @@ import { mkdir, lstat, open, readFile, readdir, rename, unlink } from 'node:fs/p
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { checkSignature, hash } from './public/core.mjs';
-import { JAZZ_RECEIPT_FORMAT, validJazzRequestId } from './public/jazz-radio-contract.mjs';
+import { JAZZ_RECEIPT_FORMAT, JAZZ_CLIP_MAX_SECONDS, validJazzRequestId } from './public/jazz-radio-contract.mjs';
 
 const quota = 256 * 1024 * 1024, maxRecords = 2000, maxJournal = 8 * 1024 * 1024;
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -71,7 +71,7 @@ export async function createJazzLibrary({ dataDir, signer }) {
       if (requests.has(requestId)) return requests.get(requestId);
       if (!validJazzRequestId(id) || !validJazzRequestId(requestId) || !Array.isArray(chords) || chords.length !== 8
         || !Buffer.isBuffer(audio) || audio.length < 128 || audio.length > 1048576
-        || !Number.isSafeInteger(samples) || samples < 960 || samples > 48000 * 2 * 40) throw new Error('Invalid Jazz keepsake.');
+        || !Number.isSafeInteger(samples) || samples < 960 || samples > 48000 * 2 * JAZZ_CLIP_MAX_SECONDS) throw new Error('Invalid Jazz keepsake.');
       if (records.length >= maxRecords || usedBytes + audio.length > quota || journalBytes > maxJournal - 12000) throw Object.assign(new Error('The permanent Jazz library is full. Export or back up its recordings before adding more; nothing has been removed.'), { status: 507 });
       const sha256 = digest(audio), audioPath = path.join(audioDir, sha256 + '.mp3'); let added = false, fd;
       const record = { format: JAZZ_RECEIPT_FORMAT, id, requestId, sequence: records.length + 1, previous,

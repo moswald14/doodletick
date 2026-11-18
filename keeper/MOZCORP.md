@@ -1,10 +1,12 @@
-# MozCorp private rooms · 0.12b
+# MozCorp private rooms · 0.15b
 
 ## Install your rooms
 
 Open **MozCorp** in Keeper and choose the matching private ZIP with **Choose private bundle**. Keeper checks its complete size, fingerprint and file inventory before activating it. A failed upload leaves the installed bundle intact. Use the ZIP prepared for this Keeper version; an unrelated or modified bundle is refused.
 
 The public app contains a generic loader and the approved bundle fingerprint. Private station source stays in the separately installed bundle in Keeper's data. Rooms run in isolated, opaque-origin frames with no direct access to the parent app's storage or network. Home Assistant keeps its normal authenticated ingress. This isolation is not an independent security certification.
+
+Version 0.15b requires its matching private bundle to fix paragraph breaks in newly generated stories. Update this same Keeper app, then replace the private ZIP when prompted. Existing saved endings remain exact. The loader continues checking the complete bundle before activation.
 
 ## Create, save and score a world
 
@@ -55,6 +57,10 @@ Open the upgrade proposal desk to choose an area, identify the base release and 
 When AI is configured, save **Allow external AI proposal requests** before choosing **AI proposal**. Each request also needs a fresh instruction-only consent. Only the selected area, the instruction you enter and the base release reference are sent to the provider. Manual proposal fields, world saves, private desk notes, files and vault contents are excluded. Missing configuration is shown explicitly; the manual workflow remains available.
 
 For Home Assistant, set `mozcorp_ai_enabled`, `mozcorp_openai_model` and the password field `mozcorp_openai_api_key` in the app configuration, then restart the app. Desktop Keeper reads `OPENAI_API_KEY` and `OPENAI_MODEL` when it starts. Keys remain on the server; do not put them in an instruction. Configuration alone makes no AI request: the saved preference and consent for an individual request are still required.
+
+If Home Assistant hides the key field, turn on **Show unused optional configuration options**. The translated **OpenAI API key** field for proposals is above the separate Jazz options. Enter and save the key directly there, then restart Keeper. The proposal desk reports whether a key is configured without revealing it.
+
+Recognized provider failures show fixed notices for authentication, project permissions, quota, temporary rate limits, unavailable models, rejected requests or service failures. Check the indicated account or setting before choosing another request. Unknown failures remain generic; no provider error text is displayed, and there is no automatic retry. A configured key still needs valid provider access and available usage limits.
 
 Saved proposals retain their instruction and structured details for every version. Review the current version, then approve or decline it. **Revise proposal** creates another version and returns it to review; an earlier approval does not approve the new version. Stale writes are refused, so refresh after another user changes the desk. Your unsaved form stays available when a request fails.
 

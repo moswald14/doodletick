@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
+import path from 'node:path';
 import { JazzVoice, JAZZ_VOICE_MAX_TEXT, JAZZ_VOICE_MAX_SECONDS } from '../jazz-voice.mjs';
 
 const wav = () => { const buffer = Buffer.alloc(48); buffer.write('RIFF', 0); buffer.write('WAVE', 8); return buffer; };
@@ -15,7 +16,8 @@ function fakeChild() {
 
 test('offline voice stays idle until requested and sends text through stdin with fixed pipe-only conversion', async () => {
   const calls = [], voice = new JazzVoice({ executor: async (command, args, options) => { calls.push({ command, args, options }); return command === 'espeak-ng' ? wav() : pcm(); } });
-  assert.equal(calls.length, 0); assert.deepEqual(voice.status(), { available: null, busy: false, queued: 0, error: '' });
+  assert.equal(calls.length, 0); assert.deepEqual(voice.status(), { available: null, busy: false, queued: 0, error: '', errorCode: null,
+    attempts: 0, lastAttemptAt: null, lastSuccessAt: null, currentStage: null });
   const output = await voice.synthesize('Doodle Jazz; $(untrusted) <voice> is on.');
   assert.deepEqual([...output.samples], [-32768, 32767, -20, 20]); assert.equal(output.sampleRate, 48000); assert.equal(output.channels, 2);
   assert.deepEqual(calls.map(call => call.command), ['espeak-ng', 'ffmpeg']); assert(calls[0].args.includes('--stdin')); assert(calls[0].args.includes('--stdout'));
@@ -34,9 +36,115 @@ test('invalid text, malformed WAV, misaligned PCM and oversized executor output 
   }
 });
 
-test('missing local binaries produce a usable status without leaking process text', async () => {
-  const voice = new JazzVoice({ executor: async () => { throw Object.assign(Error('private path or diagnostic'), { code: 'ENOENT' }); } });
-  assert.equal(await voice.synthesize('Doodle Jazz.'), null); assert.match(voice.status().error, /eSpeak NG and FFmpeg/); assert(!voice.status().error.includes('private')); voice.close();
+test('failures identify the speech or conversion stage without exposing process diagnostics', async () => {
+  for (const [command, prefix, name] of [['espeak-ng', 'SPEECH', 'eSpeak NG'], ['ffmpeg', 'ENCODER', 'FFmpeg']]) {
+    for (const [code, suffix] of [['ENOENT', 'NOT_FOUND'], ['EACCES', 'NOT_EXECUTABLE'], ['EPERM', 'NOT_EXECUTABLE'], ['ETIMEDOUT', 'TIMEOUT'], ['UNKNOWN', 'FAILED']]) {
+      const voice = new JazzVoice({ executor: async current => {
+        if (current === command) throw Object.assign(Error('private path or diagnostic'), { code });
+        return wav();
+      } });
+      try {
+        assert.equal(await voice.synthesize('Doodle Jazz.'), null);
+        const status = voice.status(); assert.equal(status.errorCode, prefix + '_' + suffix);
+        assert(status.error.startsWith(name)); assert(!JSON.stringify(status).includes('private'));
+        assert.equal(status.available, false); assert.equal(status.attempts, 1); assert.equal(status.currentStage, null);
+      } finally { voice.close(); }
+    }
+  }
+});
+
+test('a later announcement retries a missing tool and successful synthesis clears the failure', async () => {
+  let missing = true, clock = 100;
+  const voice = new JazzVoice({ now: () => clock, executor: async command => {
+    if (missing) throw Object.assign(Error('missing tool'), { code: 'ENOENT' });
+    return command === 'espeak-ng' ? wav() : pcm();
+  } });
+  try {
+    assert.equal(await voice.synthesize('First.'), null);
+    assert.equal(voice.status().lastAttemptAt, 100); assert.equal(voice.status().lastSuccessAt, null);
+    missing = false; clock = 200;
+    assert(await voice.synthesize('Second.'));
+    assert.deepEqual(voice.status(), { available: true, busy: false, queued: 0, error: '', errorCode: null,
+      attempts: 2, lastAttemptAt: 200, lastSuccessAt: 200, currentStage: null });
+    missing = true; clock = 300;
+    assert.equal(await voice.synthesize('Third.'), null);
+    assert.equal(voice.status().available, false); assert.equal(voice.status().lastSuccessAt, 200);
+    assert.equal(voice.status().lastAttemptAt, 300); assert.equal(voice.status().attempts, 3);
+  } finally { voice.close(); }
+});
+
+test('progress reports the current stage and counts actual attempts rather than queued jobs', async () => {
+  let releaseSpeech, releaseEncoder, clock = 100;
+  const voice = new JazzVoice({ now: () => clock, executor: command => new Promise(resolve => {
+    if (command === 'espeak-ng') releaseSpeech = resolve; else releaseEncoder = resolve;
+  }) });
+  try {
+    const first = voice.synthesize('First.'); const second = voice.synthesize('Second.');
+    assert.equal(voice.status().currentStage, 'speech'); assert.equal(voice.status().attempts, 1);
+    assert.equal(voice.status().queued, 1); assert.equal(voice.status().lastAttemptAt, 100);
+    releaseSpeech(wav()); await flush(); assert.equal(voice.status().currentStage, 'encoder');
+    clock = 200; releaseEncoder(pcm()); assert(await first);
+    assert.equal(voice.status().attempts, 2); assert.equal(voice.status().lastSuccessAt, 200);
+    assert.equal(voice.status().currentStage, 'speech');
+    voice.close(); assert.equal(await second, null); await flush();
+    assert.equal(voice.status().currentStage, null); assert.equal(voice.status().busy, false);
+  } finally { voice.close(); }
+});
+
+test('invalid diagnostic clocks cannot strand announcements', async () => {
+  const voice = new JazzVoice({ now: () => { throw Error('invalid test clock'); }, executor: async command => command === 'espeak-ng' ? wav() : pcm() });
+  try { assert(await voice.synthesize('Ready.')); assert.equal(voice.status().lastAttemptAt, null); assert.equal(voice.status().lastSuccessAt, null); }
+  finally { voice.close(); }
+});
+
+test('Linux resolves only fixed installed paths after missing PATH commands', async () => {
+  const calls = [];
+  const voice = new JazzVoice({ platform: 'linux', spawnImpl: (command, args, options) => {
+    calls.push({ command, args, options });
+    const child = fakeChild();
+    if (!command.startsWith('/usr/bin/')) process.nextTick(() => child.emit('error', Object.assign(Error('missing on PATH'), { code: 'ENOENT' })));
+    else child.stdin.on('finish', () => { child.stdout.write(command.endsWith('espeak-ng') ? wav() : pcm()); child.emit('close', 0); });
+    return child;
+  } });
+  try {
+    assert(await voice.synthesize('A safe announcement.'));
+    assert.deepEqual(calls.map(call => call.command), ['espeak-ng', '/usr/bin/espeak-ng', 'ffmpeg', '/usr/bin/ffmpeg']);
+    assert.deepEqual(calls[0].args, calls[1].args); assert.deepEqual(calls[2].args, calls[3].args);
+    assert(calls.every(call => call.options.shell === false && call.options.windowsHide === true));
+  } finally { voice.close(); }
+});
+
+test('Windows missing speech checks only official install roots and does not guess an FFmpeg path', async () => {
+  const calls = [], missing = Object.assign(Error('missing on PATH'), { code: 'ENOENT' });
+  const voice = new JazzVoice({ platform: 'win32', spawnImpl: command => { calls.push(command); throw missing; } });
+  try {
+    assert.equal(await voice.synthesize('Ready.'), null);
+    const expected = ['espeak-ng', ...[process.env.ProgramFiles || 'C:\\Program Files', process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)']
+      .filter(root => /^[a-z]:\\/i.test(root) && !root.split(/[\\/]/).includes('..')).map(root => path.win32.join(root, 'eSpeak NG', 'espeak-ng.exe'))];
+    assert.deepEqual(calls, [...new Set(expected)]); assert.equal(voice.status().errorCode, 'SPEECH_NOT_FOUND');
+  } finally { voice.close(); }
+  const encoderCalls = [], encoder = new JazzVoice({ platform: 'win32', spawnImpl: command => {
+    encoderCalls.push(command); if (command === 'ffmpeg') throw missing;
+    const child = fakeChild(); child.stdin.on('finish', () => { child.stdout.write(wav()); child.emit('close', 0); }); return child;
+  } });
+  try { assert.equal(await encoder.synthesize('Ready.'), null); assert.deepEqual(encoderCalls, ['espeak-ng', 'ffmpeg']); assert.equal(encoder.status().errorCode, 'ENCODER_NOT_FOUND'); }
+  finally { encoder.close(); }
+});
+
+test('installed tools with permission or runtime failures do not fall through to another executable', async () => {
+  for (const code of ['EACCES', 'EPERM', 'ETIMEDOUT', 'UNKNOWN']) {
+    const calls = [], voice = new JazzVoice({ platform: 'linux', spawnImpl: command => { calls.push(command); throw Object.assign(Error('private process failure'), { code }); } });
+    try { assert.equal(await voice.synthesize('Ready.'), null); assert.deepEqual(calls, ['espeak-ng']); }
+    finally { voice.close(); }
+  }
+});
+
+test('closing during a missing-command failure prevents fallback processes from starting', async () => {
+  const calls = []; let child;
+  const voice = new JazzVoice({ platform: 'linux', spawnImpl: command => { calls.push(command); child = fakeChild(); return child; } });
+  const pending = voice.synthesize('Ready.');
+  child.emit('error', Object.assign(Error('missing command'), { code: 'ENOENT' })); voice.close();
+  assert.equal(await pending, null); await flush(); assert.deepEqual(calls, ['espeak-ng']); assert.equal(voice.status().error, '');
 });
 
 test('announcements run serially with at most two waiting jobs and close cancels all pending work', async () => {

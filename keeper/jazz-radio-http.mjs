@@ -11,6 +11,7 @@ export function createJazzRadioHttpHandler(service) {
       if (req.method === 'GET') {
         if (action === 'status') return send(200, service.status());
         if (action === 'library') return send(200, service.library(url.search ? Number(url.searchParams.get('offset')) : 0));
+        if (action === 'voices') return send(200,service.voices());
         if (action === 'stream') { service.listen(res); return true; }
         const match = action.match(/^audio\/([a-f0-9]{64})\.mp3$/);
         if (match) {
@@ -26,19 +27,19 @@ export function createJazzRadioHttpHandler(service) {
         }
         return send(404, { error: 'Jazz action not found.' });
       }
-      if (req.method !== 'POST' || !['start','stop','settings','shuffle','new-set','never-stop','voice','dig','receipt','context','beat'].includes(action)) return send(404, { error: 'Jazz action not found.' });
+      if (req.method !== 'POST' || !['start','stop','settings','shuffle','new-set','never-stop','voice','voice-test','player-voice','dig','receipt','context','beat'].includes(action)) return send(404, { error: 'Jazz action not found.' });
       if (req.headers['x-keeper-request'] !== '1') return send(403, { error: 'Missing request protection.' });
       if (!/^application\/json(?:;|$)/i.test(req.headers['content-type'] || '')) return send(415, { error: 'JSON required.' });
       if (Date.now() - windowAt > 60000) { windowAt = Date.now(); count = 0; }
       if (++count > 120) return send(429, { error: 'Please wait a minute before changing Jazz again.' });
       const chunks = []; let size = 0;
-      for await (const chunk of req) { size += chunk.length; if (size > 6000) return send(413, { error: 'Jazz request too large.' }); chunks.push(chunk); }
+      for await (const chunk of req) { size += chunk.length; if (size > (action==='player-voice'?40000:6000)) return send(413, { error: 'Jazz request too large.' }); chunks.push(chunk); }
       const input = JSON.parse(Buffer.concat(chunks).toString('utf8'));
       if (!input || typeof input !== 'object' || Array.isArray(input)) return send(400, { error: 'Invalid Jazz request.' });
       const result = action === 'start' ? await service.start() : action === 'stop' ? await service.stop()
         : action === 'settings' ? await service.settings(input) : action === 'shuffle' ? await service.shuffle()
         : action === 'new-set' ? await service.newSet() : action === 'never-stop' ? await service.neverStop(input.enabled)
-        : action === 'voice' ? await service.voice(input.enabled) : action === 'dig' ? await service.dig(input.requestId)
+        : action === 'voice' ? await service.voice(input.enabled) : action === 'voice-test' ? await service.testVoice() : action === 'player-voice' ? await service.assignVoice(input) : action === 'dig' ? await service.dig(input.requestId)
         : action === 'receipt' ? await service.receipt() : action === 'context' ? service.context() : service.beat(input);
       return send(action === 'dig' && result.status !== 'saved' ? 202 : 200, result);
     } catch (error) {

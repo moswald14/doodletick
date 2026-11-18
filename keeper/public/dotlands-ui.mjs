@@ -171,7 +171,7 @@ export function createDotlandsUI({ container = document.getElementById('view-dot
   async function refresh() {
     const ticket = generation;
     quote = await client.info(); if (ticket !== generation) return;
-    $('price').textContent = `Entry: 1 ${quote.currency} per player, once. Returning is free.`;
+    $('price').textContent = `Entry: 1 Doodle Coin per player, once. Returning is free.`;
     const result = await client.request('list'); if (ticket !== generation) return;
     roomRows(result.rooms); status(client.pending ? 'An earlier request needs a retry. Its exact signed request is saved, so retrying cannot charge twice.' : 'Your rooms are saved on this Keeper.'); controls();
   }

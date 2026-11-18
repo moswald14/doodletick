@@ -1,3 +1,25 @@
+# 0.17b — Doodleverse paper wallet
+
+- Download the standalone paper wallet maker from the Doodleverse Coin miner or wallet.
+- Generate a main-network receiving address and print it alongside the private key. Both have QR codes.
+- Recover the printed key offline into an encrypted backup you can restore in Keeper.
+
+# 0.16b — Jazz band voices, rhythm and feedback
+
+- Select speed, two through seven beats per bar, phrase length, drum groove and key. Suggested keys follow the genre and Beat only plays the percussion.
+- Use the sounds you kept in Dot Wave or import an editable recipe. Assign it to piano, bass or drums. The next bar uses the new sound and the Keeper remembers it across restarts.
+- Naming a song after a verified payment and keeping an eight-chord passage teach the band which progressions to revisit. Keeper can check model access without a new song or payment.
+- Test voice reports whether the announcer generated audio. Home Assistant retries local synthesis through its installed audio tools when command lookup fails.
+- Long measures fit the eight-chord recording limit. Existing signed feedback and audio can still be replayed.
+
+# 0.15b — Telephone World paragraphs and AI proposal diagnostics
+
+Updates the approved private MozCorp bundle to fix paragraph breaks in newly generated stories and their Studio handoff. Install the matching private ZIP after updating this same Keeper app. Existing saved stories, source text, master copies and editable scores retain their contents. Shared service storage, signed formats, native coin rules and Home Assistant permissions are unchanged.
+
+AI proposal failures now show fixed account, access, quota, throttling, request or service notices when recognized. Provider diagnostics and credentials are excluded; failed requests never retry automatically or create a proposal.
+
+Oversized and incomplete MozCorp uploads now receive their JSON rejection reliably before the connection closes, with bounded cleanup and no storage write.
+
 # 0.14b — Home Assistant Jazz radio
 
 Jazz now broadcasts from Home Assistant, with free VDO.Ninja listening, independent local output volume and mute, eight distinct jazz genres, structured shuffle and hourly player changes under an unlockable Never stop guard. A started station resumes after Keeper restarts; power, network and third-party outages can interrupt it.

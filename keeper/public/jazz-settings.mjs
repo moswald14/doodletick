@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import { DJ_STYLES } from './jazz-core.mjs';
+import { validateJazzArrangement } from './jazz-radio-contract.mjs';
 
 const styles = Object.freeze(Object.keys(DJ_STYLES));
 const settingsKeys = Object.freeze(['style', 'tempo', 'swing', 'room', 'piano', 'bass', 'drums']);
@@ -25,7 +26,7 @@ function seededRandom(seed) {
 /**
  * Make one coherent musical choice in the player's UI units. Swing is a whole
  * percentage (50 is straight); room and instrument levels are whole percentages.
- * Only the seven musical controls and a short label are returned. Applying this
+ * The seven shuffled controls, preserved arrangement choices and a short label are returned. Applying this
  * bundle must leave master volume, mutes and unrelated user state with the caller.
  */
 export function djShuffleSettings(current, seed) {
@@ -61,6 +62,7 @@ export function djShuffleSettings(current, seed) {
     piano,
     bass,
     drums,
+    ...validateJazzArrangement(previous),
     label: `${family.name} ${style} ${family.ending}`
   };
 
@@ -70,4 +72,17 @@ export function djShuffleSettings(current, seed) {
     settings.tempo += settings.tempo < highTempo ? 1 : -1;
   }
   return settings;
+}
+
+/** Suggest a neighboring key while retaining the selected genre's major/minor mode. */
+export function djSuggestKey(current, seed) {
+  if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff) throw new RangeError('Jazz key seed must be an unsigned 32-bit integer.');
+  const names = ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'G♭', 'G', 'A♭', 'A', 'B♭', 'B'];
+  const previous = current && typeof current === 'object' ? current : {}, genre = DJ_STYLES[previous.style] || DJ_STYLES.swing;
+  const keyFromLabel = names.findIndex(note => typeof previous.key === 'string' && previous.key.startsWith(note + ' '));
+  const base = Number.isInteger(previous.keyRoot) && previous.keyRoot >= 0 && previous.keyRoot < 12 ? previous.keyRoot :
+    Number.isInteger(previous.tonic) && previous.tonic >= 0 && previous.tonic < 12 ? previous.tonic : keyFromLabel >= 0 ? keyFromLabel : genre.tonic;
+  const move = seededRandom(seed >>> 0)() < 0.5 ? 5 : 7, root = (base + move) % 12;
+  const mode = previous.style === 'modal' ? 'Dorian' : genre.mode === 'minor' ? 'minor' : 'major';
+  return { root, label: names[root] + ' ' + mode, reason: `A ${move === 5 ? 'fourth' : 'fifth'} above ${names[base]} keeps a nearby key color in this genre.` };
 }

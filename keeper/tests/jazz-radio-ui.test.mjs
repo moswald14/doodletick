@@ -23,8 +23,8 @@ function station() {
 const reply = (value, status = 200) => ({ ok: status >= 200 && status < 300, status, async json() { return copy(value); } });
 
 async function fixture(t, pages = new Map([[0, { count: 0, receipts: [], offset: 0, nextOffset: null }]]), prefs = null) {
-  const elements = new Map(), selectors = new Map(), timers = new Map(), windowEvents = new Map(), requests = [], pending = [], received = [], audioPlayers = [];
-  let remote = station(), nextTimer = 0, namingOptions, disposed = false, holdStatus = false, heldPoll, holdLibrary = false, heldLibrary;
+  const elements = new Map(), selectors = new Map(), timers = new Map(), windowEvents = new Map(), documentEvents = new Map(), requests = [], pending = [], received = [], audioPlayers = [];
+  let remote = station(), nextTimer = 0, namingOptions, bandOptions, bandDisposed = false, disposed = false, holdStatus = false, heldPoll, holdLibrary = false, heldLibrary;
   class Element {
     constructor(tagName = 'div') {
       this.tagName = tagName.toUpperCase(); this.children = []; this.listeners = new Map(); this.attributes = new Map(); this.dataset = {}; this.style = {};
@@ -53,7 +53,7 @@ async function fixture(t, pages = new Map([[0, { count: 0, receipts: [], offset:
     getElementById(id) { assert(elements.has(id), 'Shipped Jazz HTML contains ' + id); return elements.get(id); },
     querySelector(selector) { return selector === '.jazz-tool #cast-jazz' ? elements.get('cast-jazz') : generic(selector); },
     querySelectorAll(selector) { return selector === '[data-style]' ? tabs : selector === '[data-mute]' ? muteButtons : [new Element(), new Element(), new Element(), new Element()]; },
-    createElement: tag => new Element(tag), createTextNode: text => ({ textContent: text }), addEventListener() {}
+    createElement: tag => new Element(tag), createTextNode: text => ({ textContent: text }), addEventListener(name, handler) { documentEvents.set(name, handler); }
   };
   const fetch = async (url, options = {}) => {
     const action = String(url).split('/api/jazz-radio/')[1];
@@ -76,6 +76,7 @@ async function fixture(t, pages = new Map([[0, { count: 0, receipts: [], offset:
     localStorage: { getItem: () => prefs ? JSON.stringify(prefs) : null, setItem() {} }, Audio: class extends Element { constructor() { super('audio'); } },
     fetch, DJ_GENRES, JAZZ_DEFAULT_SETTINGS, checkSignature: async () => true,
     createJazzNamingUI(options) { namingOptions = options; return { receive: data => received.push(copy(data)), playbackChanged() {}, dispose() { disposed = true; } }; },
+    createJazzBandUI(options) { bandOptions = options; return { paint() {}, dispose() { bandDisposed = true; } }; },
     setTimeout(fn, delay) { const id = ++nextTimer; timers.set(id, { fn, delay }); return id; }, clearTimeout: id => timers.delete(id),
     AbortSignal: { timeout: () => ({}) }, URL, Blob, Date, console, navigator: { clipboard: { writeText: async () => {} } }
   });
@@ -84,7 +85,7 @@ async function fixture(t, pages = new Map([[0, { count: 0, receipts: [], offset:
   t.after(() => windowEvents.get('pagehide')?.());
   const field = id => document.getElementById(id);
   return {
-    field, requests, pending, received, pages, naming: () => namingOptions, disposed: () => disposed, monitor: () => audioPlayers[0],
+    field, requests, pending, received, pages, naming: () => namingOptions, band: () => bandOptions, bandDisposed: () => bandDisposed, disposed: () => disposed, monitor: () => audioPlayers[0],
     remote: () => remote, setRemote(value) { remote = copy(value); },
     input(id, value) { field(id).value = value; field(id).fire('input'); }, click(id) { field(id).click(); },
     timer(delay) { const entry = [...timers].find(([, item]) => item.delay === delay); if (!entry) return false; timers.delete(entry[0]); void entry[1].fn(); return true; },
@@ -97,6 +98,7 @@ async function fixture(t, pages = new Map([[0, { count: 0, receipts: [], offset:
     },
     holdPoll() { holdStatus = true; }, releasePoll() { assert(heldPoll); heldPoll(); },
     holdOlderPage() { holdLibrary = true; }, releaseOlderPage(error) { assert(heldLibrary); heldLibrary(error); },
+    key(key, { code = key, targetTag = 'DIV', ctrlKey = false, metaKey = false, altKey = false } = {}) { documentEvents.get('keydown')?.({ key, code, target: { tagName: targetTag }, ctrlKey, metaKey, altKey, preventDefault() {} }); },
     leave() { windowEvents.get('pagehide')?.(); }
   };
 }
@@ -159,6 +161,23 @@ test('a failed beat request releases naming for retry and preserves the server e
   assert(f.received.some(event => event.partRejected === 'stale-name'));
   assert.match(f.field('status').textContent, /set changed/);
   f.leave(); assert.equal(f.disposed(), true);
+});
+
+test('band meter, phrase, beat-only and key edits preserve the full station settings through its existing debounce', async t => {
+  const f = await fixture(t);
+  f.band().changeSettings({ beatsPerBar: 7, phraseBars: 8, beatOnly: true, keyRoot: 9 });
+  assert.equal(f.pending.length, 0); f.timer(400); await flush();
+  assert.deepEqual(f.pending[0].input, { ...JAZZ_DEFAULT_SETTINGS, beatsPerBar: 7, phraseBars: 8, beatOnly: true, keyRoot: 9 });
+  f.resolve(0); await flush(); assert.equal(f.remote().settings.beatsPerBar, 7);
+  f.leave(); assert.equal(f.bandDisposed(), true);
+});
+
+test('keyboard listening and mute remain local, new set is explicit, and editing controls keep their own keys', async t => {
+  const f = await fixture(t); f.key('m'); assert.equal(f.monitor().muted, true); assert.equal(f.pending.length, 0);
+  for (const targetTag of ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'A']) f.key('m', { targetTag });
+  assert.equal(f.monitor().muted, true); f.key(' ', { code: 'Space' }); await flush(); assert.equal(f.monitor().paused, false); assert.equal(f.pending.length, 0);
+  f.key('n', { ctrlKey: true }); f.key('n', { targetTag: 'SELECT' }); assert.equal(f.pending.length, 0);
+  f.key('n'); await flush(); assert.equal(f.pending.length, 1); assert.equal(f.pending[0].action, 'new-set'); f.resolve(0, { settings: { ...JAZZ_DEFAULT_SETTINGS } }); await flush();
 });
 
 function receipt(index) {

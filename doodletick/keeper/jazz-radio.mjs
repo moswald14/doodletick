@@ -12,6 +12,8 @@ import { createJazzMonitor, encodeJazzClip } from './jazz-media.mjs';
 import { createJazzNodeCast } from './jazz-node-cast.mjs';
 import { createJazzWorld } from './jazz-world.mjs';
 import { JazzVoice } from './jazz-voice.mjs';
+import { createJazzLearning, jazzLearningPassage } from './jazz-learning.mjs';
+import { createJazzVoices } from './jazz-voices.mjs';
 
 const rate = 48000, frameSize = 480, freshSeed = () => randomBytes(4).readUInt32LE() || 1;
 const error = (message, status = 400) => Object.assign(new Error(message), { status });
@@ -49,9 +51,13 @@ class JazzRoom {
 
 export async function createJazzRadio({ dataDir, signer, enabled = false, now = Date.now,
   transportFactory = createJazzNodeCast, monitorFactory = createJazzMonitor, encoder = encodeJazzClip,
-  world = createJazzWorld({ now }), voice = new JazzVoice(), automatic = true, bankFactory = djMakeBank } = {}) {
+  world = createJazzWorld({ now }), voice = new JazzVoice(), automatic = true, bankFactory = djMakeBank,
+  getNamedFeedback = () => [], homeAssistant = false, dotBankFactory } = {}) {
   const privateDir = path.join(dataDir, 'jazz-radio'); await mkdir(privateDir, { recursive: true, mode: 0o700 });
   const statePath = path.join(privateDir, 'station.json'), library = await createJazzLibrary({ dataDir, signer });
+  const learning = await createJazzLearning({ dataDir, now });
+  const voiceBuild = new AbortController();
+  const playerVoices = await createJazzVoices({dataDir,signal:voiceBuild.signal,...(dotBankFactory?{buildBank:dotBankFactory}:{})});
   let saved = { format: 'doodle-jazz-station-v1', settings: { ...JAZZ_DEFAULT_SETTINGS }, seed: freshSeed(), running: false,
     neverStop: false, voice: false, revision: 1, nextShuffleAt: null, invitation: makeInvitation() };
   let storageError = null;
@@ -60,6 +66,8 @@ export async function createJazzRadio({ dataDir, signer, enabled = false, now = 
   const unreadableStation = storageError !== null;
   let renderer, bank, transport, monitor, room, timer, announceTimer, running = false, starting = false, closing = false;
   let generation = 0, lastInfo = null, namingEvent = null, namingSequence = 0, infoEvents = [], recent = [], current = null, ordinal = 0;
+  let audibleVoices = null, queuedVoices = null, previousBeatOnly = false;
+  let voiceBootError = null;
   let startedAt = null, renderedFrames = 0, nextFrameAt = 0, lastWorldAt = 0, lastBrief = null, voiceSamples = null, voiceAt = 0, speaking = false, pendingSpeech = null;
   let lastError = storageError, transportState = { phase: 'off' }, chain = Promise.resolve(), persistence = Promise.resolve(), captureChain = Promise.resolve();
   const jobs = new Map(), tasks = new Set();
@@ -78,14 +86,33 @@ export async function createJazzRadio({ dataDir, signer, enabled = false, now = 
     return result;
   }
   function announce(text) {
-    if (!saved.voice || !running || closing) return;
+    if (!saved.voice || !running || closing) return Promise.resolve();
     if (speaking || voiceSamples) { pendingSpeech = text; return; }
     const token = generation; speaking = true;
-    remember((async () => {
+    return remember((async () => {
       try { const result = await voice.synthesize(text); if (result && running && saved.voice && generation === token) { voiceSamples = result.samples; voiceAt = 0; } }
       catch { /* Voice is optional. Its failure must never interrupt the music. */ }
       finally { speaking = false; }
     })());
+  }
+  function composition() {
+    return { style: saved.settings.style, tempo: saved.settings.tempo, swing: saved.settings.swing / 100,
+      beatsPerBar: saved.settings.beatsPerBar, phraseBars: saved.settings.phraseBars,
+      beatPattern: saved.settings.beatPattern, beatOnly: saved.settings.beatOnly,
+      keyRoot: saved.settings.keyRoot, favorLikes: saved.settings.favorLikes,
+      favoriteProgressions: saved.settings.favorLikes === false ? [] : learning.favorites() };
+  }
+  async function learn(eventId, source, info, chords) {
+    const passage = jazzLearningPassage(info, chords);
+    const result = await learning.remember({ eventId, source, passage });
+    if (result.learned) renderer?.configure({ composition: composition() });
+    return result;
+  }
+  function learnSaved(receipt) {
+    const { id, chords } = receipt.record;
+    const anchor = chords[4];
+    const matching = chords.filter(chord => chord.style === anchor.style && chord.key === anchor.key);
+    return learn(id, 'saved', anchor, matching);
   }
   function settingsAnnouncement(reason) {
     clearTimeout(announceTimer);
@@ -100,9 +127,9 @@ export async function createJazzRadio({ dataDir, signer, enabled = false, now = 
   function applySettings(settings, newSet = false) {
     saved.settings = validateRadioSettings(settings); saved.revision++;
     if (newSet) saved.seed = freshSeed();
-    renderer?.configure({ composition: { style: saved.settings.style, tempo: saved.settings.tempo, swing: saved.settings.swing / 100,
+    renderer?.configure({ composition: { ...composition(),
       ...(newSet ? { seed: saved.seed, newSet: true } : {}) } });
-    renderer?.configure({ scene: { id: 'radio-' + saved.revision, composition: { style: saved.settings.style, tempo: saved.settings.tempo, swing: saved.settings.swing / 100 },
+    renderer?.configure({ scene: { id: 'radio-' + saved.revision, composition: composition(),
       levels: Object.fromEntries(['piano', 'bass', 'drums'].map(key => [key, saved.settings[key] / 100])) } });
   }
   function shuffle(reason) {
@@ -126,6 +153,8 @@ export async function createJazzRadio({ dataDir, signer, enabled = false, now = 
           const receipt = await library.save({ id: job.id, requestId: job.requestId, chords: chords.map(c => c.meta), samples: size, audio,
             capturedAt: job.capturedAt, tick: job.tick });
           job.status = 'saved'; job.message = 'Eight chords saved on your Doodlechain.'; job.receipt = receipt;
+          try { await learnSaved(receipt); }
+          catch { job.message = 'Eight chords saved. Band memory could not update. Your recording is safe.'; }
         } catch (e) { job.status = 'failed'; job.message = e.status ? e.message : 'The audio could not be saved. Your existing recordings are unchanged; try again.'; }
       });
       captureChain = task.catch(() => {}); remember(task);
@@ -140,6 +169,8 @@ export async function createJazzRadio({ dataDir, signer, enabled = false, now = 
       const i = mark.info;
       current = { samples: 0, chunks: [], meta: { ordinal: ++ordinal, chord: i.chord, root: i.chordRoot, quality: i.chordQuality,
         seed: i.seed, set: i.set, style: i.style, tempo: i.tempo, swing: i.swing, key: i.key, bar: i.bar, chorus: i.chorus, beat: i.beat,
+        ...(i.tonic === undefined ? {} : { tonic: i.tonic, beatsPerBar: i.beatsPerBar, beatPattern: i.beatPattern, beatOnly: i.beatOnly }),
+        voices: Object.fromEntries(Object.entries(i.playerVoices||{}).map(([part,value])=>[part,value?{digest:value.digest}:null])),
         startedAt: new Date(startedAt + mark.frame / rate * 1000).toISOString() } };
       begin = at;
     }
@@ -149,7 +180,9 @@ export async function createJazzRadio({ dataDir, signer, enabled = false, now = 
     if (!renderer || !running) return;
     const left = new Float32Array(frameSize), right = new Float32Array(frameSize), music = new Int16Array(frameSize * 2), output = new Int16Array(frameSize * 2);
     infoEvents = []; const frameStart = renderer.frame; renderer.render(left, right);
+    const roomResetAt = infoEvents.find(mark => mark.resetRoom)?.frame;
     for (let i = 0; i < frameSize; i++) {
+      if (roomResetAt === frameStart + i) room = new JazzRoom();
       const stereo = room.sample(left[i], right[i], saved.settings.room / 100);
       for (let channel = 0; channel < 2; channel++) {
         const j = i * 2 + channel; music[j] = Math.round(Math.max(-1, Math.min(1, stereo[channel])) * 32767);
@@ -193,11 +226,28 @@ export async function createJazzRadio({ dataDir, signer, enabled = false, now = 
   async function startSource() {
     requireEnabled(); if (running || starting) return; starting = true; lastError = null;
     try {
-      bank ||= bankFactory(24000); room = new JazzRoom(); recent = []; current = null; ordinal = 0; renderedFrames = 0; lastInfo = null;
-      renderer = new DJRenderer(rate, bank, { style: saved.settings.style, tempo: saved.settings.tempo, swing: saved.settings.swing / 100, seed: saved.seed }, info => {
+      if (!bank) {
+        try { bank = await playerVoices.initialBank(); }
+        catch {
+          if (closing) throw error('Keeper is closing.', 503);
+          voiceBootError = 'The saved voices could not be prepared. Jazz is playing with the original trio.';
+        }
+        bank ||= bankFactory(24000);
+      }
+      room = new JazzRoom(); recent = []; current = null; ordinal = 0; renderedFrames = 0; lastInfo = null;
+      audibleVoices = voiceBootError ? { piano: null, bass: null, drums: null } : playerVoices.status().parts;
+      queuedVoices = null; previousBeatOnly = false;
+      renderer = new DJRenderer(rate, bank, { ...composition(), seed: saved.seed }, info => {
         if (info.partApplied || info.partRejected) { namingEvent = { sequence: ++namingSequence, info }; return; }
-        if (typeof info.beat !== 'number') return; lastInfo = info;
-        if (info.chords.some(c => c.beat === info.beat)) infoEvents.push({ frame: Math.round(info.seconds * rate), info });
+        if (typeof info.beat !== 'number') return;
+        if (queuedVoices && renderer.bank === bank) {
+          audibleVoices = queuedVoices;
+          queuedVoices = null;
+        }
+        const resetRoom = info.beatOnly && !previousBeatOnly;
+        previousBeatOnly = info.beatOnly;
+        lastInfo = { ...info, playerVoices: audibleVoices };
+        if (info.chords.some(c => c.beat === info.beat)) infoEvents.push({ frame: Math.round(info.seconds * rate), info:lastInfo, resetRoom });
       });
       renderer.configure({ levels: Object.fromEntries(['piano', 'bass', 'drums'].map(key => [key, saved.settings[key] / 100])) });
       const token = ++generation; let monitorFailed = false;
@@ -235,7 +285,9 @@ export async function createJazzRadio({ dataDir, signer, enabled = false, now = 
         info: lastInfo, namingEvent, color: tickAt(now()), canDig: running && recent.length >= 4 && library.status().available,
         recentChords: [...recent.slice(-7).map(c => c.meta), ...(current ? [current.meta] : [])],
         jobs: [...jobs.values()].map(({ id, requestId, status, message }) => ({ id, requestId, status, message })),
-        library: library.status(), voiceStatus: voice.status(), brief: lastBrief };
+        library: library.status(), learning: learning.status(), voiceStatus: voice.status(), brief: lastBrief,
+        playerVoices: { ...playerVoices.status(), ...(voiceBootError ? { error: voiceBootError } : {}) },
+        runtime: { host: homeAssistant ? 'Home Assistant' : 'Keeper', platform: process.platform } };
     },
     start() { return serialized(async () => { if (!running) { recoveryPending = false; clearTimeout(timer); await startSource(); } return service.status(); }); },
     stop() { return serialized(async () => {
@@ -259,6 +311,28 @@ export async function createJazzRadio({ dataDir, signer, enabled = false, now = 
     voice(value) { return serialized(async () => {
       requireEnabled(); if (typeof value !== 'boolean') throw error('Choose whether voice updates are on.'); saved.voice = value; saved.revision++;
       if (!value) { voiceSamples = null; pendingSpeech = null; clearTimeout(announceTimer); } await persist(); if (value) worldAnnouncement(); return service.status();
+    }); },
+    testVoice() { return serialized(async () => {
+      requireEnabled(); if (!running || !saved.voice) throw error('Start Jazz and switch voice on before testing it.', 409);
+      if (speaking || voiceSamples) throw error('An announcement is already playing. Try the voice test again shortly.', 409);
+      await announce(`The Jazz voice is ready. The band is playing ${DJ_STYLES[saved.settings.style].name}. The Doodle clock color is ${tickAt(now()).color}.`);
+      return service.status();
+    }); },
+    async learnNamed({ id, context }) {
+      if (!enabled || closing) return;
+      if (typeof id !== 'string' || !/^[a-f0-9]{32}$/.test(id)) throw error('Invalid named feedback.');
+      const musical = validateJazzContext(context);
+      return learn(id, 'named', musical, musical.progression || musical.chords);
+    },
+    voices() { return playerVoices.recipes(); },
+    assignVoice(input) { return serialized(async () => {
+      requireEnabled();
+      let prepared;
+      try { prepared = await playerVoices.assign(input.part, input.voice); }
+      catch (failure) { if (failure.status) throw failure; throw error('Keeper could not prepare that player voice. Try another sound.', 503); }
+      bank = prepared.bank; queuedVoices = prepared.parts; voiceBootError = null;
+      renderer?.configure({ bank }); saved.revision++;
+      settingsAnnouncement('A player has a new voice.'); return service.status();
     }); },
     dig(requestId) { return serialized(async () => {
       requireEnabled(); if (!validJazzRequestId(requestId)) throw error('A fresh keepsake request is required.');
@@ -284,7 +358,13 @@ export async function createJazzRadio({ dataDir, signer, enabled = false, now = 
         settings: { ...saved.settings }, message: 'A signed chord snapshot. Use I dig this! to save eight chords with replay audio.' };
       return { record, publicKey: signer.publicKey, signature: await signer.sign(record) };
     },
-    context() { requireEnabled(); if (!renderer?.info) throw error('Start Jazz before naming this set.', 409); return validateJazzContext({ ...renderer.info, motif: renderer.events.filter(e => e.role === 'melody').map(e => e.note).slice(0, 8) }); },
+    context() {
+      requireEnabled(); if (!lastInfo) throw error('Start Jazz before naming this set.', 409);
+      const matching = [...recent.map(c => c.meta), ...(current ? [current.meta] : [])]
+        .filter(c => c.style === lastInfo.style && c.key === lastInfo.key).slice(-8);
+      return validateJazzContext({ ...lastInfo, motif: renderer.events.filter(e => e.role === 'melody').map(e => e.note).slice(0, 8),
+        ...(matching.length ? { progression: matching.map(c => ({ root: c.root, quality: c.quality })) } : {}) });
+    },
     beat(input) {
       requireEnabled();
       if (!running || !renderer?.info || input.targetSet !== renderer.info.set || input.targetSeed !== renderer.info.seed || typeof input.requestId !== 'string' || !/^[a-z0-9-]{1,64}$/i.test(input.requestId)) throw error('The set changed. Your paid title and beat remain saved; apply them to the current set when ready.', 409);
@@ -294,10 +374,23 @@ export async function createJazzRadio({ dataDir, signer, enabled = false, now = 
     // Deterministic clock/audio advancement is injected in tests; production uses schedule().
     advance(frames = 1) { if (automatic || !Number.isInteger(frames) || frames < 1 || frames > 500) throw new Error('Manual rendering is disabled.'); for (let i = 0; i < frames; i++) renderFrame(); periodic(); },
     async close() {
-      closing = true; clearTimeout(timer); clearTimeout(announceTimer); world.close?.(); voice.close(); await chain; await haltResources();
-      await Promise.allSettled([...tasks]); await captureChain; await persistence; await library.close();
+      closing = true; voiceBuild.abort(); playerVoices.close(); clearTimeout(timer); clearTimeout(announceTimer); world.close?.(); voice.close(); await chain; await haltResources();
+      await Promise.allSettled([...tasks]); await captureChain; await persistence; await library.close(); await learning.close();
     }
   };
+  if (enabled) {
+    let history = [];
+    try {
+      const values = getNamedFeedback();
+      if (Array.isArray(values)) history = values.slice(-32);
+    } catch {}
+    for (const item of history) {
+      try { await service.learnNamed(item); } catch { /* Keep processing other completed feedback. */ }
+    }
+    for (const receipt of library.list().slice(0, 32).reverse()) {
+      try { await learnSaved(receipt); } catch { /* Older verified receipts may omit preference data. */ }
+    }
+  }
   if (enabled && saved.running && !storageError) remember(serialized(startSource).catch(() => { if (automatic) remember(recover('Jazz is retrying its server connection.')); }));
   return service;
 }

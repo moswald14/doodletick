@@ -1,4 +1,4 @@
-const CACHE = 'doodletick-shell-v0.14b-r1';
+const CACHE = 'doodletick-shell-v0.17b';
 const ASSETS = ['/clock-wheel.mjs', '/', '/index.html', '/app.mjs', '/core.mjs', '/style.css', '/logo.svg', '/files.css', '/files-ui.mjs', '/licenses.mjs', '/archive.mjs', '/file-store.mjs', '/peers.mjs', '/manifest.webmanifest', '/theme.mjs', '/theme.css'];
 ASSETS.push('/dotlands-ui.mjs', '/dotlands-protocol.mjs', '/dotlands-bridge.js', '/dotlands-engine.js', '/dotlands-app.js', '/dotlands.html', '/dotlands.css');
 ASSETS.push('/spirograph.mjs', '/spirograph-auth.mjs', '/vpn-description.mjs', '/vpn-transport.mjs', '/vpn-ui.mjs', '/arcade.css', '/arcade-ui.mjs', '/arcade-canvas.mjs', '/arcade-room.mjs', '/arcade-store.mjs', '/arcade-link.mjs', '/game-engine.mjs', '/workshop.mjs');
@@ -12,7 +12,7 @@ ASSETS.push('/keeper-clock.mjs', '/sleep-ui.mjs', '/sleep-audio.mjs', '/sleep-mi
 ASSETS.push('/phrase-core.mjs', '/phrase-store.mjs', '/phrase-ui.mjs', '/phrase.css');
 ASSETS.push('/phrase-notices.mjs', '/phrase-notices.txt');
 const DICTIONARIES = ['/phrase-dictionary.json', '/phrase-attestations.json'];
-ASSETS.push('/jazz-radio-ui.mjs','/jazz-radio-contract.mjs','/jazz-radio.css','/jazz-genres.mjs');
+ASSETS.push('/jazz-radio-ui.mjs','/jazz-radio-contract.mjs','/jazz-radio.css','/jazz-genres.mjs','/jazz-band-ui.mjs','/jazz-dot-voices.mjs');
 ASSETS.push('/jazz.html', '/jazz.css', '/jazz-core.mjs', '/jazz-player.mjs', '/jazz-worklet.mjs');
 ASSETS.push('/jazz-name-contract.mjs', '/jazz-name-client.mjs', '/jazz-name-ui.mjs', '/jazz-settings.mjs', '/jazz-cast.mjs', '/vdoninja-sdk.js', '/vdoninja-sdk-license.txt');
 ASSETS.push('/doodle-bridge.js','/telephone.html','/telephone.css','/telephone-1.js','/telephone-2.js','/telephone-session.js', '/telephone-post-roll.js','/telephone-integration.css','/telephone-rhyme.html','/telephone-rhyme.css','/telephone-rhyme-1.js','/telephone-keeper.mjs','/telephone-keeper.css','/studio.html','/studio-app.js','/studio-worker.js','/studio.css','/studio-classic.html','/studio-notices.txt');

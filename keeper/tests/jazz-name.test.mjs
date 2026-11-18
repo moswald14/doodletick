@@ -26,8 +26,38 @@ test('fiat conversion rounds upward in integer base units and rejects invalid pr
   for (const value of ['0', '-1', 'NaN', '1e-7', '0.0000000000001', '1001', '0.1junk', 0.1]) assert.throws(() => quotePepeUnits(value));
 });
 
+test('the OpenAI connection check is coalesced and uses no payment, generation, or secret-bearing response', async t => {
+  const network = fakeNetwork();
+  let checks = 0;
+  network.checkOpenAI = async () => { checks++; return { ok: false, status: 401, detail: 'never echo provider detail' }; };
+  network.preflight = async () => assert.fail('A connection check must not use payment preflight.');
+  const { s } = await serviceFixture(t, { network });
+  const [first, second] = await Promise.all([s.checkConnection(), s.checkConnection()]);
+  assert.deepEqual(first, second);
+  assert.equal(checks, 1);
+  assert.equal(first.ok, false);
+  assert.match(first.message, /declined the key/);
+  assert.equal(JSON.stringify(first).includes('provider detail'), false);
+  assert.equal(network.generates, 0);
+});
+
+test('a completed payment teaches the band once with musical context only', async t => {
+  const feedback = [];
+  const { s, network } = await serviceFixture(t, { onComplete: async value => feedback.push(value) });
+  const quote = await s.quote({ payer, context });
+  assert.deepEqual(feedback, []);
+  network.pay(quote);
+  await s.claim(input(quote));
+  assert.equal((await completed(s, quote)).status, 'complete');
+  assert.equal(feedback.length, 1);
+  assert.deepEqual(feedback[0], { id: quote.id, context: validateJazzContext(context) });
+  assert.deepEqual(s.completedFeedback(), feedback);
+  await s.claim(input(quote));
+  assert.equal(feedback.length, 1);
+});
+
 test('musical inputs and AI patterns are bounded and copied without injected fields', () => {
-  assert.deepEqual(validateJazzContext({ ...context, wallet: 'unused' }), context);
+  assert.deepEqual(validateJazzContext({ ...context, wallet: 'unused' }), { ...context, beatsPerBar: 4, phraseBars: 'genre', beatPattern: 'genre', beatOnly: false, keyRoot: 'auto' });
   assert.deepEqual(validateJazzResult({ ...result, script: 'unused' }), result);
   for (const patch of [{ tempo: Infinity }, { seed: 0 }, { motif: Array(9).fill(60) }, { key: '<script>' }, { style: 'unknown' }]) assert.throws(() => validateJazzContext({ ...context, ...patch }));
   for (const pattern of [[{ instrument: 'piano', step: 0, velocity: 0.3 }, result.pattern[0]], [{ ...result.pattern[0], step: 16 }, result.pattern[1]], [result.pattern[0], result.pattern[0]], Array(25).fill(result.pattern[0]), [{ ...result.pattern[0], velocity: NaN }, result.pattern[1]]]) assert.throws(() => validateJazzResult({ ...result, pattern }));

@@ -1,4 +1,8 @@
-# Doodle Tick Keeper · 0.14b
+# Doodle Tick Keeper · 0.17b
+
+**0.17b adds a paper wallet maker to the Doodleverse miner.** From Keeper, open **Doodleverse Coin**, then choose **Paper wallet maker**. Open the downloaded file offline to create or recover a paper wallet. [Paper wallet guide](../keeper/paper-wallet/README.md)
+
+**0.16b gives the Jazz band a memory and more ways to play.** Set the speed, beats per bar, phrase length, drum groove and key. Save editable Dot Wave voices to the players and teach the band with signed keepsakes or song naming. [Open the Jazz guide](../keeper/JAZZ.md).
 
 **0.14b adds Home Assistant Jazz radio:** eight genres, hourly shuffle, optional world-update voice, local mute and signed eight-chord replay keepsakes. [Open the Jazz guide](../keeper/JAZZ.md).
 

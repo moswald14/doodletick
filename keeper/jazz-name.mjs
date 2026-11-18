@@ -23,11 +23,13 @@ function configurationReady(config) {
   } catch { return false; }
 }
 
-export async function createJazzNamingService({ dataDir, config = jazzConfigFromEnvironment(), network, now = Date.now } = {}) {
+export async function createJazzNamingService({ dataDir, config = jazzConfigFromEnvironment(), network, now = Date.now, onComplete = async () => {} } = {}) {
+  if (typeof onComplete !== 'function') throw new Error('Invalid naming completion handler.');
   const configured = configurationReady(config);
   const remote = network || (configured ? createJazzNetwork(config) : null);
   const filename = path.join(dataDir, 'jazz-naming.json');
   let state = { version: 1, quotes: [], calls: {} }, fault = false, closing = false, chain = Promise.resolve();
+  let connectionCheck, checkedConnection;
   const tasks = new Set();
   try {
     await mkdir(dataDir, { recursive: true, mode: 0o700 });
@@ -97,15 +99,44 @@ export async function createJazzNamingService({ dataDir, config = jazzConfigFrom
           ? 'Generation did not finish. Your payment is saved. Retry without paying again.'
           : 'Generation needs the Keeper owner’s help. Keep this paid receipt; do not pay again.'; }
         await persist();
+        if (result) {
+          // Learning is optional and can never revoke a completed paid result.
+          // Only musical data and an opaque request id reach the band memory.
+          try { await onComplete({ id: q.id, context: structuredClone(q.context) }); } catch {}
+        }
       });
     })();
     tasks.add(task); task.catch(() => {}).finally(() => tasks.delete(task));
   }
   return {
+    completedFeedback() { return fault ? [] : state.quotes.filter(q => q.paid && q.status === 'complete' && q.result).slice(-32)
+      .map(q => ({ id: q.id, context: structuredClone(q.context) })); },
     configuration() {
       return { ready: ready(), chainId: PEPE_CHAIN_ID, contract: PEPE_CONTRACT, usd: JAZZ_NAME_USD,
         recipient: isAddress(config.recipient) ? config.recipient : null, model: JAZZ_MODEL,
         message: ready() ? 'A title and new beat cost about $0.02 in PEPE, plus the Ethereum fee in ETH.' : 'Song naming is not connected yet. No payment will be requested.' };
+    },
+    checkConnection() {
+      requireReady();
+      if (checkedConnection && now() - checkedConnection.checkedAt < 30000) return checkedConnection;
+      if (connectionCheck) return connectionCheck;
+      connectionCheck = (async () => {
+        let reply;
+        try { reply = await remote.checkOpenAI(); } catch {}
+        const messages = {
+          401: 'OpenAI declined the key. Check the Jazz API key in Keeper configuration.',
+          403: 'The OpenAI project does not allow this key to check the model.',
+          404: 'The naming model is unavailable to this OpenAI project.',
+          429: 'OpenAI limited the connection check. Try again shortly.'
+        };
+        checkedConnection = {
+          checkedAt: now(), ok: reply?.ok === true,
+          message: reply?.ok === true ? 'The Keeper can reach the OpenAI naming model. The connection check uses no song generation or payment.'
+            : messages[reply?.status] || 'The Keeper could not reach the OpenAI naming model. Try again shortly.'
+        };
+        return checkedConnection;
+      })().finally(() => { connectionCheck = null; });
+      return connectionCheck;
     },
     quote(input) { return serialized(async () => {
       requireReady();
@@ -155,7 +186,7 @@ export async function createJazzNamingService({ dataDir, config = jazzConfigFrom
       if (!verified.paid) return publicJob(q);
       await startGeneration(q); return publicJob(q);
     }); },
-    async close() { closing = true; await chain; await Promise.allSettled([...tasks]); await chain; }
+    async close() { closing = true; await chain; await Promise.allSettled([...tasks, connectionCheck]); await chain; }
   };
   async function verify(q, hash) { return verifyPepePayment(remote.rpc, q, hash); }
 }
@@ -167,7 +198,7 @@ export function createJazzNamingHttpHandler(service) {
     const send = (status, value) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(value)); return true; };
     if (req.method === 'GET' && url.pathname === '/api/jazz-name/config') return send(200, service.configuration());
     const operation = url.pathname.slice('/api/jazz-name/'.length);
-    if (req.method !== 'POST' || !['quote', 'claim', 'job', 'retry'].includes(operation)) return send(404, { error: 'Naming action not found.' });
+    if (req.method !== 'POST' || !['quote', 'claim', 'job', 'retry', 'checkConnection'].includes(operation)) return send(404, { error: 'Naming action not found.' });
     if (req.headers['x-keeper-request'] !== '1') return send(403, { error: 'Missing request protection.' });
     if (!/^application\/json(?:;|$)/i.test(req.headers['content-type'] || '')) return send(415, { error: 'JSON required.' });
     if (Date.now() - windowStart > 60000) { windowStart = Date.now(); requests = 0; }

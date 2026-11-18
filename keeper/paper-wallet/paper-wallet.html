@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="@@POLICY@@">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Doodleverse Paper Wallet</title>
+  <style>@@STYLE@@</style>
+  <script defer type="module">@@SCRIPT@@</script>
+</head>
+<body>
+  <main>
+    <header class="screen hero">
+      <p class="network"><span aria-hidden="true"></span>Doodleverse Coin · Main network</p>
+      <h1>Paper wallet</h1>
+      <p>Generate a DVC address for mining or receiving coins. Print the private key and keep it somewhere only you can reach.</p>
+    </header>
+    <section class="screen controls" aria-label="Make a paper wallet">
+      <div class="actions">
+        <button id="make" class="primary" type="button" disabled>Make a paper wallet</button>
+        <button id="print" type="button" disabled>Print wallet</button>
+        <button id="clear" type="button" disabled>Clear wallet</button>
+      </div>
+      <p id="status" role="status">Open this downloaded HTML file in a browser to make your wallet.</p>
+    </section>
+    <article id="sheet" aria-label="Doodleverse paper wallet sheet">
+      <div class="sheet-title">Doodleverse Coin <span>Main network · Paper wallet</span></div>
+      <section class="card receiving" aria-labelledby="receiving-title">
+        <div>
+          <p class="label">Share this</p>
+          <h2 id="receiving-title">Receiving address</h2>
+          <p class="note">Use this address in the miner or give it to someone sending you DVC.</p>
+          <code id="address" dir="ltr">Your address will appear here.</code>
+        </div>
+        <div id="address-qr" class="qr"></div>
+      </section>
+      <section class="card spending" aria-labelledby="spending-title">
+        <div>
+          <p class="label">Keep private</p>
+          <h2 id="spending-title">Private key</h2>
+          <p class="note">Anyone who has this text or scans its QR code can spend the coins. Keep the printed sheet private.</p>
+          <p id="print-hint" class="screen note">The private key appears in the print preview.</p>
+          <code id="private-key" class="print-secret" dir="ltr"></code>
+        </div>
+        <div id="private-qr" class="qr print-secret"></div>
+      </section>
+    </article>
+    <details class="screen extra" id="recover">
+      <summary>Recover from paper</summary>
+      <form id="recover-form" autocomplete="off">
+        <p class="note">Load the printed key here while offline, then save an encrypted backup for Keeper.</p>
+        <label for="wif">Printed private key</label>
+        <input id="wif" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="54" required disabled>
+        <label for="printed-address">Printed receiving address <span class="note">(optional)</span></label>
+        <input id="printed-address" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="37" disabled>
+        <button id="read-paper" type="submit" disabled>Load paper wallet</button>
+      </form>
+    </details>
+    <details class="screen extra" id="backup" hidden>
+      <summary>Save encrypted backup</summary>
+      <form id="backup-form" autocomplete="off">
+        <p class="note">Choose a password. Then use <strong>Restore encrypted wallet backup</strong> in Keeper’s native DVC wallet to spend from this address. If you already have a different wallet there, use a separate browser profile.</p>
+        <label for="password">Backup password</label>
+        <input id="password" type="password" autocomplete="new-password" minlength="12" maxlength="1024" required>
+        <label for="repeat-password">Repeat password</label>
+        <input id="repeat-password" type="password" autocomplete="new-password" minlength="12" maxlength="1024" required>
+        <p class="note">Use at least 12 characters. You’ll need this password to unlock the backup.</p>
+        <button id="save" type="submit" disabled>Download encrypted backup</button>
+      </form>
+      <p id="backup-status" role="status"></p>
+    </details>
+    <details class="screen extra credits">
+      <summary>Source and licenses</summary>
+      <pre>@@NOTICES@@</pre>
+    </details>
+  </main>
+</body>
+</html>

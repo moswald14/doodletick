@@ -1,6 +1,6 @@
 # Dotlands saved rooms
 
-Feature branch; not yet included in an installed Keeper release. The game source lives at https://github.com/moswald14/dotlands and its persistent service lives in this repository.
+Feature branch integrated with Keeper 0.17b; not yet included in an installed Keeper release. The game source lives at https://github.com/moswald14/dotlands and its persistent service lives in this repository.
 
 Open **Dotlands · saved rooms**, unlock your usual vault, and create a room or enter a friend's six-character code. Each human pays **1 private garden Doodle Coin once per room**, including the creator. Matured garden earnings are settled on entry. Returning with the same vault identity is free. Solo, pass & play and computer seats are free.
 
@@ -20,4 +20,8 @@ Saved storage is bounded to 200 rooms and 40 created rooms per identity. Full st
 
 Run `node scripts/sync-ha.mjs`, `node scripts/check-repository.mjs`, and `node scripts/test.mjs` before release. Recovery tests cover real garden debits followed by failed room writes, concurrent joins, stale exact retries, reloads and server restarts.
 
-Before deployment, finish a two-browser playtest with disposable identities, verify the phone layout and copy-code flow, and test reopening the game through authenticated Home Assistant ingress. Browser automation was unavailable during preparation; these live checks and the installed release remain pending. Integrate the latest shared Keeper release and update all release labels before packaging. Do not replace the parallel Telephone or Jazz candidates.
+Validation on November 18, 2026: all 1,118 tests passed against the integrated 0.17b source with four test processes at a time. The gateway tests use real signed requests, independently earned garden coins, two players, turns, full Keeper and gateway restart, and free return with unchanged balances and admission receipts.
+
+Chrome and the in-app browser completed paid create/join, maximum-army attrition, copy-code, play after the host closed, and reopening after both browsers closed. The returned map matched all 36 displayed tile labels. The game board and turn controls fit a 390 by 844 browser viewport. These are browser tests, not physical-phone tests.
+
+The live installed Home Assistant update still needs verification. Assign a new release version and preserve later shared changes before packaging; do not replace published 0.17b artifacts.

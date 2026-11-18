@@ -1,3 +1,25 @@
+## 0.17b — Doodleverse paper wallet
+
+Select **Paper wallet maker** next to **Your mining patch**. The standalone HTML creates a main-network DVC address offline and prints the receiving address and private key with QR codes. It can also recover a printed key into an encrypted Keeper wallet backup. [Paper wallet guide](paper-wallet/README.md)
+
+## 0.16b — Jazz band voices, rhythm and feedback
+
+- Select speed, two through seven beats per bar, phrase length, drum groove and key. Suggested keys follow the genre and Beat only plays the percussion.
+- Use the sounds you kept in Dot Wave or import an editable recipe. Assign it to piano, bass or drums. The next bar uses the new sound and the Keeper remembers it across restarts.
+- Naming a song after a verified payment and keeping an eight-chord passage teach the band which progressions to revisit. Keeper can check model access without a new song or payment.
+- Test voice reports whether the announcer generated audio. Home Assistant retries local synthesis through its installed audio tools when command lookup fails.
+- Long measures fit the eight-chord recording limit. Existing signed feedback and audio can still be replayed.
+
+## 0.15b — Telephone World paragraphs and AI proposal diagnostics
+
+New Bullshit Telephone World stories display proper paragraph breaks in the machine and retain them when carried into Dot Studio. The private-room change updates the approved bundle fingerprint; private station source remains separately installed.
+
+The upgrade desk now distinguishes provider authentication, permissions, recognized quota/rate limits, unavailable models, rejected requests and service failures using fixed local messages. Provider error text and credentials are never displayed or saved. Failed requests make no automatic retry and create no proposal; configuration alone does not establish working provider access.
+
+Oversized or incomplete shared-service uploads receive a complete JSON rejection before closing. Cleanup discards at most 64 KiB for at most 250 ms without buffering it; request limits and rejection before storage writes remain enforced.
+
+After the Keeper update, install the matching private MozCorp ZIP. Existing source text, master copies, saved endings, animal sessions and Studio scores remain exact. Typed literal backslashes in source or machine signals are preserved. Shared cloud, HOPE-LON and upgrade proposal formats, native coin rules and Home Assistant access remain unchanged.
+
 ## 0.14b — Home Assistant Jazz radio
 
 Jazz now broadcasts from Home Assistant, with free VDO.Ninja listening, independent local output volume and mute, eight distinct jazz genres, structured shuffle and hourly player changes under an unlockable Never stop guard. A started station resumes after Keeper restarts; power, network and third-party outages can interrupt it.

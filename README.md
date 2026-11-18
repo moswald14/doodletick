@@ -1,4 +1,10 @@
-# Doodle Tick · 0.14b
+# Doodle Tick · 0.17b
+
+**0.17b adds a paper wallet maker to the Doodleverse miner.** Download the offline file from the mining panel to print a receiving address and private key, or recover the key into an encrypted Keeper backup. [Paper wallet guide](keeper/paper-wallet/README.md)
+
+**0.16b gives the Jazz band a memory and more ways to play.** Set the speed, beats per bar, phrase length, drum groove and key. Save editable Dot Wave voices to the players and teach the band with signed keepsakes or song naming. [Open the Jazz guide](keeper/JAZZ.md).
+
+**0.15b fixes Telephone World story paragraphs and clarifies AI proposal failures.** Install the matching private MozCorp bundle after updating Keeper. The proposal desk distinguishes common account, access and service failures without displaying provider diagnostics. See [the MozCorp guide](keeper/MOZCORP.md).
 
 **0.14b adds Home Assistant Jazz radio:** eight genres, hourly shuffle, optional world-update voice, local mute and signed eight-chord replay keepsakes. [Open the Jazz guide](keeper/JAZZ.md).
 

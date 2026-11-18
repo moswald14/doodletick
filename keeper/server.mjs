@@ -44,7 +44,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
   let previous = null, count = 0;
   try { const lines = (await readFile(path.join(dataDir, 'receipts.jsonl'), 'utf8')).trim().split('\n').filter(Boolean); count = lines.length; if (count) previous = await hash(JSON.parse(lines.at(-1))); } catch (e) { if (e.code !== 'ENOENT') { await lock.close(); await unlink(lockPath); throw e; } }
   let queue = Promise.resolve();
-  let garden, vpn, dvc, jazzNaming, dvcUnavailable = false;
+  let garden, vpn, dvc, jazzNaming, jazzRadio, dvcUnavailable = false;
   try {
     garden = await createGardenLedger({ ...gardenOptions, dataDir, identity });
     vpn = await createVpnNetwork({ ...vpnOptions, garden });
@@ -55,7 +55,8 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
       // existing vault, garden, files and witness interface offline.
       dvcUnavailable = true;
     }
-    jazzNaming = await createJazzNamingService({ ...jazzOptions, dataDir: path.join(dataDir, 'jazz-naming') });
+    jazzNaming = await createJazzNamingService({ ...jazzOptions, dataDir: path.join(dataDir, 'jazz-naming'),
+      onComplete: value => jazzRadio?.learnNamed(value) });
   } catch (e) { await jazzNaming?.close(); await vpn?.close(); await garden?.idle(); await dvc?.close(); await lock.close(); await unlink(lockPath); throw e; }
   const unavailable = () => { throw Object.assign(new Error('DVC history needs recovery.'), { code: 'DVC_STORAGE' }); };
   const handleDvc = createDvcHttpHandler({ node: dvc || Object.fromEntries(['status', 'account', 'createJob', 'submitBlock', 'submitTransfer', 'getSegment', 'locate', 'locators', 'ingestSegment', 'getMempool'].map(name => [name, unavailable])), mutationLimit: 120 });
@@ -71,7 +72,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
   const shelfIdle = await createShelfIdleStore({ dataDir });
   const handleShelfIdle = createShelfIdleHttpHandler({ store: shelfIdle });
   const handleJazzNaming = createJazzNamingHttpHandler(jazzNaming);
-  const jazzRadio = await createJazzRadio({ ...jazzRadioOptions, dataDir,
+  jazzRadio = await createJazzRadio({ ...jazzRadioOptions, dataDir, getNamedFeedback: () => jazzNaming.completedFeedback(),
     signer: { publicKey: identity.publicKey, sign: record => sign(record, identity.privateKey) } });
   const handleJazzRadio = createJazzRadioHttpHandler(jazzRadio);
   const dotlands = await createDotlandsStore({ dataDir, identity, chargeAdmission: args => garden.chargeArcadeAdmission(args) });
@@ -92,12 +93,12 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
   for (const file of ['jazz.html', 'jazz.css', 'jazz-core.mjs', 'jazz-player.mjs', 'jazz-worklet.mjs']) allowedFiles.add(file);
   for (const file of ['jazz-name-contract.mjs', 'jazz-name-client.mjs', 'jazz-name-ui.mjs']) allowedFiles.add(file);
   for (const file of ['jazz-settings.mjs', 'jazz-cast.mjs', 'vdoninja-sdk.js', 'vdoninja-sdk-license.txt']) allowedFiles.add(file);
-  for (const file of ['jazz-radio-ui.mjs', 'jazz-radio-contract.mjs', 'jazz-radio.css', 'jazz-genres.mjs']) allowedFiles.add(file);
+  for (const file of ['jazz-radio-ui.mjs', 'jazz-radio-contract.mjs', 'jazz-radio.css', 'jazz-genres.mjs', 'jazz-band-ui.mjs', 'jazz-dot-voices.mjs']) allowedFiles.add(file);
   for (const file of ['doodle-bridge.js', 'telephone.html', 'telephone.css', 'telephone-1.js', 'telephone-2.js', 'telephone-session.js', 'telephone-post-roll.js', 'telephone-integration.css', 'telephone-rhyme.html', 'telephone-rhyme.css', 'telephone-rhyme-1.js', 'telephone-keeper.mjs', 'telephone-keeper.css', 'studio.html', 'studio-app.js', 'studio-worker.js', 'studio.css', 'studio-classic.html', 'studio-notices.txt']) allowedFiles.add(file);
   for(const file of ['mozcorp-ui.mjs','mozcorp-cloud.mjs','mozcorp-upgrades.mjs','mozcorp.css','creative-score-player.mjs'])allowedFiles.add(file);
   for (const file of ['shelfdefense.html', 'shelfdefense.css', 'shelfdefense-art.js', 'shelfdefense-waves.js', 'shelfdefense-audio.js', 'shelfdefense-game.js', 'shelfdefense-app.js', 'shelfdefense-wave-lab.js']) allowedFiles.add(file);
   for (const file of ['shelf-idle.html', 'shelf-idle.css', 'shelf-idle-card.js', 'shelf-idle-client.mjs', 'shelf-idle.mjs']) allowedFiles.add(file);
-  for (const file of ['scrypt.html', 'scrypt.css', 'scrypt-ui.mjs', 'dvc-scrypt-miner.mjs', 'scrypt-wallet.html', 'scrypt-wallet.css', 'scrypt-wallet-ui.mjs', 'scrypt-wallet-core.mjs', 'scrypt-wallet-crypto.mjs', 'scrypt-wallet-crypto-notices.txt']) allowedFiles.add(file);
+  for (const file of ['scrypt.html', 'scrypt.css', 'scrypt-ui.mjs', 'dvc-scrypt-miner.mjs', 'scrypt-wallet.html', 'scrypt-wallet.css', 'scrypt-wallet-ui.mjs', 'scrypt-wallet-core.mjs', 'scrypt-wallet-crypto.mjs', 'scrypt-wallet-crypto-notices.txt', 'scrypt-paper-wallet.html']) allowedFiles.add(file);
   const server = http.createServer(async (req, res) => {
     const address = server.address();
     const hostnames = [`127.0.0.1:${address.port}`, `localhost:${address.port}`];
@@ -120,7 +121,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
       if (await handleDotlands(req,res,url)) return;
       if (await handleDvc(req, res, url)) return;
       if (await vpn.handleLocal(req, res, url)) return;
-      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.14b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt(), nativeCoin: { available: !dvcUnavailable, error: dvcUnavailable ? 'DVC_STORAGE' : null } });
+      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.17b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt(), nativeCoin: { available: !dvcUnavailable, error: dvcUnavailable ? 'DVC_STORAGE' : null } });
       if (req.method === 'GET' && url.pathname === '/api/time') {
         const receivedAt = Date.now(), nonce = url.searchParams.get('nonce');
         if (!validTimeNonce(nonce) || url.searchParams.getAll('nonce').length !== 1) return send(400, { error: 'A fresh clock challenge is required.' });
@@ -149,6 +150,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
       if (req.method !== 'GET') return send(405, { error: 'Method not supported.' });
       const file = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
       if (!allowedFiles.has(file)) return send(404, { error: 'Not found.' });
+      if (file === 'scrypt-paper-wallet.html') res.setHeader('Content-Disposition', 'attachment; filename="Doodleverse-Paper-Wallet.html"');
       return send(200, await readFile(path.join(root, 'public', file), 'utf8'), types[path.extname(file)]);
     } catch (e) { return send(e instanceof SyntaxError ? 400 : 500, { error: e instanceof SyntaxError ? 'Invalid JSON.' : 'The local witness could not complete this request.' }); }
   });
