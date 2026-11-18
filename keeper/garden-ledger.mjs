@@ -3,6 +3,7 @@ import path from 'node:path';
 import { hash, sign, checkSignature, EPOCH, random, b64 } from './public/core.mjs';
 import { recipe, mushroomId, gardenHour, pendingCoins, verifyGardenRequest, DECORATIONS, GARDEN_FORMAT, HOUR } from './public/mushroom-core.mjs';
 import { MINING_FORMAT, MINING_RULES, verifyMiningWork } from './public/mushroom-mining.mjs';
+import { verifyDotlandsRequest } from './public/dotlands-protocol.mjs';
 
 const fail = (message, status = 400) => Object.assign(new Error(message), { status });
 const amount = n => Number.isSafeInteger(n) && n > 0 && n <= 1000000000;
@@ -172,5 +173,34 @@ export async function createGardenLedger({ dataDir, identity, now = Date.now, wr
   function dispatch(proof, readOnly = false) {
     const job = queue.then(() => process(proof, readOnly)); queue = job.catch(() => {}); return job;
   }
-  return { info, dispatch, idle: () => queue };
+  // Called only by the Keeper's durable room authority after it saves a seat
+  // reservation. There is no public endpoint that accepts an arbitrary debit.
+  // The permanent entitlement survives newer garden actions and response loss.
+  function chargeArcadeAdmission({ owner, room, price, proof }) {
+    const job = queue.then(async () => {
+      const r = proof?.record;
+      if (price !== 1 || !/^[A-Z2-9]{6}$/.test(room || '') || owner !== r?.owner ||
+          !['create', 'join'].includes(r?.operation) || r?.args?.acceptPrice !== 1 ||
+          (r.operation === 'join' && r.args.code !== room) || !await verifyDotlandsRequest(proof, identity.fingerprint)) throw fail('The arcade entry permission does not match.', 403);
+      const key = owner + ':' + room;
+      if (state.arcadeAdmissions?.[key]) return state.arcadeAdmissions[key];
+      if (!state.accounts[owner]) throw fail('Join this Keeper’s Mushroom garden and earn a Doodle Coin first.', 402);
+      if (state.revision >= 100000 || Object.keys(state.arcadeAdmissions || {}).length >= 4000) throw fail('This Keeper’s arcade admission capacity is full.', 503);
+      const next = structuredClone(state), time = clock(next), earned = settle(next, owner, time), wallet = next.accounts[owner];
+      if (wallet.balance < price) throw fail('Not enough Doodle Coins. Earn coins in this Keeper’s Mushroom garden.', 402);
+      wallet.balance -= price; next.spent += price; wallet.sequence++; next.revision++; next.lastTime = time;
+      const requestId = await hash(r);
+      const receipt = await signed({ format: GARDEN_FORMAT, issuer: identity.fingerprint, requestId, kind: 'receipt', owner,
+        sequence: wallet.sequence, revision: next.revision, time, balance: wallet.balance,
+        result: { action: 'arcade-admission', game: 'dotlands', room, amount: price, earned } });
+      next.arcadeAdmissions ||= {}; next.arcadeAdmissions[key] = receipt;
+      wallet.lastRequest = requestId; wallet.lastReceipt = receipt;
+      next.history.push(receipt); next.history = next.history.slice(-2000);
+      const balances = Object.values(next.accounts).reduce((n, v) => n + v.balance, 0);
+      if (!Number.isSafeInteger(wallet.sequence) || !Number.isSafeInteger(balances) || balances + next.spent !== next.minted) throw Error('Coin conservation check failed.');
+      await save(next); state = next; return receipt;
+    });
+    queue = job.catch(() => {}); return job;
+  }
+  return { info, dispatch, chargeArcadeAdmission, idle: () => queue };
 }

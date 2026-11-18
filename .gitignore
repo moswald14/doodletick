@@ -11,6 +11,8 @@ dist/
 witness-key.json
 garden-ledger.json
 shelf-idle.json
+dotlands-rooms.json
+dotlands-rooms.json.next
 receipts.jsonl
 server.lock
 tailscaled.state

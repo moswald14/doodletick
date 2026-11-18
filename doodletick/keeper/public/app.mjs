@@ -17,6 +17,7 @@ import { createVpnUI } from './vpn-ui.mjs';
 import { newIdentity, random, b64, deriveKey, encryptVault, decryptVault, sealEntry, verifyWitness, verifyEntry, receiptFor, verifyReceipt, tickAt, tetrachromaColor, EPOCH, MAX_TEXT, MAX_BACKUP, validateEnvelope } from './core.mjs';
 import { createFilesUI } from './files-ui.mjs';
 import { createArcadeUI } from './arcade-ui.mjs';
+import { createDotlandsUI } from './dotlands-ui.mjs';
 const $ = id => document.getElementById(id);
 const STORAGE = 'doodletick-vault-v1';
 const RECOVERY = 'doodletick-tab-recovery-v1';
@@ -25,6 +26,7 @@ let vault = null, key = null, salt = null, savedRaw = null, pendingBackup = null
 let saveTimer, toastTimer, queue = Promise.resolve(), generation = 0, busy = false, lastActive = Date.now();
 let changeId = 0;
 let arcadeUI;
+let dotlandsUI;
 let mozcorpUI;
 let recipientUI;
 let nativePeerUI;
@@ -80,11 +82,13 @@ const backgroundMusicUI = createBackgroundMusicUI($('keeper-music'), { onBeforeP
   $('atmosphere-music-status').textContent = state.phase === 'playing' ? (state.muted || state.volume === 0 ? 'Music muted' : 'Music playing') : state.phase === 'starting' ? 'Starting music…' : 'Music paused';
 } });
 function showView(view) {
-  if (!['arcade', 'mozcorp', 'telephone', 'phrases', 'garden', 'sleep', 'coin', 'vault', 'files', 'verify', 'about'].includes(view)) view = 'arcade';
-  for (const section of ['arcade', 'mozcorp', 'telephone', 'phrases', 'garden', 'sleep', 'coin', 'vault', 'files', 'verify', 'about']) $('view-' + section).hidden = view !== section;
+  if (!['arcade', 'dotlands', 'mozcorp', 'telephone', 'phrases', 'garden', 'sleep', 'coin', 'vault', 'files', 'verify', 'about'].includes(view)) view = 'arcade';
+  for (const section of ['arcade', 'dotlands', 'mozcorp', 'telephone', 'phrases', 'garden', 'sleep', 'coin', 'vault', 'files', 'verify', 'about']) $('view-' + section).hidden = view !== section;
   for (const button of document.querySelectorAll('[data-view]')) { button.classList.toggle('active', button.dataset.view === view); button.setAttribute('aria-current', button.dataset.view === view ? 'page' : 'false'); }
   $('page-name').textContent = { phrases: 'PHRASE LAB', mozcorp: 'MOZCORP LABS', telephone: 'TELEPHONE WORLD', garden: 'MUSHROOM GARDEN', sleep: 'SLEEP GARDEN', coin: 'DOODLEVERSE COIN', arcade: 'THE DOODLEVERSE', vault: 'MY VAULT', files: 'FILES & PEERS', verify: 'CHECK A RECEIPT', about: 'THE IDEA' }[view];
   arcadeUI?.setVisible(view === 'arcade');
+  dotlandsUI?.setVisible(view === 'dotlands');
+  if (view === 'dotlands') $('page-name').textContent = 'DOTLANDS · SAVED ROOMS';
   mozcorpUI?.setVisible(view === 'mozcorp');
   phraseUI?.setVisible(view === 'phrases');
   mushroomUI.setVisible(view === 'garden');
@@ -95,6 +99,7 @@ function showView(view) {
 const fileUI = createFilesUI({ toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); } });
 phraseUI = createPhraseLabUI($('view-phrases'), { postBatch: postPhraseBatch, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); } });
 arcadeUI = createArcadeUI({ toast, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); }, onPackStored: () => fileUI.refresh() });
+dotlandsUI = createDotlandsUI({ container: $('view-dotlands'), toast, clock: keeperClock, onUnlockRequest: () => showView('vault'), onGardenRequest: () => showView('garden'), onActivity: () => { lastActive = Date.now(); } });
 const mushroomUI = createMushroomUI({ toast, clock: keeperClock, onUnlockRequest: () => showView('vault'), onActivity: () => { lastActive = Date.now(); }, onBeforeListen: () => { backgroundMusicUI.pause(); sleepUI?.stop('Paused for a recipe preview.'); } });
 sleepUI = createSleepUI($('view-sleep'), { getOwnedMushrooms: () => mushroomUI.listeningMushrooms(), onActivity: () => { lastActive = Date.now(); }, onBeforePlay: () => { backgroundMusicUI.pause(); mushroomUI.stopListening(); } });
 const nativePanel = document.createElement('section');
@@ -206,6 +211,7 @@ function showUnlocked() {
   recipientUI.unlock(vault.identity);
   fileUI.unlock(vault.identity, key).catch(error => toast(error.message));
   arcadeUI.unlock(vault.identity, key).catch(error => toast(error.message));
+  dotlandsUI.unlock(vault.identity).catch(error => toast(error.message));
 }
 function clearSession() {
   phraseUI.setUnlocked(false);
@@ -215,6 +221,7 @@ function clearSession() {
   nativePeerUI.disconnect('Peer stopped because the creator vault is locked.');
   fileUI.lock();
   arcadeUI.lock();
+  dotlandsUI.lock();
   generation++; clearTimeout(saveTimer); vault = null; key = null; salt = null; selected = null;
   $('entry-dialog').close(); $('detail-body').textContent = ''; $('detail-title').textContent = ''; $('detail-meta').textContent = ''; $('detail-proof').textContent = ''; $('entries').replaceChildren();
   $('entry-title').value = ''; $('entry-body').value = ''; $('search').value = ''; $('password').value = ''; $('confirm-password').value = ''; $('username').value = ''; $('greeting').textContent = ''; $('revision-note').textContent = '';

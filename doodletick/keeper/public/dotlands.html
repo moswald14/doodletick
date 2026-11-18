@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#edf1e9">
+  <meta name="description" content="A new continent every game. A simple hex strategy game for one to four players, with solo AI and private online rooms.">
+  <title>Dotlands — A new continent every game.</title>
+  <link rel="stylesheet" href="./dotlands.css">
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <button id="home" class="brand" aria-label="Dotlands menu"><svg viewBox="0 0 32 36" aria-hidden="true"><path d="M16 1 31 9.5v17L16 35 1 26.5v-17Z" fill="currentColor"/><g fill="#edf1e9"><circle cx="11" cy="13" r="2.5"/><circle cx="21" cy="13" r="2.5"/><circle cx="11" cy="23" r="2.5"/><circle cx="21" cy="23" r="2.5"/></g></svg>DOTLANDS<span class="brand-edition">FIELD NOTES № 01</span></button>
+    <div class="header-actions"><button id="sound" class="icon-button" aria-label="Turn sound on" title="Sound">♪<span id="sound-line">／</span></button><button id="help" class="icon-button" aria-label="How to play">?</button></div>
+  </header>
+  <p id="connection-status" class="connection-status" role="status" hidden></p>
+  <main id="game" hidden>
+    <div class="game-top"><span class="eyebrow" id="round-label">ROUND 01</span><span id="turn-label" class="turn-pill">Moss's turn</span><button id="menu" class="text-button">Menu</button></div>
+    <div id="standings" class="standings" aria-label="Country standings"></div>
+    <section class="board-wrap" aria-label="Game map">
+      <div class="map-coordinate">THE LITTLE CONTINENT</div><div class="compass" aria-hidden="true">N<br>↑</div>
+      <svg id="board" role="group" aria-label="Hex map. Select your tile, then a neighboring tile."></svg>
+      <div class="map-footer"><span><i class="neutral-dot"></i> Independent land</span><span id="map-seed"></span></div>
+    </section>
+    <div id="event-log" class="event-log" role="status" aria-live="polite">Every great country starts small.</div>
+    <section id="controls" class="controls" aria-label="Turn controls"></section>
+  </main>
+  <main id="welcome" class="welcome">
+    <section class="intro"><div class="eyebrow">A LITTLE GAME OF CONQUEST</div><h1>Small armies.<br><span>Big borders.</span></h1><p>A new continent every game.<br>Take it one hex at a time.</p><div id="hero-map" class="hero-map" aria-hidden="true"></div><div class="intro-bottom"><span>01—04 PLAYERS</span><span>NO DICE. JUST DECISIONS.</span></div></section>
+    <section class="setup"><div class="section-heading"><span class="eyebrow">CHOOSE YOUR COMPANY</span><span class="little-star">✳</span></div>
+      <div class="mode-tabs" role="tablist" aria-label="Game mode"><button data-mode="solo" role="tab" aria-selected="true">Solo <small>vs. computers</small></button><button data-mode="local" role="tab" aria-selected="false">Pass & play <small>one screen</small></button><button data-mode="online" role="tab" aria-selected="false">Online <small>private rooms</small></button></div>
+      <div id="local-setup"><label class="field-label" for="country-count">COUNTRIES</label><select id="country-count"><option value="2">2 countries</option><option value="3">3 countries</option><option value="4" selected>4 countries</option></select><div id="head-start-field"><label class="field-label" for="head-start">YOUR HEAD START</label><select id="head-start"><option value="0">None — an equal start</option><option value="1" selected>+1 dot on each starting hex</option><option value="2">+2 dots on each starting hex</option></select></div><div id="human-field" hidden><label class="field-label" for="human-count">PEOPLE SHARING THIS SCREEN</label><select id="human-count"><option value="2" selected>2 people + computers</option><option value="3">3 people + computer</option><option value="4">4 people</option></select></div><div class="setup-note" id="mode-note">A new continent. You against the computers.</div><button id="start" class="primary full">Take on the world <span>↗</span></button></div>
+      <div id="online-setup" hidden><p id="online-status" class="setup-note" role="status">Open a saved room using the room list above. Each human pays 1 Doodle Coin once; returning is free.</p><button id="reconnect" class="text-button" hidden>Return to your saved room →</button></div>
+      <button id="continue" class="secondary full" hidden>Continue local game →</button><div class="rules-preview"><div><strong>01</strong><span>Keep one dot<br>on every hex.</span></div><div><strong>02</strong><span>Both armies lose.<br>The difference stays.</span></div><div><strong>03</strong><span>Grow your country.<br>Outlast the others.</span></div></div>
+    </section>
+  </main>
+  <main id="lobby" class="lobby" hidden><div class="eyebrow">YOUR PRIVATE TABLE</div><h1>Room for<br><span>conquest.</span></h1><p>Friends open the same Keeper, choose Dotlands, and enter this code. Everyone can close the game and return later.</p><button id="copy-room" class="room-code" title="Copy room code"><span id="lobby-code"></span> <small>Copy code ↗</small></button><button id="copy-invite" class="secondary full">Copy invitation link ↗</button><div id="lobby-seats"></div><p id="lobby-status" class="setup-note" role="status"></p><button id="start-room" class="primary full">Start game · fill empty seats with AI ↗</button><button id="leave-lobby" class="text-button">Back to menu</button></main>
+  <footer class="site-footer"><span>THINK SMALL. CONQUER BIG.</span><span>DOODLEVERSE / SAVED ROOMS</span></footer>
+</div>
+<dialog id="modal" aria-labelledby="modal-title"><div id="modal-content"></div></dialog>
+<div id="toast" class="toast" role="status" hidden></div>
+<script src="./dotlands-engine.js"></script>
+<script src="./dotlands-bridge.js"></script>
+<script src="./dotlands-app.js"></script>
+</body>
+</html>

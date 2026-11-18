@@ -1,5 +1,6 @@
 const CACHE = 'doodletick-shell-v0.14b-r1';
 const ASSETS = ['/clock-wheel.mjs', '/', '/index.html', '/app.mjs', '/core.mjs', '/style.css', '/logo.svg', '/files.css', '/files-ui.mjs', '/licenses.mjs', '/archive.mjs', '/file-store.mjs', '/peers.mjs', '/manifest.webmanifest', '/theme.mjs', '/theme.css'];
+ASSETS.push('/dotlands-ui.mjs', '/dotlands-protocol.mjs', '/dotlands-bridge.js', '/dotlands-engine.js', '/dotlands-app.js', '/dotlands.html', '/dotlands.css');
 ASSETS.push('/spirograph.mjs', '/spirograph-auth.mjs', '/vpn-description.mjs', '/vpn-transport.mjs', '/vpn-ui.mjs', '/arcade.css', '/arcade-ui.mjs', '/arcade-canvas.mjs', '/arcade-room.mjs', '/arcade-store.mjs', '/arcade-link.mjs', '/game-engine.mjs', '/workshop.mjs');
 ASSETS.push('/mushroom-core.mjs', '/mushroom-ui.mjs', '/mushroom-art.mjs', '/mushroom.css', '/dot-effects-dsp.mjs', '/dot-amp-tone.mjs', '/dot-studio-dsp.mjs', '/dot-collision-audio.mjs', '/dot-wave-export.mjs', '/dot-mushroom-dsp.mjs', '/dot-mushroom-motion.mjs');
 ASSETS.push('/mushroom-mining.mjs', '/mushroom-miner.mjs', '/public-chain.mjs', '/public-chain-wallet.mjs', '/public-chain-artifact.mjs', '/public-chain.css');

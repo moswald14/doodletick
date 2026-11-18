@@ -20,6 +20,8 @@ import { createMozCorpWorldHttpHandler } from './mozcorp-world-http.mjs';
 import { createJazzNamingService, createJazzNamingHttpHandler } from './jazz-name.mjs';
 import { createJazzRadio } from './jazz-radio.mjs';
 import { createJazzRadioHttpHandler } from './jazz-radio-http.mjs';
+import { createDotlandsStore } from './dotlands-store.mjs';
+import { createDotlandsHttpHandler } from './dotlands-http.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 export async function createKeeperServer({ dataDir = path.join(root, '.doodletick'), lockDir = dataDir, port = 4317, vpnOptions, gardenOptions, privateRoomOptions, mozcorpOptions, scryptOptions, jazzOptions, jazzRadioOptions } = {}) {
@@ -72,8 +74,11 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
   const jazzRadio = await createJazzRadio({ ...jazzRadioOptions, dataDir,
     signer: { publicKey: identity.publicKey, sign: record => sign(record, identity.privateKey) } });
   const handleJazzRadio = createJazzRadioHttpHandler(jazzRadio);
+  const dotlands = await createDotlandsStore({ dataDir, identity, chargeAdmission: args => garden.chargeArcadeAdmission(args) });
+  const handleDotlands = createDotlandsHttpHandler({ store: dotlands });
   const types = { '.txt': 'text/plain; charset=utf-8', '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json' };
   const allowedFiles = new Set(['clock-wheel.mjs', 'index.html', 'app.mjs', 'core.mjs', 'style.css', 'logo.svg', 'files.css', 'files-ui.mjs', 'licenses.mjs', 'archive.mjs', 'file-store.mjs', 'peers.mjs', 'manifest.webmanifest', 'sw.mjs', 'theme.mjs', 'theme.css']);
+  for (const file of ['dotlands-ui.mjs', 'dotlands-protocol.mjs', 'dotlands-bridge.js', 'dotlands-engine.js', 'dotlands-app.js', 'dotlands.html', 'dotlands.css']) allowedFiles.add(file);
   for (const file of ['spirograph.mjs', 'spirograph-auth.mjs', 'vpn-description.mjs', 'vpn-transport.mjs', 'vpn-ui.mjs', 'arcade.css', 'arcade-ui.mjs', 'arcade-canvas.mjs', 'arcade-room.mjs', 'arcade-store.mjs', 'arcade-link.mjs', 'game-engine.mjs', 'workshop.mjs']) allowedFiles.add(file);
   for (const file of ['mushroom-core.mjs', 'mushroom-ui.mjs', 'mushroom-art.mjs', 'mushroom.css', 'mushroom-mining.mjs', 'mushroom-miner.mjs', 'dot-effects-dsp.mjs', 'dot-amp-tone.mjs', 'dot-studio-dsp.mjs', 'dot-collision-audio.mjs', 'dot-wave-export.mjs', 'dot-mushroom-dsp.mjs', 'dot-mushroom-motion.mjs']) allowedFiles.add(file);
   for (const file of ['public-chain.mjs', 'public-chain-wallet.mjs', 'public-chain-artifact.mjs', 'public-chain.css']) allowedFiles.add(file);
@@ -112,6 +117,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
       if (await handleScrypt(req,res,url)) return;
       if (await handleJazzNaming(req, res, url)) return;
       if (await handleJazzRadio(req, res, url)) return;
+      if (await handleDotlands(req,res,url)) return;
       if (await handleDvc(req, res, url)) return;
       if (await vpn.handleLocal(req, res, url)) return;
       if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.14b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt(), nativeCoin: { available: !dvcUnavailable, error: dvcUnavailable ? 'DVC_STORAGE' : null } });
@@ -139,18 +145,19 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
       if (url.pathname === '/telephone.html') res.setHeader('Content-Security-Policy', res.getHeader('Content-Security-Policy').replace("connect-src 'self'", "connect-src 'self' https://api.gdeltproject.org"));
       if (url.pathname === '/jazz.html') res.setHeader('Content-Security-Policy', res.getHeader('Content-Security-Policy').replace("connect-src 'self'", "connect-src 'self' wss://apibackup.vdo.ninja https://turnservers.vdo.ninja"));
       if (url.pathname === '/telephone-rhyme.html') res.setHeader('Content-Security-Policy', res.getHeader('Content-Security-Policy').replace("frame-ancestors 'none'", "frame-ancestors 'self'"));
+      if (url.pathname === '/dotlands.html') res.setHeader('Content-Security-Policy', res.getHeader('Content-Security-Policy').replace("frame-ancestors 'none'", "frame-ancestors 'self'"));
       if (req.method !== 'GET') return send(405, { error: 'Method not supported.' });
       const file = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
       if (!allowedFiles.has(file)) return send(404, { error: 'Not found.' });
       return send(200, await readFile(path.join(root, 'public', file), 'utf8'), types[path.extname(file)]);
     } catch (e) { return send(e instanceof SyntaxError ? 400 : 500, { error: e instanceof SyntaxError ? 'Invalid JSON.' : 'The local witness could not complete this request.' }); }
   });
-  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); }).catch(async e => { await jazzRadio.close(); await jazzNaming.close(); await nativeWallet.close(); await mozcorp.close?.().catch(() => {}); await shelfIdle.close().catch(() => {}); await vpn.close(); await dvc?.close(); await garden.idle(); await lock.close(); await unlink(lockPath); throw e; });
+  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); }).catch(async e => { await dotlands.idle(); await jazzRadio.close(); await jazzNaming.close(); await nativeWallet.close(); await mozcorp.close?.().catch(() => {}); await shelfIdle.close().catch(() => {}); await vpn.close(); await dvc?.close(); await garden.idle(); await lock.close(); await unlink(lockPath); throw e; });
   const close = async () => {
     await jazzRadio.close(); await vpn.close(); await new Promise(resolve => server.close(resolve)); await queue; await privateRooms.idle();
     let shelfCloseError;
     try { await shelfIdle.close(); await mozcorp.close?.(); } catch (error) { shelfCloseError = error; }
-    await jazzNaming.close(); await garden.idle(); await dvc?.close(); await nativeWallet.close(); await lock.close(); await unlink(lockPath);
+    await dotlands.idle(); await jazzNaming.close(); await garden.idle(); await dvc?.close(); await nativeWallet.close(); await lock.close(); await unlink(lockPath);
     if (shelfCloseError) throw shelfCloseError;
   };
   return { server, close, vpn, dvc, jazzRadio, port: server.address().port };

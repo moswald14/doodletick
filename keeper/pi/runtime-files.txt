@@ -5,6 +5,16 @@ server.mjs
 jazz-name.mjs
 jazz-name-network.mjs
 garden-ledger.mjs
+dotlands-store.mjs
+dotlands-http.mjs
+dotlands-authority.cjs
+public/dotlands-ui.mjs
+public/dotlands-protocol.mjs
+public/dotlands-bridge.js
+public/dotlands-engine.js
+public/dotlands-app.js
+public/dotlands.html
+public/dotlands.css
 vpn-network.mjs
 rendezvous.mjs
 public/app.mjs
