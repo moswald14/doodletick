@@ -176,6 +176,10 @@ jazz-node-cast.mjs
 jazz-node-native.mjs
 jazz-world.mjs
 jazz-voice.mjs
+jazz-learning.mjs
+jazz-voices.mjs
+jazz-dot-bank.mjs
+jazz-dot-worker.mjs
 jazz-stream-deps/package-lock.json
 jazz-stream-deps/package.json
 jazz-stream-deps/THIRD_PARTY_NOTICES.md
@@ -187,3 +191,5 @@ public/jazz-radio-ui.mjs
 public/jazz-radio-contract.mjs
 public/jazz-radio.css
 public/jazz-genres.mjs
+public/jazz-band-ui.mjs
+public/jazz-dot-voices.mjs

@@ -89,6 +89,7 @@ test('a keepsake captures four previous chords and four starting here, signs onc
   const env = await fixture(t), radio = await env.open(); await radio.start(); env.advance(11);
   assert.equal(radio.status().canDig, true); const current = radio.status().recentChords.at(-1).ordinal, requestId = randomUUID();
   const collecting = await radio.dig(requestId), retry = await radio.dig(requestId); assert.equal(collecting.status, 'collecting'); assert.equal(retry.id, collecting.id);
+  assert.equal(radio.status().learning.likes, 0, 'feedback is learned after a durable save');
   env.advance(12); await until(() => radio.status().jobs.some(job => job.requestId === requestId && job.status === 'saved'), 'eight-chord save');
   assert.equal(env.encoded.length, 1); const result = await radio.dig(requestId), receipt = result.receipt;
   assert.equal(result.status, 'saved'); assert.equal(receipt.record.chords.length, 8); assert.deepEqual(receipt.record.chords.map(chord => chord.ordinal), Array.from({ length: 8 }, (_, index) => current - 4 + index));
@@ -97,6 +98,52 @@ test('a keepsake captures four previous chords and four starting here, signs onc
   assert.equal(receipt.record.durationMs, Math.round(pcm.length / (48000 * 2) * 1000)); assert.equal(receipt.record.tick.color, tickAt(Date.parse(receipt.record.capturedAt)).color);
   const before = await radio.audio(receipt.record.audio.sha256); await radio.stop(); await radio.close(); const reopened = await env.open();
   assert.equal(reopened.status().running, false); assert.deepEqual((await reopened.dig(requestId)).receipt, receipt); assert.deepEqual(await reopened.audio(receipt.record.audio.sha256), before); assert.equal(reopened.library().count, 1);
+  assert.equal(reopened.status().learning.saved, 1, 'loading the same signed keepsake does not count twice');
+});
+
+test('saved player voices enter at a bar boundary and survive a failed replacement and restart', async t => {
+  const env = await fixture(t);
+  let failBuild = false;
+  const dotBankFactory = async () => {
+    if (failBuild) throw Error('Injected voice bank error');
+    return { ...bank };
+  };
+  const radio = await env.open({ dotBankFactory });
+  await radio.settings({ ...JAZZ_DEFAULT_SETTINGS, style: 'bebop', tempo: 120 });
+  await radio.start();
+  env.advance(0.45);
+  const voice = { id: 'fixture-wave', name: 'Test keys', real: Array(128).fill(0),
+    imag: Array.from({ length: 128 }, (_, index) => index === 1 ? 0.5 : 0), effects: [] };
+  await radio.assignVoice({ part: 'piano', voice });
+  assert.equal(radio.status().playerVoices.parts.piano.name, 'Test keys');
+  env.advance(0.7);
+  assert.equal(radio.status().info.playerVoices.piano, null, 'the second chord is still played with the old bank');
+  env.advance(1);
+  assert.equal(radio.status().info.playerVoices.piano.name, 'Test keys');
+  failBuild = true;
+  await assert.rejects(radio.assignVoice({ part: 'piano', voice: null }), /prepare/);
+  assert.equal(radio.voices().assignments.piano.name, 'Test keys');
+  await radio.stop();
+  await radio.close();
+  const restored = await env.open({ dotBankFactory });
+  assert.equal(restored.voices().assignments.piano.name, 'Test keys');
+  await restored.start();
+  env.advance(0.1);
+  assert(restored.status().running);
+  assert.match(restored.status().playerVoices.error, /original trio/);
+  assert.equal(restored.status().info.playerVoices.piano, null);
+});
+
+test('an older unlearnable naming context does not block later valid feedback at startup', async t => {
+  const env = await fixture(t);
+  const context = { seed: 1, set: 1, style: 'swing', tempo: 112, swing: 0.64, key: 'C major', bar: 1, chorus: 1,
+    phraseRole: 'call', chords: [{ beat: 0, text: 'Cmaj9' }], motif: [60] };
+  const history = [{ id: 'a'.repeat(32), context: { ...context, key: 'old unknown key' } }, { id: 'b'.repeat(32), context }];
+  const radio = await env.open({ getNamedFeedback: () => history });
+  assert.equal(radio.status().learning.named, 1);
+  await radio.close();
+  const restored = await env.open({ getNamedFeedback: () => history });
+  assert.equal(restored.status().learning.named, 1);
 });
 
 test('two captures share the bounded eight-chord window and Stop interrupts only unfinished passages', async t => {

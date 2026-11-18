@@ -2,7 +2,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DJ_STYLES } from '../public/jazz-core.mjs';
-import { djShuffleSettings } from '../public/jazz-settings.mjs';
+import { djShuffleSettings, djSuggestKey } from '../public/jazz-settings.mjs';
+import { JAZZ_ARRANGEMENT_DEFAULTS } from '../public/jazz-radio-contract.mjs';
 
 const keys = ['style', 'tempo', 'swing', 'room', 'piano', 'bass', 'drums'];
 const styles = Object.keys(DJ_STYLES);
@@ -27,7 +28,7 @@ test('shuffle is deterministic for uint32 seeds and leaves its input untouched',
 test('every bundle fits the controls and keeps its trio balanced and its style coherent', () => {
   for (const currentStyle of styles) for (let seed = 0; seed < 2048; seed++) {
     const choice = djShuffleSettings(initial(currentStyle), seed);
-    assert.deepEqual(Object.keys(choice).sort(), [...keys, 'label'].sort());
+    assert.deepEqual(Object.keys(choice).sort(), [...keys, ...Object.keys(JAZZ_ARRANGEMENT_DEFAULTS), 'label'].sort());
     assert(styles.includes(choice.style));
     assert(typeof choice.label === 'string' && choice.label.length > 0 && choice.label.length <= 40);
     assert(!/[\r\n<>]/.test(choice.label));
@@ -57,6 +58,29 @@ test('every bundle fits the controls and keeps its trio balanced and its style c
       assert(choice.tempo >= 80 && choice.tempo <= 145);
     }
   }
+});
+
+test('shuffle preserves meter, phrase length, beat-only, key lock and learned-preference choices', () => {
+  const arrangement = { beatsPerBar: 7, phraseBars: 8, beatPattern: 'latin', beatOnly: true, keyRoot: 9, favorLikes: false };
+  const current = Object.freeze({ ...initial('swing'), ...arrangement });
+  for (let seed = 0; seed < 128; seed++) {
+    const next = djShuffleSettings(current, seed);
+    for (const [key, value] of Object.entries(arrangement)) assert.equal(next[key], value);
+  }
+});
+
+test('key suggestions are reproducible neighboring tonalities in the current genre mode', () => {
+  for (const style of styles) for (let seed = 0; seed < 100; seed++) {
+    const current = Object.freeze({ style, keyRoot: 9 }), suggestion = djSuggestKey(current, seed);
+    assert.deepEqual(suggestion, djSuggestKey(current, seed));
+    assert(Number.isInteger(suggestion.root) && suggestion.root >= 0 && suggestion.root < 12);
+    assert([5, 7].includes((suggestion.root - 9 + 12) % 12));
+    assert.equal(typeof suggestion.reason, 'string'); assert(suggestion.reason.length > 20);
+    assert(suggestion.label.endsWith(style === 'modal' ? 'Dorian' : DJ_STYLES[style].mode));
+  }
+  const audible = { style: 'bossa', keyRoot: 'auto', tonic: 2, key: 'D minor' };
+  assert.deepEqual(djSuggestKey(audible, 47), djSuggestKey({ style: 'bossa', keyRoot: 2 }, 47));
+  for (const seed of [-1, 4294967296, 0.5, NaN, '47']) assert.throws(() => djSuggestKey(audible, seed), RangeError);
 });
 
 test('families correlate tempo, space and accompaniment instead of drawing unrelated controls', () => {

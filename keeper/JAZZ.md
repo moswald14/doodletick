@@ -29,6 +29,41 @@ The three original styles keep their performed musical events. New genres retain
 
 Arrangements take effect at the next bar. Instrument controls change the outgoing mix; local output does not. Room is a bounded server stereo effect. Station settings are shared by everyone authorized to open this Home Assistant app; browser volume and dim-room preferences stay local.
 
+## Speed, measures and key
+
+**Speed** sets 55–180 beats per minute. **Beats per bar** chooses two through seven beats and the moving dots follow your choice. **Phrase length** follows the genre or uses 4, 8, 16 or 32 bars. **Beat** sets the drum groove independently of the harmony.
+
+Choose **Beat only · just the drums** to hear percussion without piano or bass. Turning it off brings the pitched players back with their saved mixer settings. This changes the shared broadcast. Local mute still affects only the listening device.
+
+**Key** can let the band choose or hold one of the twelve displayed roots. **Suggest a key** proposes a neighboring key for the current genre and queues it for the next bar. This suggestion runs locally without an account or API request. A manual root stays selected through new sets and shuffles; each genre retains its own major, minor or modal character.
+
+Outside text fields, selectors, links and buttons, **Space** toggles local listening, **M** toggles local mute and **N** requests a new shared set. Editing controls retain their normal keyboard behavior.
+
+## Progressions you like
+
+A completed **Name this song** result and a successfully saved **I dig this!** passage each reinforce the relevant chord progression once. Payment retries, pending captures and repeated requests for an already saved passage do not add repeated likes. The band can revisit matching progressions in the same genre, with more-liked progressions receiving more weight while fresh variations remain possible. A manual key transposes a recalled progression into that key.
+
+Turn **Bring back progressions I like** off to stop favoring stored progressions in future choices. This leaves the saved preference memory intact. The displayed count reports stored musical preferences; this is local weighted selection, not training an external AI model. Playback, voice and keepsake recording need no OpenAI account.
+
+Preference memory lives in the Keeper's separate `jazz-learning/memory.json`, with room for 128 progressions and 7,000 distinct positive responses. It does not change old signed recordings, payment receipts, balances or identities. If memory cannot update, a successfully saved passage remains saved and the radio continues. Include this file in the Keeper app backup.
+
+## Give the players Dot Wave voices
+
+1. In **Dot Wave → Sound**, keep a named sound in **Your Sound Box**.
+2. Return to Jazz at the same Keeper address and press **Use saved Dot Wave sounds**. This reads that browser's saved Sound Box only when you press it. If the sounds live at another address or on another device, use **Export** in the Sound Box and then **Import sound file** in Jazz.
+3. Choose a named sound and **Piano**, **Bass** or **Drums**, then press **Give voice to player**.
+4. Wait for **Voice saved**. The Keeper prepares and saves the voice before it joins at the next bar. Loading or selecting a file alone never changes the band or starts playback.
+
+To restore a player, choose **Original trio voice** and press **Give voice to player** again. Each of the three players can have one saved assignment. All listeners hear the assigned instrument, including when the PC is off and Home Assistant continues broadcasting.
+
+Imports accept a Dot Wave sound-library JSON file with up to 32 choices, an exported Studio patch or a mushroom recipe. The file limit is 512 KB; each selected editable voice must fit within 32 KB. Recordings, WAV files, remote audio URLs and scripts are not supported. Invalid imports leave the current assignments unchanged.
+
+The saved voice retains its name, supplied creator/license/source credits, effects and editable recipe. Mushroom settings keep their seed. Studio patches use the same frozen waveform snapshot as **Keep sound**, including amp character and inversion; the original patch remains editable. Independent-pitch collisions become that snapshot when played as a pitched instrument. Listening Master and EQ are retained in a patch recipe but do not set the broadcast's listening volume.
+
+**Export player voice** downloads the complete editable voice and its credits. A voice exported this way can be imported back into Jazz. Its contained recipe is a one-sound Studio library, Studio patch or mushroom recipe that can be reopened in the corresponding Dot Wave tool. Keep the complete Jazz file to retain credit fields that older Studio library imports do not display. Your chosen content license remains separate from the app's code license.
+
+Voice preparation runs separately from the live audio clock. The Keeper saves recipes rather than imported executable code or arbitrary audio files, and recreates a bounded sample bank after restart. New keepsake recordings include the assigned musical voices; previously saved audio remains unchanged.
+
 ## Free casting
 
 The **Let others listen** panel provides a VDO.Ninja listener link. Anyone with the link can hear the current broadcast, including its voice updates. Keep it private if you want a private audience. The same station link is retained after normal restarts. Stopping ends delivery; starting the same station makes that link usable again.
@@ -45,11 +80,15 @@ Voice is synthesized offline with eSpeak NG and FFmpeg; it does not use an OpenA
 
 The latest speech and source links are visible under **Latest world update & sources**. Source requests are bounded and cached. No arbitrary client text or URL can be submitted to the announcer.
 
+With the broadcast running and voice switched on, **Test voice** queues a fixed announcer line. Its status shows preparation and the most recent successful synthesis time, or an error. A successful synthesis check means speech audio was prepared; hear the line through **Listen here** or a connected cast listener to check the actual output. Local mute or a paused listener can hide speech even while the station is broadcasting it. This check does not establish a working OpenAI account.
+
 ## Chord receipts and I dig this!
 
 **Chord receipt** downloads a Keeper-signed snapshot of the current music and clock color. A snapshot contains no replay audio.
 
 After four chords have played, **I dig this!** keeps four completed chords before the click and four starting with the chord being played at that moment. It waits for the following chords to finish, then saves their original music as MP3 with a permanent signed receipt. Voice announcements are excluded. The exact captured audio can be replayed later, even after the style changes or Keeper restarts.
+
+Passage length follows the measure, speed and chord changes. At the slowest seven-beat setting, eight chords can last about 61 seconds. Recording processing has a 64-second limit; this is a bound, not a fixed passage length.
 
 Open **Saved passages - listen again** to play recordings, download their audio or save signed receipt JSON. Older entries remain available through **Load older passages**. Receipts include all eight chord events, timing, arrangement, seed, clock color, audio SHA-256, previous receipt hash and the existing Keeper witness's public signature. The browser verifies each displayed signature. This new journal is separate from existing witness receipts, encrypted vaults, garden balances and DVC. It is your own Doodlekeeper's Doodlechain, not a public cryptocurrency transaction.
 

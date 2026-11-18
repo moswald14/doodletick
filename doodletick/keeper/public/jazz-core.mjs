@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 /* Doodle Jazz. Original procedural composition and synthesized instruments. */
-import { validateJazzContext, validateJazzResult } from './jazz-name-contract.mjs';
+import { validateJazzContext, validateJazzResult, validateJazzProgression } from './jazz-name-contract.mjs';
 import { DJ_GENRES, djGenreChart } from './jazz-genres.mjs';
+import { validateJazzArrangement } from './jazz-radio-contract.mjs';
 const DJ_NOTES = ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'G♭', 'G', 'A♭', 'A', 'B♭', 'B'];
 const DJ_CHORDS = {
   maj9: [0, 4, 7, 11, 14], m9: [0, 3, 7, 10, 14], '13': [0, 4, 7, 10, 14, 21],
@@ -9,6 +10,7 @@ const DJ_CHORDS = {
   '6/9': [0, 4, 7, 9, 14], m6: [0, 3, 7, 9], '9': [0, 4, 7, 10, 14]
 };
 const DJ_STYLES = DJ_GENRES;
+const DJ_COMPOSITION_FIELDS = ['style', 'tempo', 'swing', 'seed', 'newSet', 'beatsPerBar', 'phraseBars', 'beatPattern', 'beatOnly', 'keyRoot', 'favorLikes', 'favoriteProgressions'];
 const djClamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const djFreq = n => 440 * Math.pow(2, (n - 69) / 12);
 const DJ_MOTIFS = [[0, 2, 4, 2], [0, 3, 5, 3], [0, -2, -3, 0], [0, 2, 0, -2], [0, -1, 2, 0]];
@@ -55,6 +57,17 @@ class DJRandom {
     return this.state / 4294967296;
   }
   pick(a) { return a[Math.floor(this.next() * a.length)]; }
+}
+
+function djValidateFavoriteProgressions(input) {
+  if (!Array.isArray(input) || input.length > 32) throw new Error('Invalid favorite Jazz progressions.');
+  return input.map(entry => {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry) || !Object.hasOwn(DJ_STYLES, entry.style)
+      || !Number.isInteger(entry.tonic) || entry.tonic < 0 || entry.tonic > 11) throw new Error('Invalid favorite Jazz progression.');
+    const weight = Object.hasOwn(entry, 'weight') ? entry.weight : 1;
+    if (!Number.isInteger(weight) || weight < 1 || weight > 100) throw new Error('Invalid favorite Jazz weight.');
+    return { style: entry.style, tonic: entry.tonic, chords: validateJazzProgression(entry.chords), weight };
+  });
 }
 
 // Small, reusable sample banks keep rendering work and memory bounded indefinitely.
@@ -136,31 +149,41 @@ function djMakeBank(rate = 24000) {
 class DJComposer {
   constructor(config = {}) {
     this.rng = new DJRandom(config.seed || 7);
-    this.config = { style: 'swing', tempo: 112, swing: 0.64, ...config };
+    this.config = { style: 'swing', tempo: 112, swing: 0.64, ...config, ...validateJazzArrangement(config),
+      favoriteProgressions: Object.hasOwn(config, 'favoriteProgressions') ? djValidateFavoriteProgressions(config.favoriteProgressions) : [] };
     this.pending = null;
     this.barIndex = 0; this.chordIndex = 0;
     this.bar = 0; this.chorus = 0; this.set = 1; this.lastMelody = 72; this.lastBass = 41;
-    this.tonic = DJ_STYLES[this.config.style].tonic;
+    this.tonic = this.config.keyRoot === 'auto' ? DJ_STYLES[this.config.style].tonic : this.config.keyRoot;
     this.motif = [...DJ_MOTIFS[0]];
     this.phrase = null; this.lastVoicing = [];
+    this.favorite = null;
   }
-  configure(change) { this.pending = { ...this.pending, ...change }; }
+  configure(change) {
+    const arrangement = validateJazzArrangement({ ...this.config, ...this.pending, ...change });
+    this.pending = { ...this.pending, ...change, ...arrangement,
+      ...(Object.hasOwn(change, 'favoriteProgressions') ? { favoriteProgressions: djValidateFavoriteProgressions(change.favoriteProgressions) } : {}) };
+  }
   applyPending() {
     if (!this.pending) return;
     const change = this.pending; this.pending = null;
-    const reset = (change.style && change.style !== this.config.style) || change.newSet;
+    const reset = (change.style && change.style !== this.config.style) || change.newSet
+      || ['beatsPerBar', 'phraseBars', 'keyRoot'].some(key => Object.hasOwn(change, key) && change[key] !== this.config[key]);
     if (change.seed) { this.rng = new DJRandom(change.seed); this.config.seed = change.seed; }
     if (change.style && DJ_STYLES[change.style]) this.config.style = change.style;
     if (Number.isFinite(change.tempo)) this.config.tempo = djClamp(change.tempo, 55, 180);
     if (Number.isFinite(change.swing)) this.config.swing = djClamp(change.swing, 0.5, 0.72);
+    Object.assign(this.config, validateJazzArrangement({ ...this.config, ...change }));
+    if (Object.hasOwn(change, 'favoriteProgressions')) this.config.favoriteProgressions = change.favoriteProgressions;
     if (reset) {
       this.bar = 0; this.chorus = 0; this.set++;
       this.tonic = (DJ_STYLES[this.config.style].tonic + this.rng.pick([0, 0, 2, 5, 7])) % 12;
+      if (this.config.keyRoot !== 'auto') this.tonic = this.config.keyRoot;
       this.motif = [...this.rng.pick(DJ_MOTIFS)];
-      this.phrase = null; this.lastVoicing = [];
+      this.phrase = null; this.lastVoicing = []; this.favorite = null;
     }
   }
-  chart() {
+  genreChart() {
     const extra = djGenreChart(this.config.style);
     if (extra) return extra;
     const one = (root, quality) => [{ root, quality, start: 0, beats: 4 }];
@@ -178,6 +201,22 @@ class DJComposer {
     const bridge = [one(4, '7'), one(4, '13'), one(9, '7'), one(9, '13'), one(2, '7'), one(2, '13'), one(7, '7'), one(7, '13')];
     return [...a, ...a, ...bridge, ...a];
   }
+  chooseProgression() {
+    this.favorite = null;
+    const choices = this.config.favorLikes ? this.config.favoriteProgressions.filter(entry => entry.style === this.config.style) : [];
+    // The legacy random stream is untouched when no matching feedback exists.
+    if (!choices.length || this.rng.next() >= 0.65) return;
+    let position = this.rng.next() * choices.reduce((sum, entry) => sum + entry.weight, 0);
+    this.favorite = choices.find(entry => (position -= entry.weight) < 0) || choices.at(-1);
+    this.tonic = this.config.keyRoot === 'auto' ? this.favorite.tonic : this.config.keyRoot;
+    this.motif = [...this.rng.pick(DJ_MOTIFS)]; this.phrase = null;
+  }
+  chart() {
+    const source = this.favorite ? this.favorite.chords.map(chord => [{ root: (chord.root - this.favorite.tonic + 12) % 12,
+      quality: chord.quality, start: 0, beats: 4 }]) : this.genreChart();
+    const length = this.config.phraseBars === 'genre' ? DJ_STYLES[this.config.style].bars : this.config.phraseBars;
+    return source.length === length ? source : Array.from({ length }, (_, index) => source[index % source.length]);
+  }
   absoluteChord(c) { return { ...c, root: (c.root + this.tonic) % 12 }; }
   nearestPitch(pc, previous, low, high) {
     let best = low, distance = Infinity;
@@ -188,13 +227,23 @@ class DJComposer {
   }
   nextBar() {
     this.applyPending();
-    const chart = this.chart(), chords = chart[this.bar].map(c => this.absoluteChord(c));
+    if (this.bar === 0) this.chooseProgression();
+    const meter = this.config.beatsPerBar;
+    const source = this.chart(), chart = meter === 4 ? source : source.map(bar => bar.map((chord, index) => ({ ...chord,
+      start: index ? Math.ceil(meter / 2) : 0, beats: bar.length === 1 ? meter : index ? Math.floor(meter / 2) : Math.ceil(meter / 2) })));
+    const chords = chart[this.bar].map(c => this.absoluteChord(c));
     const nextChord = this.absoluteChord(chart[(this.bar + 1) % chart.length][0]);
     const phase = ['The melody', 'Piano wandering', 'A little breathing room', 'All together'][this.chorus % 4];
     const style = this.config.style, genre = DJ_STYLES[style];
     const events = [], rng = this.rng, bossa = style === 'bossa';
     const callRhythms = DJ_GENRE_RHYTHMS[style] || DJ_CALL_RHYTHMS;
     const seconds = 60 / this.config.tempo, swing = this.config.swing;
+    const expand = rhythm => {
+      if (meter === 4) return rhythm;
+      const out = [];
+      for (let offset = 0; offset < meter; offset += 4) for (const beat of rhythm) if (offset + beat < meter) out.push(offset + beat);
+      return out;
+    };
     const phraseBar = this.bar % 4, phraseRole = ['call', 'repeat', 'answer', 'cadence'][phraseBar];
     if (phraseBar === 0 || !this.phrase) {
       const rhythm = rng.pick(callRhythms);
@@ -202,18 +251,24 @@ class DJComposer {
         delay: Math.min(0.018, seconds * (0.018 + rng.next() * 0.012)), level: 0.92 + rng.next() * 0.08 };
       if (style === 'cool') this.phrase.anchor = djClamp(this.phrase.anchor, 67, 72);
     }
-    const when = beat => {
+    const drumStyle = this.config.beatPattern === 'genre' ? style : this.config.beatPattern;
+    const drumSwing = this.config.beatPattern === 'genre' ? swing : DJ_STYLES[drumStyle].swing;
+    const when = (beat, feel = swing) => {
       const whole = Math.floor(beat), frac = beat - whole;
-      return (whole + (frac <= 0.5 ? frac * 2 * swing : swing + (frac - 0.5) * 2 * (1 - swing))) * seconds;
+      return (whole + (frac <= 0.5 ? frac * 2 * feel : feel + (frac - 0.5) * 2 * (1 - feel))) * seconds;
     };
     const add = (instrument, note, beat, beats, velocity, role = instrument, roll = 0) => {
       // The rhythm section anchors the pulse. Swing/blues melody downbeats sit
       // a little behind it, consistently through a phrase; offbeats line up.
       // Bossa keeps its straight grid. These are compositional choices, not a
       // claim that one timing offset reproduces every musician's swing.
-      const delay = !genre.straight && role === 'melody' && Number.isInteger(beat) ? this.phrase.delay : 0;
-      events.push({ instrument, role, note, beat, time: when(beat) + delay + roll,
-        duration: Math.max(0.05, beats * seconds), velocity });
+      for (const onset of role === 'drums' ? expand([beat]) : [beat]) {
+        if (onset >= meter) continue;
+        const delay = !genre.straight && role === 'melody' && Number.isInteger(onset) ? this.phrase.delay : 0;
+        const time = when(onset, role === 'drums' ? drumSwing : swing) + delay + roll;
+        const duration = meter === 4 ? Math.max(0.05, beats * seconds) : Math.min(Math.max(0.05, beats * seconds), meter * seconds - time);
+        if (duration > 0) events.push({ instrument, role, note, beat: onset, time, duration, velocity });
+      }
     };
     const at = beat => chords.findLast(c => c.start <= beat) || chords[0];
     // Sparse accompaniment answers in the lead's rests. The bossa pattern
@@ -224,6 +279,7 @@ class DJComposer {
     else if (style === 'modal') compRhythm = [0, 2.5];
     else if (style === 'latin') compRhythm = this.bar % 2 ? [0.5, 1, 1.5, 2.5, 3, 3.5] : [0, 0.5, 1.5, 2, 2.5, 3.5];
     else if (style === 'funk') compRhythm = [0.25, 0.75, 1.75, 2.5, 3.25];
+    compRhythm = expand(compRhythm);
     for (const c of chords) {
       const rhythm = compRhythm.filter(b => b >= c.start && b < c.start + c.beats);
       if (!rhythm.length) continue;
@@ -238,24 +294,26 @@ class DJComposer {
       }
     }
     // A walking line approaches each following harmony; bossa uses a two-feel.
-    const bassBeats = style === 'cool' || style === 'modal' ? [0, 2] : style === 'latin' ? [0, 1.5, 2.5, 3.5] :
+    const bassPattern = style === 'cool' || style === 'modal' ? [0, 2] : style === 'latin' ? [0, 1.5, 2.5, 3.5] :
       style === 'funk' ? [0, 0.75, 1.5, 2.75, 3.5] : bossa ? [0, 1.5, 2, 3.5] : [0, 1, 2, 3];
+    const bassBeats = expand(bassPattern);
     bassBeats.forEach((beat, i) => {
+      const step = i % bassPattern.length;
       const c = at(beat), intervals = DJ_CHORDS[c.quality];
       let pc = c.root;
       if (style === 'modal') pc += i ? 7 : 0;
       else if (style === 'cool') pc += i ? intervals[2] : 0;
       else if (style === 'latin') pc = i === 3 ? nextChord.root : c.root + (i % 2 ? intervals[2] : 0);
-      else if (style === 'funk') pc += [0, 0, intervals[2], intervals[3], 12][i];
+      else if (style === 'funk') pc += [0, 0, intervals[2], intervals[3], 12][step];
       else if (bossa) pc += i % 2 ? intervals[2] : 0;
-      else if (i === 3) pc = nextChord.root + rng.pick([-1, 1]);
-      else if (i === 1) pc += rng.pick([intervals[1], intervals[2]]);
-      else if (i === 2) pc += rng.pick([0, intervals[2], intervals[3]]);
+      else if (meter === 4 ? i === 3 : i === bassBeats.length - 1) pc = nextChord.root + rng.pick([-1, 1]);
+      else if (step === 1) pc += rng.pick([intervals[1], intervals[2]]);
+      else if (step === 2) pc += rng.pick([0, intervals[2], intervals[3]]);
       let note = this.nearestPitch(pc, i === 0 ? 38 : this.lastBass, 33, 52);
       if (i === 0 && note > 45) note -= 12;
       this.lastBass = note;
       const length = style === 'cool' || style === 'modal' ? 1.7 : style === 'funk' ? 0.45 : bossa ? 1.12 : 0.9;
-      add('bass', note, beat, length, [0.76, 0.58, 0.68, 0.56, 0.64][i]);
+      add('bass', note, beat, length, [0.76, 0.58, 0.68, 0.56, 0.64][i % 5]);
     });
     // Four related bars: call, repeat its rhythm with a new ending, answer in
     // another direction/register, then a guide-tone cadence and real silence.
@@ -264,6 +322,7 @@ class DJComposer {
     if (phraseRole === 'answer') leadBeats = [...callRhythms[(callRhythms.findIndex(r => r.every((b, i) => b === leadBeats[i])) + 1) % callRhythms.length]];
     if (phraseRole === 'cadence') leadBeats = leadBeats.filter(b => b <= 1.5).slice(0, 2);
     else if (this.chorus % 4 === 2) leadBeats = leadBeats.slice(0, 3);
+    if (meter !== 4) leadBeats = [...new Set(leadBeats.map(beat => Math.round(beat * meter) / 4).filter(beat => beat < meter))];
     leadBeats.forEach((beat, i) => {
       const c = at(beat), intervals = DJ_CHORDS[c.quality], last = i === leadBeats.length - 1;
       const answer = phraseRole === 'answer';
@@ -290,37 +349,40 @@ class DJComposer {
         style === 'funk' ? 0.25 : Number.isInteger(beat) ? 0.46 : 0.32;
       add('piano', note, beat, length, 0.52 * energy * accent * this.phrase.level * (phraseRole === 'cadence' ? 0.82 : 1), 'melody');
     });
-    if (style === 'cool') {
+    if (drumStyle === 'cool') {
       [0, 1, 2, 3].forEach((beat, i) => add('brush', 0, beat, 0.3, i % 2 ? 0.3 : 0.2, 'drums'));
       [1, 3].forEach(beat => add('hat', 0, beat, 0.2, 0.25, 'drums'));
       [0, 2].forEach(beat => add('ride', 0, beat, 0.6, 0.18, 'drums'));
-    } else if (style === 'modal') {
+    } else if (drumStyle === 'modal') {
       [0, 1, 2, 2.5, 3].forEach(beat => add('ride', 0, beat, 0.6, beat === 2.5 ? 0.2 : 0.36, 'drums'));
       [1, 3].forEach(beat => add('hat', 0, beat, 0.2, 0.32, 'drums'));
       add('brush', 0, 3, 0.3, 0.2, 'drums');
-    } else if (style === 'latin') {
+    } else if (drumStyle === 'latin') {
       // Son clave has two attacks in one bar and three in the other. Keep its
       // direction stable while bass and comping interlock around it.
       (this.bar % 2 ? [0, 1.5, 3] : [1, 2]).forEach(beat => add('stick', 0, beat, 0.2, 0.42, 'drums'));
       [0, 0.5, 1.5, 2, 2.5, 3.5].forEach(beat => add('ride', 0, beat, 0.5, 0.24, 'drums'));
       [0, 1, 2, 3].forEach(beat => add('hat', 0, beat, 0.2, 0.32, 'drums'));
-    } else if (style === 'funk') {
+    } else if (drumStyle === 'funk') {
       for (let step = 0; step < 16; step++) add('hat', 0, step / 4, 0.2, step % 4 === 0 ? 0.42 : step % 2 === 0 ? 0.3 : 0.18, 'drums');
       [1, 3].forEach(beat => add('stick', 0, beat, 0.2, 0.62, 'drums'));
       [1.75, 3.25].forEach(beat => add('brush', 0, beat, 0.3, 0.16, 'drums'));
-    } else if (bossa) {
+    } else if (drumStyle === 'bossa') {
       [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5].forEach((beat, i) => add('hat', 0, beat, 0.2, i % 2 ? 0.34 : 0.48, 'drums'));
       [0, 1.5, 2.5, 3].forEach(beat => add('stick', 0, beat, 0.2, 0.36, 'drums'));
     } else {
       [0, 1, 1.5, 2, 3, 3.5].forEach((beat, i) => add('ride', 0, beat, 0.6, [0.4, 0.65, 0.28, 0.4, 0.65, 0.28][i], 'drums'));
       [1, 3].forEach(beat => { add('hat', 0, beat, 0.2, 0.46, 'drums'); add('brush', 0, beat, 0.3, 0.37, 'drums'); });
       if (this.bar % 4 === 3) add('brush', 0, 3.5, 0.3, 0.42, 'drums');
-      if (style === 'bebop') add('brush', 0, 2.5, 0.3, 0.36, 'drums');
+      if (drumStyle === 'bebop') add('brush', 0, 2.5, 0.3, 0.36, 'drums');
     }
-    (style === 'funk' ? [0, 0.75, 2, 2.75] : style === 'cool' ? [0] : [0, 2])
-      .forEach(beat => add('kick', 0, beat, 0.2, style === 'cool' ? 0.18 : 0.28, 'drums'));
+    (drumStyle === 'funk' ? [0, 0.75, 2, 2.75] : drumStyle === 'cool' ? [0] : [0, 2])
+      .forEach(beat => add('kick', 0, beat, 0.2, drumStyle === 'cool' ? 0.18 : 0.28, 'drums'));
     events.sort((a, b) => a.time - b.time);
     const info = { seed: this.config.seed || 7, style: this.config.style, tempo: this.config.tempo, swing: this.config.swing,
+      beatsPerBar: meter, phraseBars: this.config.phraseBars, beatPattern: this.config.beatPattern,
+      beatOnly: this.config.beatOnly, keyRoot: this.config.keyRoot, favorLikes: this.config.favorLikes, tonic: this.tonic,
+      fromFavorite: this.favorite !== null,
       phase: phase + ' · ' + phraseRole, phraseRole,
       key: DJ_NOTES[this.tonic] + (style === 'modal' ? ' Dorian' : genre.mode === 'minor' ? ' minor' : ' major'), bar: this.bar + 1, bars: chart.length,
       chorus: this.chorus + 1, set: this.set,
@@ -332,11 +394,12 @@ class DJComposer {
       this.bar = 0; this.chorus++;
       if (this.chorus % 4 === 0) {
         this.tonic = (this.tonic + rng.pick([0, 5, 7])) % 12;
+        if (this.config.keyRoot !== 'auto') this.tonic = this.config.keyRoot;
         this.set++;
         this.motif = [...rng.pick(DJ_MOTIFS)];
       }
     }
-    return { events, info, duration: seconds * 4 };
+    return { events: this.config.beatOnly ? events.filter(event => event.role === 'drums') : events, info, duration: seconds * meter };
   }
 }
 
@@ -350,8 +413,16 @@ class DJRenderer {
     this.targets = { ...this.levels }; this.maxVoices = 0;
     this.pendingPart = null; this.activePart = null;
     this.pendingScene = null;
+    this.pendingBank = null;
   }
   configure(data) {
+    if (data.bank) {
+      const bank = data.bank;
+      if (Number.isInteger(bank.rate) && bank.rate >= 8000 && bank.rate <= 96000
+        && ['piano', 'bass'].every(role => Array.isArray(bank[role]) && bank[role].length > 0
+          && bank[role].every(sample => Number.isInteger(sample.note) && sample.note >= 0 && sample.note <= 127 && sample.data instanceof Float32Array && sample.data.length >= 2))
+        && ['ride', 'brush', 'kick', 'hat', 'stick'].every(kind => bank.drums?.[kind] instanceof Float32Array && bank.drums[kind].length >= 2)) this.pendingBank = bank;
+    }
     if (data.levels) for (const role of ['piano', 'bass', 'drums']) {
       if (Number.isFinite(data.levels[role])) {
         this.targets[role] = djClamp(data.levels[role], 0, 1);
@@ -364,8 +435,10 @@ class DJRenderer {
       if (c && Object.hasOwn(DJ_STYLES, c.style) && Number.isFinite(c.tempo) && c.tempo >= 55 && c.tempo <= 180
         && Number.isFinite(c.swing) && c.swing >= 0.5 && c.swing <= 0.72 && levels
         && ['piano', 'bass', 'drums'].every(role => Number.isFinite(levels[role]) && levels[role] >= 0 && levels[role] <= 1)) {
-        this.composer.configure({ style: c.style, tempo: c.tempo, swing: c.swing });
-        this.pendingScene = { id: scene.id, levels: { piano: levels.piano, bass: levels.bass, drums: levels.drums } };
+        try {
+          this.composer.configure(Object.fromEntries(DJ_COMPOSITION_FIELDS.filter(key => Object.hasOwn(c, key)).map(key => [key, c[key]])));
+          this.pendingScene = { id: scene.id, levels: { piano: levels.piano, bass: levels.bass, drums: levels.drums } };
+        } catch { /* A malformed scene cannot partially replace a queued arrangement. */ }
       }
     }
     if (typeof data.nameSnapshot === 'string' && /^[a-z0-9-]{1,64}$/i.test(data.nameSnapshot)) {
@@ -404,13 +477,14 @@ class DJRenderer {
   render(left, right) {
     for (let i = 0; i < left.length; i++, this.frame++) {
       if (this.frame >= this.nextBar) {
+        if (this.pendingBank) { this.bank = this.pendingBank; this.pendingBank = null; }
         if (this.pendingScene) {
           this.targets = { ...this.targets, ...this.pendingScene.levels };
           this.notify({ sceneApplied: this.pendingScene.id }); this.pendingScene = null;
         }
         const bar = this.composer.nextBar();
         const matches = part => part.targetSet === bar.info.set && part.targetSeed === bar.info.seed;
-        if (this.activePart && !matches(this.activePart)) this.activePart = null;
+        if (this.activePart && (!matches(this.activePart) || this.info?.beatPattern !== bar.info.beatPattern)) this.activePart = null;
         if (this.pendingPart) {
           const part = this.pendingPart; this.pendingPart = null;
           if (matches(part)) { this.activePart = part; this.notify({ partApplied: part.requestId, set: bar.info.set }); }
@@ -420,20 +494,22 @@ class DJRenderer {
           const seconds = 60 / bar.info.tempo, swing = bar.info.swing;
           bar.events = bar.events.filter(e => e.role !== 'drums');
           for (const hit of this.activePart.result.pattern) {
-            const beat = hit.step / 4, whole = Math.floor(beat), frac = beat - whole;
+            const beat = hit.step * bar.info.beatsPerBar / 16, whole = Math.floor(beat), frac = beat - whole;
             const time = (whole + (frac <= 0.5 ? frac * 2 * swing : swing + (frac - 0.5) * 2 * (1 - swing))) * seconds;
-            bar.events.push({ instrument: hit.instrument, role: 'drums', note: 0, beat, time, duration: 0.25 * seconds, velocity: hit.velocity });
+            const duration = bar.info.beatsPerBar === 4 ? 0.25 * seconds : Math.min(bar.info.beatsPerBar / 16 * seconds, bar.duration - time);
+            bar.events.push({ instrument: hit.instrument, role: 'drums', note: 0, beat, time, duration, velocity: hit.velocity });
           }
           bar.events.sort((a, b) => a.time - b.time);
           bar.info.namedTitle = this.activePart.result.title;
         }
+        if (bar.info.beatOnly) this.voices = this.voices.filter(voice => voice.role === 'drums');
         this.events = bar.events; this.eventIndex = 0; this.barStart = this.nextBar;
         this.nextBar += bar.duration * this.rate; this.info = bar.info;
         this.beat = 0; this.nextBeat = this.frame;
       }
-      if (this.frame >= this.nextBeat && this.beat < 4) {
+      if (this.frame >= this.nextBeat && this.beat < this.info.beatsPerBar) {
         const chord = this.info.chords.findLast(c => c.beat <= this.beat);
-        this.notify({ ...this.info, beat: this.beat, seconds: this.frame / this.rate,
+        this.notify({ ...this.info, beat: this.beat, beatNumber: this.beat + 1, seconds: this.frame / this.rate,
           chord: chord.text, chordIndex: chord.index, chordRoot: chord.root, chordQuality: chord.quality });
         this.beat++; this.nextBeat = this.barStart + this.beat * (60 / this.info.tempo) * this.rate;
       }
@@ -458,4 +534,4 @@ class DJRenderer {
   }
 }
 
-export { DJ_NOTES, DJ_STYLES, DJRandom, DJComposer, DJRenderer, djVoiceLead, djClamp, djMakeBank };
+export { DJ_NOTES, DJ_STYLES, DJRandom, DJComposer, DJRenderer, djVoiceLead, djClamp, djMakeBank, djValidateFavoriteProgressions };

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import { spawn } from 'node:child_process';
+import { JAZZ_CLIP_MAX_SECONDS } from './public/jazz-radio-contract.mjs';
 
 const inputArgs = ['-hide_banner', '-loglevel', 'error', '-nostdin', '-protocol_whitelist', 'pipe', '-probesize', '64', '-analyzeduration', '1000', '-f', 's16le', '-ar', '48000', '-ac', '2', '-i', 'pipe:0'];
 const outputArgs = ['-map', '0:a:0', '-codec:a', 'libmp3lame', '-b:a', '128k', '-write_xing', '0', '-flush_packets', '1', '-f', 'mp3', 'pipe:1'];
@@ -42,7 +43,7 @@ export async function createJazzMonitor({ spawnImpl = spawn, onFailure = () => {
 }
 
 export async function encodeJazzClip(samples, { spawnImpl = spawn, timeoutMs = 12000 } = {}) {
-  if (!(samples instanceof Int16Array) || samples.length < 960 || samples.length > 48000 * 2 * 40 || samples.length % 2) throw new Error('The eight-chord audio is outside its recording limit.');
+  if (!(samples instanceof Int16Array) || samples.length < 960 || samples.length > 48000 * 2 * JAZZ_CLIP_MAX_SECONDS || samples.length % 2) throw new Error('The eight-chord audio is outside its recording limit.');
   const child = spawnImpl('ffmpeg', [...inputArgs, ...outputArgs], { stdio: ['pipe', 'pipe', 'ignore'], windowsHide: true, shell: false });
   return new Promise((resolve, reject) => {
     const chunks = []; let bytes = 0, settled = false;

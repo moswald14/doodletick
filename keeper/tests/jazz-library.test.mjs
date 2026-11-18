@@ -12,6 +12,14 @@ const signer = { publicKey: owner.publicKey, sign: record => sign(record, owner.
 const START = Date.parse('2026-11-17T12:00:00Z');
 const audio = number => { const bytes = Buffer.alloc(256, number); bytes.write('ID3'); return bytes; };
 const passage = (overrides = {}) => ({ requestId: randomUUID(), chords: Array.from({ length: 8 }, (_, index) => ({ ordinal: index + 1, chord: 'Cmaj7', root: 0, quality: 'maj7', durationMs: 2000 })), samples: 48000 * 2 * 16, audio: audio(1), capturedAt: new Date(START).toISOString(), tick: tickAt(START), ...overrides });
+test('eight slow seven-beat measures fit the signed recording limit and remain replayable',async t=>{
+  const {open}=await fixture(t), library=await open();
+  const samples=Math.ceil(48000*8*7*60/55)*2, receipt=await library.save(passage({samples}));
+  assert.equal(receipt.record.durationMs,61091);
+  assert(await checkSignature(receipt.record,receipt.signature,receipt.publicKey));
+  await library.close();const restored=await open();
+  assert.equal(restored.status().count,1);assert.deepEqual(await restored.audio(receipt.record.audio.sha256),audio(1));
+});
 async function fixture(t) {
   const dataDir = await mkdtemp(path.join(tmpdir(), 'doodletick-jazz-library-'));
   const libraries = [];
@@ -80,7 +88,7 @@ test('detecting missing or altered audio during replay immediately blocks furthe
 
 test('invalid recordings and closing cannot append partial records', async t => {
   const env = await fixture(t), library = await env.open();
-  for (const bad of [{ requestId: 'not-a-request' }, { chords: [] }, { audio: Buffer.alloc(127) }, { samples: 959 }, { samples: 48000 * 2 * 40 + 1 }]) await assert.rejects(library.save(passage(bad)), /Invalid/);
+  for (const bad of [{ requestId: 'not-a-request' }, { chords: [] }, { audio: Buffer.alloc(127) }, { samples: 959 }, { samples: 48000 * 2 * 64 + 1 }]) await assert.rejects(library.save(passage(bad)), /Invalid/);
   assert.equal(library.status().count, 0);
   const receipt = await library.save(passage()); await library.close(); await assert.rejects(library.save(passage()), error => error.status === 503);
   const reopened = await env.open(); assert.deepEqual(reopened.list(), [receipt]);

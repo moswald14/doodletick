@@ -53,6 +53,7 @@
   <section class="naming" aria-labelledby="naming-heading">
     <div class="naming-heading"><div><h2 id="naming-heading">GIVE THIS SET A NAME</h2><p>Give this original improvisation a title and a fresh beat, written by OpenAI.</p></div><button type="button" class="name-song" id="name-song" disabled>Name this song <small>2¢ USD IN PEPE</small></button></div>
     <p id="naming-status" role="status" aria-live="polite">Checking song naming…</p>
+    <div class="naming-actions"><button type="button" id="naming-connection" hidden>Check OpenAI connection</button></div>
     <div class="naming-tools"><label for="naming-wallet">Your Ethereum wallet</label><select id="naming-wallet"><option value="">Choose a wallet</option></select><label class="receipt-import">Restore receipt <input type="file" id="naming-import" accept="application/json,.json"></label></div>
     <div id="naming-review" hidden>
       <dl class="naming-details"><div><dt>Payment</dt><dd id="naming-amount"></dd></div><div><dt>To the creator</dt><dd id="naming-recipient"></dd></div><div><dt>From your wallet</dt><dd id="naming-payer"></dd></div><div><dt>Network</dt><dd>Ethereum · original PEPE</dd></div></dl>

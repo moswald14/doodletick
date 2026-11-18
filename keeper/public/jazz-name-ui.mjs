@@ -23,6 +23,8 @@ export function createJazzNamingUI({ getSnapshot, getPlayback, applyResult }) {
     if (disposed) return;
     const q = client.receipt, playback = getPlayback(), unfinished = q && !q.result && (q.hash || q.status !== 'quoted' || q.expiresAt > Date.now());
     $('name-song').disabled = working || !client.configuration?.ready || !playback.info || !!unfinished;
+    const connection = $('naming-connection');
+    if (connection) { connection.hidden = !client.configuration?.ready; connection.disabled = working; }
     $('naming-wallet').disabled = working;
     $('naming-review').hidden = !q;
     $('naming-result').hidden = !q?.result;
@@ -74,6 +76,11 @@ export function createJazzNamingUI({ getSnapshot, getPlayback, applyResult }) {
     const estimate = await client.walletCheck(selected);
     $('naming-fee').textContent = formatPepeUnits(estimate.feeWei) + ' ETH estimated network fee; your wallet shows the final fee.';
     message('Review the payment below. Confirming opens your wallet to approve the transfer.');
+  }));
+  $('naming-connection')?.addEventListener('click', () => void act(async () => {
+    message('Checking the Keeper’s OpenAI connection…');
+    const check = await client.request('checkConnection', {});
+    message(check.message, !check.ok);
   }));
   $('naming-pay').addEventListener('click', () => void act(async () => {
     message('Review and confirm the PEPE transfer in your wallet.');

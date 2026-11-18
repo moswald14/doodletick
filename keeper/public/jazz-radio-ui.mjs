@@ -3,6 +3,7 @@ import { DJ_GENRES } from './jazz-genres.mjs';
 import { JAZZ_DEFAULT_SETTINGS } from './jazz-radio-contract.mjs';
 import { checkSignature } from './core.mjs';
 import { createJazzNamingUI } from './jazz-name-ui.mjs';
+import { createJazzBandUI } from './jazz-band-ui.mjs';
 
 export async function initializeJazzRadioUI() {
   const $ = id => document.getElementById(id);
@@ -33,6 +34,8 @@ export async function initializeJazzRadioUI() {
   let closed = false, pollTimer, pollPending = false, busy = false, dirty = false, changeTimer, settings = { ...station.settings }, undo = null;
   let volume = 45, muted = false, night = false, librarySignature = '', ops = Promise.resolve(), errorMessage = '', session = 1;
   let settingsVersion = 0, namingSequence = null;
+  const band = createJazzBandUI({getSettings:()=>settings,getStation:()=>station,request,action,
+    changeSettings:patch=>{settings={...settings,...patch};changeSettings();}});
   let libraryVersion = 0, libraryNextOffset = null, libraryLoading = false, libraryMeta = null;
   const libraryIds = new Set(), libraryMore = document.createElement('button');
   libraryMore.type = 'button'; libraryMore.id = 'library-more'; libraryMore.hidden = true;
@@ -50,13 +53,14 @@ export async function initializeJazzRadioUI() {
   }
   function paintSettings() {
     for (const id of ['tempo', 'swing', 'room', 'piano', 'bass', 'drums']) { if (document.activeElement !== $(id)) $(id).value = settings[id]; }
-    $('tempo-value').textContent = settings.tempo;
+    $('tempo-value').textContent = settings.tempo + ' BPM';
     for (const id of ['swing','room']) $(id + '-value').textContent = settings[id] + '%';
     for (const button of document.querySelectorAll('[data-style]')) {
       const selected = button.dataset.style === settings.style; button.setAttribute('aria-pressed', String(selected)); button.setAttribute('aria-selected', String(selected)); button.tabIndex = selected ? 0 : -1;
     }
     for (const button of document.querySelectorAll('[data-mute]')) { const quiet = settings[button.dataset.mute] === 0; button.setAttribute('aria-pressed', String(quiet)); button.textContent = quiet ? '+' : '−'; }
     $('swing').disabled = ['bossa','latin','funk'].includes(settings.style);
+    band.paint(station,settings,busy);
   }
   function paint() {
     const s = station, listening = !monitor.paused && !!monitor.src, info = s.info;
@@ -87,8 +91,10 @@ export async function initializeJazzRadioUI() {
     }
     if (info) {
       $('chord').textContent = info.chord; $('track-name').textContent = info.namedTitle || DJ_GENRES[info.style].name + ' · ' + info.key;
-      $('track-info').textContent = info.phase + ' / ' + info.tempo + ' BPM'; $('position').textContent = `BAR ${info.bar}/${info.bars} · CHORUS ${info.chorus}`;
-      document.querySelectorAll('.beat-dots i').forEach((dot, i) => dot.classList.toggle('active', s.running && i === info.beat));
+      const feel = info.beatOnly ? ' · Beat only' : info.fromFavorite ? ' · Favorite progression' : '';
+      const beat = info.beatNumber ?? (Number.isFinite(info.beat) ? Math.floor(info.beat) + 1 : 1);
+      $('track-info').textContent = info.tempo + ' BPM' + feel;
+      $('position').textContent = `Bar ${info.bar} of ${info.bars} · beat ${beat} of ${info.beatsPerBar || 4}`;
     }
     const seconds = s.seconds || 0; $('elapsed').textContent = (seconds >= 3600 ? Math.floor(seconds / 3600) + ':' : '') + String(Math.floor(seconds / 60) % 60).padStart(2,'0') + ':' + String(seconds % 60).padStart(2,'0');
     if (!dirty && !busy) { settings = { ...s.settings }; paintSettings(); }
@@ -100,6 +106,8 @@ export async function initializeJazzRadioUI() {
     } else if (!event) namingSequence = null;
     if (info) naming.receive(info);
     naming.playbackChanged();
+    band.paint(station,settings,busy);
+    document.querySelectorAll('.beat-dots i').forEach((dot, i) => dot.classList.toggle('active', s.running && i === info?.beat));
   }
   const naming = createJazzNamingUI({
     getPlayback: () => ({ session, state: station.running ? 'playing' : 'idle', info: station.info }),
@@ -241,7 +249,7 @@ export async function initializeJazzRadioUI() {
     if (e.key.toLowerCase() === 'm') { muted = !muted; localVolume(); }
     if (e.key.toLowerCase() === 'n') void action('new-set').catch(() => {});
   });
-  function leave() { closed = true; clearTimeout(pollTimer); clearTimeout(changeTimer); naming.dispose(); releaseReplays(); releasePlayer(monitor); }
+  function leave() { closed = true; clearTimeout(pollTimer); clearTimeout(changeTimer); band.dispose(); naming.dispose(); releaseReplays(); releasePlayer(monitor); }
   window.addEventListener('pagehide', leave, {once:true});
   window.addEventListener('pageshow', e => { if (e.persisted) location.reload(); });
   localVolume(); paintSettings(); paint(); void poll();

@@ -1,6 +1,6 @@
 # Jazz titles, payment and new beats
 
-The Jazz room has a **Name this song** button. A listener reviews and confirms a direct transfer of about **$0.02 USD worth of original PEPE on Ethereum** to the creator. After three confirmations, the Keeper asks OpenAI for an original title and a quiet, one-bar drum groove. The groove joins at a bar boundary, follows the drum mixer and returns to the original trio at the next set. A saved beat can also be applied explicitly to a later set.
+The Jazz room has a **Name this song** button. A listener reviews and confirms a direct transfer of about **$0.02 USD worth of original PEPE on Ethereum** to the creator. After three confirmations, the Keeper asks OpenAI for an original title and a quiet, one-bar drum groove. The groove joins at a bar boundary, follows the drum mixer and returns to the ordinary arrangement at the next set. A saved beat can also be applied explicitly to a later set. The paid PEPE flow is unchanged by the new band controls and Dot Wave player voices.
 
 Ethereum charges its own fee in ETH, paid by the listener. That fee can exceed the PEPE payment. This is a direct token transfer; no unlimited approval, custody, swap, bridge or automatic withdrawal is used. The connected wallet must hold PEPE and enough ETH. It shows the final fee and requires the listener’s confirmation.
 
@@ -14,6 +14,10 @@ In Home Assistant, open Doodle Tick’s Configuration and set:
 - `jazz_openai_api_key`: the owner’s OpenAI API key, entered into Home Assistant’s password field. Never put it in Jazz, a browser script, a chat message or a public repository.
 - `jazz_daily_limit`: the maximum number of generation attempts per UTC day, including retries; default 30. Each new quote reserves room for up to three attempts.
 - `jazz_enabled`: turn on after the account is connected, then restart the app.
+
+In Jazz, **Check OpenAI connection** checks access to the naming model without
+requesting a payment or a generated song. If the check reports a rejected key,
+replace it directly in Home Assistant's Jazz password field.
 
 For desktop/Pi, supply these server environment variables through the existing service manager: `OPENAI_API_KEY`, `DOODLETICK_JAZZ_ENABLED=true`, `DOODLETICK_JAZZ_NETWORK=ethereum`, `DOODLETICK_JAZZ_RECIPIENT`, and optionally `DOODLETICK_JAZZ_DAILY_LIMIT` (default 30). `DOODLETICK_JAZZ_RPC_URL` can select an owner-trusted HTTPS Ethereum RPC; the default is PublicNode. Environment files are not loaded automatically or included in release downloads.
 
@@ -31,10 +35,14 @@ Server payment and generation records live in the private `jazz-naming/jazz-nami
 
 ## Music and privacy
 
-OpenAI receives a bounded musical summary: the audible set’s seed, style, tempo, swing, key, bar/chorus, chord symbols, phrase role and a few performed melody notes. It receives no recording, microphone audio, wallet password, payer address or API key in that summary. The result is text and a validated 16-step percussion pattern, never executable code. Swing/blues retain their swing grid and space around the four-bar call, varied repeat, answer and cadence; bossa retains its straight pulse.
+OpenAI receives a bounded musical summary: the audible set's seed, style, tempo, swing, key, bar/chorus, chord symbols, progression, phrase role and a few performed melody notes. The selected beats per bar, phrase length and beat-only state travel with that summary. Beat-only requests can have no melody notes. No recording, microphone audio, Dot Wave voice recipe, wallet password, payer address or API key enters that summary.
+
+The result is text and a validated 16-step percussion pattern, never executable code. The renderer fits those steps into the selected two-to-seven-beat bar. Swing styles retain their timing grid; straight genres keep their straight pulse. Phrase length follows the genre or the chosen 4, 8, 16 or 32 bars, preserving the call, varied repeat, answer and cadence approach. Key suggestions and all ordinary arrangement controls work without a naming payment or model call.
+
+A successfully completed naming result also reinforces its musical progression in the Keeper's separate band preference memory. A successfully saved **I dig this!** passage does the same without payment. Feedback is deduplicated by the completed request or saved passage. It weights future local progression choices; it does not retrain the OpenAI model, rewrite signed keepsakes or modify payment records. **Bring back progressions I like** controls whether the band revisits these favorites. A preference-storage error leaves a completed paid result and existing recordings available. Read [the Jazz guide](JAZZ.md#progressions-you-like) for storage and limits.
 
 The model is `gpt-6-luna`, limited to 1,600 output tokens, with no tools and no stored OpenAI response. The owner pays OpenAI’s API bill separately from the PEPE received. Server limits bound attempts; they do not represent a dollar spending limit in the OpenAI account.
 
 Sources: [PEPE network and contract](https://www.coinbase.com/price/pepe), [Ethereum fees](https://ethereum.org/developers/docs/gas/), [Coinbase spot prices](https://docs.cdp.coinbase.com/coinbase-app/track-apis/prices), [OpenAI structured outputs](https://developers.openai.com/api/docs/guides/structured-outputs), [model details and pricing](https://developers.openai.com/api/docs/models/gpt-6-luna).
 
-This is a development change awaiting account setup and release integration. Simulated payment tests do not establish a real-money purchase, funded API result or physical Home Assistant installation.
+Account access, release installation and audible output require their own checks. Selecting an account-setup option alone does not establish that a key was created or saved, or that a funded model request succeeded. Simulated payment tests do not establish a real-money purchase, funded API result or physical Home Assistant installation. Naming stays unavailable until the owner's connection and server configuration pass their checks.
