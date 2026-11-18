@@ -25,7 +25,7 @@ export async function initializeJazzRadioUI() {
   document.querySelector('.jazz-tool #cast-jazz').textContent = 'Start broadcast';
   document.querySelector('#cast-jazz').closest('.jazz-tool').querySelector('p').textContent = 'Free VDO.Ninja audio casting, broadcast by Home Assistant. No microphone or camera.';
   document.querySelector('#cast-link-row > p').textContent = 'Anyone with this link can listen. Home Assistant keeps the music playing when this browser closes. Local Pause, Volume and Mute affect only your listening.';
-  document.querySelector('footer > p').textContent = 'MADE FOR THE DOODLEVERSE. Home Assistant radio · Keeper 0.15b';
+  document.querySelector('footer > p').textContent = 'MADE FOR THE DOODLEVERSE. Home Assistant radio · Keeper 0.16b';
   document.querySelector('footer details').replaceChildren();
   const footerSummary = document.createElement('summary'), footerText = document.createElement('p');
   footerSummary.textContent = 'Keeping the room open'; footerText.textContent = 'Start the broadcast once. Home Assistant renders original music and keeps the station running, including after a Keeper restart. Never stop locks Stop and shuffles the players hourly; turn it off to stop intentionally. Your local output volume, mute and Pause listening leave the stream alone. Power, network or service outages can interrupt it. Keyboard: Space for local listening, M to mute here, N for a fresh set.';

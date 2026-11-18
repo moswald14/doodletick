@@ -1,3 +1,7 @@
+# Validation — Doodle Tick 0.16b
+
+Focused checks cover legacy scores, selectable beats and measures, drums-only output, weighted progression feedback, persisted voice recipes, next-bar bank swaps, naming receipt recovery, and signed long passages. Voice and MP3 canaries run in each candidate Home Assistant image. A local protected endpoint or fixture does not establish a configured live API account or installation.
+
 # Validation - Doodle Tick 0.15b
 
 ## Telephone World story paragraphs - 2026-11-17

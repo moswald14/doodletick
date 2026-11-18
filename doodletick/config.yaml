@@ -1,5 +1,5 @@
 name: Doodle Tick Keeper
-version: "0.15b"
+version: "0.16b"
 image: "ghcr.io/moswald14/doodletick-{arch}"
 slug: doodletick
 description: Creator vault, native DVC mining and payments, garden and direct peer arcade

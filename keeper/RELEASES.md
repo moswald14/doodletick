@@ -1,3 +1,11 @@
+## 0.16b — Jazz band voices, rhythm and feedback
+
+- Select speed, two through seven beats per bar, phrase length, drum groove and key. Suggested keys follow the genre and Beat only plays the percussion.
+- Use the sounds you kept in Dot Wave or import an editable recipe. Assign it to piano, bass or drums. The next bar uses the new sound and the Keeper remembers it across restarts.
+- Naming a song after a verified payment and keeping an eight-chord passage teach the band which progressions to revisit. Keeper can check model access without a new song or payment.
+- Test voice reports whether the announcer generated audio. Home Assistant retries local synthesis through its installed audio tools when command lookup fails.
+- Long measures fit the eight-chord recording limit. Existing signed feedback and audio can still be replayed.
+
 ## 0.15b — Telephone World paragraphs and AI proposal diagnostics
 
 New Bullshit Telephone World stories display proper paragraph breaks in the machine and retain them when carried into Dot Studio. The private-room change updates the approved bundle fingerprint; private station source remains separately installed.
