@@ -1,6 +1,10 @@
-## 0.15b — Telephone World story paragraphs
+## 0.15b — Telephone World paragraphs and AI proposal diagnostics
 
-New Bullshit Telephone World stories display proper paragraph breaks in the machine and retain them when carried into Dot Studio. The public app updates only its approved private bundle fingerprint; private station source remains separately installed.
+New Bullshit Telephone World stories display proper paragraph breaks in the machine and retain them when carried into Dot Studio. The private-room change updates the approved bundle fingerprint; private station source remains separately installed.
+
+The upgrade desk now distinguishes provider authentication, permissions, recognized quota/rate limits, unavailable models, rejected requests and service failures using fixed local messages. Provider error text and credentials are never displayed or saved. Failed requests make no automatic retry and create no proposal; configuration alone does not establish working provider access.
+
+Oversized or incomplete shared-service uploads receive a complete JSON rejection before closing. Cleanup discards at most 64 KiB for at most 250 ms without buffering it; request limits and rejection before storage writes remain enforced.
 
 After the Keeper update, install the matching private MozCorp ZIP. Existing source text, master copies, saved endings, animal sessions and Studio scores remain exact. Typed literal backslashes in source or machine signals are preserved. Shared cloud, HOPE-LON and upgrade proposal formats, native coin rules and Home Assistant access remain unchanged.
 

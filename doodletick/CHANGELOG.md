@@ -1,6 +1,10 @@
-# 0.15b — Telephone World story paragraphs
+# 0.15b — Telephone World paragraphs and AI proposal diagnostics
 
 Updates the approved private MozCorp bundle to fix paragraph breaks in newly generated stories and their Studio handoff. Install the matching private ZIP after updating this same Keeper app. Existing saved stories, source text, master copies and editable scores retain their contents. Shared service storage, signed formats, native coin rules and Home Assistant permissions are unchanged.
+
+AI proposal failures now show fixed account, access, quota, throttling, request or service notices when recognized. Provider diagnostics and credentials are excluded; failed requests never retry automatically or create a proposal.
+
+Oversized and incomplete MozCorp uploads now receive their JSON rejection reliably before the connection closes, with bounded cleanup and no storage write.
 
 # 0.14b — Home Assistant Jazz radio
 

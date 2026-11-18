@@ -58,6 +58,10 @@ When AI is configured, save **Allow external AI proposal requests** before choos
 
 For Home Assistant, set `mozcorp_ai_enabled`, `mozcorp_openai_model` and the password field `mozcorp_openai_api_key` in the app configuration, then restart the app. Desktop Keeper reads `OPENAI_API_KEY` and `OPENAI_MODEL` when it starts. Keys remain on the server; do not put them in an instruction. Configuration alone makes no AI request: the saved preference and consent for an individual request are still required.
 
+If Home Assistant hides the key field, turn on **Show unused optional configuration options**. The translated **OpenAI API key** field for proposals is above the separate Jazz options. Enter and save the key directly there, then restart Keeper. The proposal desk reports whether a key is configured without revealing it.
+
+Recognized provider failures show fixed notices for authentication, project permissions, quota, temporary rate limits, unavailable models, rejected requests or service failures. Check the indicated account or setting before choosing another request. Unknown failures remain generic; no provider error text is displayed, and there is no automatic retry. A configured key still needs valid provider access and available usage limits.
+
 Saved proposals retain their instruction and structured details for every version. Review the current version, then approve or decline it. **Revise proposal** creates another version and returns it to review; an earlier approval does not approve the new version. Stale writes are refused, so refresh after another user changes the desk. Your unsaved form stays available when a request fails.
 
 After a separately completed release, use **Record completed deployment** with its release reference. A recorded deployment can later receive a completed rollback reference. These actions save review records; the desk does not install or restore code. Deleting a proposal removes its saved instructions and versions after confirmation, while metadata-only audit events remain.
