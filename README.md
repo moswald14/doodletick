@@ -1,6 +1,8 @@
-# Doodle Tick · 0.17b
+# Doodle Tick · 0.18b
 
-**0.17b adds a paper wallet maker to the Doodleverse miner.** Download the offline file from the mining panel to print a receiving address and private key, or recover the key into an encrypted Keeper backup. [Paper wallet guide](keeper/paper-wallet/README.md)
+
+**0.18b adds [saved Dotlands rooms](keeper/DOTLANDS.md): 1 private garden Doodle Coin per player once, free returns, and five-second checks that idle when hidden.**
+**0.18b adds a paper wallet maker to the Doodleverse miner.** Download the offline file from the mining panel to print a receiving address and private key, or recover the key into an encrypted Keeper backup. [Paper wallet guide](keeper/paper-wallet/README.md)
 
 **0.16b gives the Jazz band a memory and more ways to play.** Set the speed, beats per bar, phrase length, drum groove and key. Save editable Dot Wave voices to the players and teach the band with signed keepsakes or song naming. [Open the Jazz guide](keeper/JAZZ.md).
 

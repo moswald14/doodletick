@@ -1,6 +1,6 @@
 # Dotlands saved rooms
 
-Feature branch integrated with Keeper 0.17b; not yet included in an installed Keeper release. The game source lives at https://github.com/moswald14/dotlands and its persistent service lives in this repository.
+Included in Keeper 0.18b, based on the existing 0.17b release. The game source lives at https://github.com/moswald14/dotlands and its persistent service lives in this repository.
 
 Open **Dotlands · saved rooms**, unlock your usual vault, and create a room or enter a friend's six-character code. Each human pays **1 private garden Doodle Coin once per room**, including the creator. Matured garden earnings are settled on entry. Returning with the same vault identity is free. Solo, pass & play and computer seats are free.
 
@@ -24,4 +24,4 @@ Validation on November 18, 2026: all 1,118 tests passed against the integrated 0
 
 Chrome and the in-app browser completed paid create/join, maximum-army attrition, copy-code, play after the host closed, and reopening after both browsers closed. The returned map matched all 36 displayed tile labels. The game board and turn controls fit a 390 by 844 browser viewport. These are browser tests, not physical-phone tests.
 
-The live installed Home Assistant update still needs verification. Assign a new release version and preserve later shared changes before packaging; do not replace published 0.17b artifacts.
+Installation is verified separately from these local tests. The 0.18b release preserves the 0.17b Telephone, Jazz and paper-wallet features.

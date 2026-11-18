@@ -1,3 +1,11 @@
+# 0.18b
+
+Dotlands now saves online rooms on this Keeper. Each human pays **1 private garden Doodle Coin once per room**, including the creator. Returning with the same vault identity is free. Confirmed moves and seats survive all browsers closing and Keeper restarts. Friends use the same reachable Keeper and its existing access controls; there is no new public access route. Solo, pass & play and computer seats are free.
+
+Rooms reserve a seat before payment and keep signed admission receipts. Interrupted requests recover without a second fee. The game frame never receives the vault key. Active games check every five seconds and idle when hidden or offline. Corrupt storage fails closed for saved rooms without replacing the data or blocking the vault. Back up the witness identity, garden ledger and room storage together while stopped. Earlier temporary browser-hosted rooms are not migrated.
+
+Validation: 1,118 automated checks passed, including two-player payment, play and restart recovery through the Home Assistant gateway. Two-browser play verified maximum-army attrition, copy-code, continuing after the host closed and returning to an identical board after both browsers closed. The 390x844 browser layout was inspected; physical-device testing remains unverified. See [Dotlands](DOTLANDS.md) for recovery and limits.
+
 # 0.17b — Doodleverse paper wallet
 
 - Download the standalone paper wallet maker from the Doodleverse Coin miner or wallet.
