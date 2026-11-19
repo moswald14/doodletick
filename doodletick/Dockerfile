@@ -21,11 +21,11 @@ WORKDIR /opt/doodletick
 COPY keeper/ ./keeper/
 RUN npm ci --prefix keeper/jazz-stream-deps --omit=dev --ignore-scripts --include=optional --no-audit --no-fund \
     && npm cache clean --force
-COPY gateway.mjs main.mjs migration.mjs mozcorp-options.mjs core-options.mjs core-process.mjs jazz-options.mjs ./
+COPY gateway.mjs dating-relay.mjs main.mjs migration.mjs mozcorp-options.mjs core-options.mjs core-process.mjs jazz-options.mjs ./
 COPY core-source/chain-manifest.json ./core-source/chain-manifest.json
 COPY public/ ./public/
 LABEL io.hass.name="Doodle Tick Keeper" io.hass.description="Private Doodleverse Keeper" \
-      io.hass.type="addon" io.hass.version="0.18b" io.hass.arch="${BUILD_ARCH}"
+      io.hass.type="addon" io.hass.version="0.19b" io.hass.arch="${BUILD_ARCH}"
 LABEL org.opencontainers.image.source="https://github.com/moswald14/doodletick"
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s CMD node -e "fetch('http://127.0.0.1:8099/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 CMD ["node", "main.mjs"]

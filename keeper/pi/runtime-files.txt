@@ -121,6 +121,9 @@ public/telephone-rhyme.css
 public/telephone-rhyme-1.js
 public/telephone-keeper.mjs
 public/telephone-keeper.css
+public/dating.html
+public/dating-app.mjs
+public/dating.css
 public/studio.html
 public/studio-app.js
 public/studio-worker.js

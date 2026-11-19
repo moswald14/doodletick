@@ -1,0 +1,140 @@
+:root {
+  color-scheme: dark;
+  --paper: #101319;
+  --line: #373b4b;
+  --muted: #acaebb;
+  --accent: #a9e972;
+  --soft: #a9e9721c;
+  --danger: #ffab94;
+  background: #0b0d12;
+  color: #ecebe7;
+  font: 15px/1.55 system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+[hidden] { display: none !important; }
+a { color: inherit; text-underline-offset: .22em; }
+a:hover { color: var(--accent); }
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 28px;
+  padding: 16px clamp(16px, 4vw, 56px);
+  border-bottom: 1px solid var(--line);
+}
+.site-header nav { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 13px; }
+.wordmark { color: var(--accent); font: 750 23px/1.1 monospace; text-decoration: none; }
+main { width: min(100% - 32px, 1440px); margin: 0 auto 56px; }
+.button {
+  display: inline-block;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+  color: inherit;
+  background: #1b2029;
+  text-decoration: none;
+  cursor: pointer;
+}
+.button:hover { border-color: var(--accent); }
+.button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+:root {
+  --dating-pink: #ffb5d4;
+  --dating-coral: #ff9b87;
+  --dating-panel: #1a151e;
+  --dating-line: #504052;
+  --dating-muted: #bdb1c0;
+}
+.dating-room-title { overflow-wrap: anywhere; }
+.dating-room-title h1 {
+  margin: 0;
+  font: 850 clamp(42px, 8.4vw, 112px)/.93 system-ui, sans-serif;
+  letter-spacing: -.075em;
+}
+.dating-room-title h1 span { color: var(--dating-pink); }
+.dating-eyebrow {
+  margin: 0 0 12px;
+  color: var(--dating-pink);
+  font: 700 12px/1.4 monospace;
+  text-transform: uppercase;
+  letter-spacing: .115em;
+}
+.dating-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.button.dating-primary { background: var(--dating-pink); border-color: var(--dating-pink); color: #24121d; font-weight: 750; }
+.button.dating-primary:hover { background: #ffd5e6; }
+.button.dating-danger { color: #ffc2b9; border-color: #92545a; }
+.button.dating-danger:hover { border-color: var(--dating-coral); }
+.dating-room .button:focus-visible, .dating-room input:focus-visible, .dating-room textarea:focus-visible,
+.dating-room select:focus-visible, .dating-room summary:focus-visible {
+  outline: 2px solid var(--dating-pink); outline-offset: 3px;
+}
+.dating-room { max-width: 1040px; }
+.dating-room-title { padding: clamp(28px, 6vw, 68px) 0 20px; }
+.dating-room-title h1 { font-size: clamp(48px, 7vw, 86px); }
+.dating-notice { margin: 0 0 16px; padding: 10px 13px; border-left: 3px solid var(--dating-pink); background: #231925; }
+.dating-panel {
+  padding: clamp(16px, 3vw, 28px);
+  background: var(--dating-panel);
+  border: 1px solid var(--dating-line);
+  border-radius: 12px;
+}
+.dating-room h2, .dating-room h3 { margin: 0; line-height: 1.22; }
+.dating-panel > p { max-width: 68ch; }
+.dating-room details { margin-top: 20px; }
+.dating-room summary { cursor: pointer; color: var(--dating-pink); }
+.dating-form { display: grid; justify-items: start; gap: 12px; max-width: 650px; }
+.dating-form label:not(.dating-check), .dating-form-row, .dating-form textarea { width: 100%; }
+.dating-form-row { display: grid; grid-template-columns: 1fr 1fr; align-items: end; gap: 12px; }
+.dating-form label, .dating-filter { display: block; font-weight: 650; }
+.dating-form input:not([type="checkbox"]), .dating-form select, .dating-form textarea,
+.dating-filter select, #dating-generated-key {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--dating-line);
+  border-radius: 6px;
+  background: #110e15;
+  color: inherit;
+  font: inherit;
+  font-weight: 450;
+}
+.dating-form textarea { resize: vertical; }
+.dating-check { display: flex !important; gap: 8px; align-items: baseline; }
+.dating-check input { accent-color: var(--dating-pink); }
+.dating-muted { color: var(--dating-muted); font-size: .88em; font-weight: 450; }
+.dating-room :disabled { cursor: not-allowed; opacity: .62; }
+#dating-generated-key { margin: 10px 0; max-width: 42rem; font-family: monospace; }
+#dating-sign-in { margin-top: 12px; max-width: 360px; }
+.dating-nav, .dating-section-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.dating-nav { margin-bottom: 12px; }
+.dating-nav .button[aria-pressed="true"] { background: var(--dating-pink); color: #24121d; border-color: var(--dating-pink); }
+.dating-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 255px), 1fr)); gap: 12px; }
+.dating-card {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--dating-line);
+  border-radius: 9px;
+  background: #221925;
+  overflow-wrap: anywhere;
+}
+.dating-card p { margin: 0; white-space: pre-wrap; }
+.dating-card blockquote { margin: 2px 0 6px; color: var(--dating-pink); }
+.dating-card .dating-actions { align-self: end; gap: 8px; }
+.dating-account { border-top: 1px solid var(--dating-line); padding-top: 16px; }
+.dating-conversation { margin-top: 20px; border-top: 1px solid var(--dating-line); padding-top: 16px; }
+#dating-messages { display: grid; gap: 8px; padding: 0; list-style: none; }
+#dating-messages li { max-width: min(100%, 620px); width: fit-content; padding: 8px 12px; background: #2b2230; border-radius: 8px; }
+#dating-messages li.mine { justify-self: end; background: #4a273a; }
+#dating-messages li p { margin: 3px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+#dating-report { max-width: min(420px, calc(100vw - 32px)); color: inherit; }
+#dating-report::backdrop { background: #0b0710bd; }
+@media (max-width: 420px) {
+  .dating-form-row { grid-template-columns: 1fr; }
+}

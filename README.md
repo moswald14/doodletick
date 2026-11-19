@@ -1,4 +1,6 @@
-# Doodle Tick · 0.18b
+# Doodle Tick · 0.19b
+
+**0.19b brings [Bullshit Telephone dating](keeper/MOZCORP.md) into Home Assistant.** Open **Telephone Dating** in Doodle Tick Keeper and use your existing dating sign-in key. Your profile, matches and messages use the same live service.
 
 
 **0.18b adds [saved Dotlands rooms](keeper/DOTLANDS.md): 1 private garden Doodle Coin per player once, free returns, and five-second checks that idle when hidden.**

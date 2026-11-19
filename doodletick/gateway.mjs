@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { createDatingRelay } from './dating-relay.mjs';
 import { privateFramePolicy } from './keeper/private-rooms.mjs';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -7,7 +8,8 @@ const security = {
   'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer',
   'Content-Security-Policy': "default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://geocoding-api.open-meteo.com https://api.open-meteo.com https://ethereum-rpc.publicnode.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
 };
-export function createIngressServer({ keeperPort, control, ingressIP = '172.30.32.2', healthy = () => true }) {
+export function createIngressServer({ keeperPort, control, ingressIP = '172.30.32.2', healthy = () => true, datingFetch = globalThis.fetch }) {
+  const dating = createDatingRelay({ fetchImpl: datingFetch });
   return http.createServer(async (req, res) => {
     const reply = (code, data, type = 'application/json') => {
       res.writeHead(code, { ...security, 'Content-Type': type }); res.end(typeof data === 'string' ? data : JSON.stringify(data));
@@ -21,6 +23,10 @@ export function createIngressServer({ keeperPort, control, ingressIP = '172.30.3
     }
     // Never trust a client-supplied forwarding header as proof of ingress authentication.
     if (source !== ingressIP) return reply(403, { error: 'Open this app through Home Assistant.' });
+    if (req.url === '/dating-api' || req.url.startsWith('/dating-api/')) {
+      for (const [name, value] of Object.entries(security)) res.setHeader(name, value);
+      return dating(req, res);
+    }
     if (!['GET', 'POST', 'PATCH', 'DELETE'].includes(req.method)) return reply(405, { error: 'Method not allowed.' });
     if (req.method !== 'GET' && req.headers['x-keeper-request'] !== '1') return reply(403, { error: 'Missing request protection.' });
     // Relative request targets only; the proxy can never select another upstream.

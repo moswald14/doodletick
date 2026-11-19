@@ -95,6 +95,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
   for (const file of ['jazz-settings.mjs', 'jazz-cast.mjs', 'vdoninja-sdk.js', 'vdoninja-sdk-license.txt']) allowedFiles.add(file);
   for (const file of ['jazz-radio-ui.mjs', 'jazz-radio-contract.mjs', 'jazz-radio.css', 'jazz-genres.mjs', 'jazz-band-ui.mjs', 'jazz-dot-voices.mjs']) allowedFiles.add(file);
   for (const file of ['doodle-bridge.js', 'telephone.html', 'telephone.css', 'telephone-1.js', 'telephone-2.js', 'telephone-session.js', 'telephone-post-roll.js', 'telephone-integration.css', 'telephone-rhyme.html', 'telephone-rhyme.css', 'telephone-rhyme-1.js', 'telephone-keeper.mjs', 'telephone-keeper.css', 'studio.html', 'studio-app.js', 'studio-worker.js', 'studio.css', 'studio-classic.html', 'studio-notices.txt']) allowedFiles.add(file);
+  for (const file of ['dating.html', 'dating-app.mjs', 'dating.css']) allowedFiles.add(file);
   for(const file of ['mozcorp-ui.mjs','mozcorp-cloud.mjs','mozcorp-upgrades.mjs','mozcorp.css','creative-score-player.mjs'])allowedFiles.add(file);
   for (const file of ['shelfdefense.html', 'shelfdefense.css', 'shelfdefense-art.js', 'shelfdefense-waves.js', 'shelfdefense-audio.js', 'shelfdefense-game.js', 'shelfdefense-app.js', 'shelfdefense-wave-lab.js']) allowedFiles.add(file);
   for (const file of ['shelf-idle.html', 'shelf-idle.css', 'shelf-idle-card.js', 'shelf-idle-client.mjs', 'shelf-idle.mjs']) allowedFiles.add(file);
@@ -121,7 +122,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
       if (await handleDotlands(req,res,url)) return;
       if (await handleDvc(req, res, url)) return;
       if (await vpn.handleLocal(req, res, url)) return;
-      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.18b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt(), nativeCoin: { available: !dvcUnavailable, error: dvcUnavailable ? 'DVC_STORAGE' : null } });
+      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.19b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt(), nativeCoin: { available: !dvcUnavailable, error: dvcUnavailable ? 'DVC_STORAGE' : null } });
       if (req.method === 'GET' && url.pathname === '/api/time') {
         const receivedAt = Date.now(), nonce = url.searchParams.get('nonce');
         if (!validTimeNonce(nonce) || url.searchParams.getAll('nonce').length !== 1) return send(400, { error: 'A fresh clock challenge is required.' });

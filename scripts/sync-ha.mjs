@@ -40,6 +40,8 @@ export function adaptForHomeAssistant(name, source) {
   }
   if (name === 'public/index.html') {
     content = content.replaceAll('href="/', 'href="./').replaceAll('src="/', 'src="./');
+    content = replaceRequired(content, 'id="keeper-dating-link" class="nav-item" href="./dating.html" hidden',
+      'id="keeper-dating-link" class="nav-item" href="./dating.html"', name);
     content = replaceRequired(content, '</head>', '<link rel="stylesheet" href="./ha.css"><script type="module" src="./ha.mjs"></script></head>', name);
     const panel = `<section class="ha-connection" id="ha-connection" aria-label="Home Assistant Keeper">
 <h2>Your always-on Keeper</h2><p id="ha-status" role="status">Checking this Keeper…</p>

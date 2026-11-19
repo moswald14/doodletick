@@ -1,3 +1,8 @@
+# 0.19b — Telephone dating
+
+- Open **Telephone Dating** within Doodle Tick Keeper over HTTPS.
+- Sign in with your existing Telephone dating key to see the same profile, matches and messages as on the public site. New accounts created here also work on the public site.
+
 # 0.18b
 
 Dotlands now saves online rooms on this Keeper. Each human pays **1 private garden Doodle Coin once per room**, including the creator. Returning with the same vault identity is free. Confirmed moves and seats survive all browsers closing and Keeper restarts. Friends use the same reachable Keeper and its existing access controls; there is no new public access route. Solo, pass & play and computer seats are free.

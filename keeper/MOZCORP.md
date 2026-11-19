@@ -36,6 +36,14 @@ Existing records on the original private site do not appear automatically. Expor
 
 HOPE-LON keeps its fictional feed and solved-case records in the same Keeper service storage. It starts paused. It does not copy accounts or records from the original site and does not add social posts, likes or membership services.
 
+## Telephone Dating in Home Assistant
+
+Open **Telephone Dating** from Keeper's sidebar while using the authenticated Home Assistant Web UI over HTTPS. The page stays inside that app frame and offers **Back to Keeper**; the story tools and installed MozCorp rooms remain available through their usual navigation.
+
+Sign in with your **existing dating key** to use the same dating profile, matches and conversations as on the public dating site. That key starts with `btw_` and is separate from your Home Assistant password. No key is copied from another app. Creating another account is a secondary, explicit choice for people who do not already have a dating account.
+
+The page checks that its shared service is ready before sign-in or registration. Outside HTTPS, or while that check fails, it sends no dating key. **Public dating site** opens the separate site only when selected and carries no key in its link. This page does not read contacts, world saves, private desk notes or the Keeper vault, and it creates no separate local profile store.
+
 ## Keep desk boundaries intact
 
 EVERYWHEN transfers only its approved fictional scene and creative icon cue. Sensations, notes, weather, receipts, full receipt hashes and synthetic RAM buffers stay outside that transfer. The cue travels through a one-use in-memory handoff; using its preview in the hopper remains an explicit action.

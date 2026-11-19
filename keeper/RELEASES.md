@@ -1,3 +1,7 @@
+## 0.19b — Telephone dating in Home Assistant
+
+Open **Telephone Dating** in the Keeper sidebar. A dating account uses the same sign-in key, profile, matches and private conversations on the public dating site and in Keeper. The Home Assistant session opens Keeper, then a separate dating sign-in opens the dating account. See the [MozCorp guide](MOZCORP.md).
+
 ## 0.18b
 
 Dotlands now saves online rooms on this Keeper. Each human pays **1 private garden Doodle Coin once per room**, including the creator. Returning with the same vault identity is free. Confirmed moves and seats survive all browsers closing and Keeper restarts. Friends use the same reachable Keeper and its existing access controls; there is no new public access route. Solo, pass & play and computer seats are free.
