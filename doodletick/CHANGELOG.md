@@ -1,3 +1,9 @@
+# 0.19.2b — Studio 2.9 generators
+
+- Add Doodle Jazz to editable Melody notes, Random beat and melody, a 24-hour Coin Wave, and an AI sketch handoff. Preserve existing Studio and Telephone projects without changing saved formats.
+- Allow only the Studio document to contact api.exchange.coinbase.com and api.coingecko.com when its user requests market data. Keep CSV import available without network; AI uses copy/open/paste without a Keeper provider endpoint or stored credentials.
+- Overlay the matching app source on verified immutable 0.19.1b images. Preserve native Core, coin/signature rules, data directories and the official checked-image release pipeline.
+
 # 0.19.1b — Dot Wave Studio 2.8
 
 - Update the existing embedded Studio with reviewed Hum to Melody and waveform capture, WOOFpad two-voice patches, recorded instruments and editable singing.

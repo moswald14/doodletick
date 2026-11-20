@@ -49,6 +49,7 @@ export function createIngressServer({ keeperPort, control, ingressIP = '172.30.3
       const upstream = http.request({ hostname: '127.0.0.1', port: keeperPort, path: req.url, method: req.method, headers }, response => {
         const page = req.url.split('?')[0];
         let pageSecurity = security;
+        if (page === '/studio.html') pageSecurity = { ...security, 'Content-Security-Policy': security['Content-Security-Policy'].replace("connect-src 'self'", "connect-src 'self' https://api.exchange.coinbase.com https://api.coingecko.com") };
         if (page === '/telephone.html') pageSecurity = { ...security, 'Content-Security-Policy': security['Content-Security-Policy'].replace("connect-src 'self'", "connect-src 'self' https://api.gdeltproject.org") };
         if (page === '/jazz.html') pageSecurity = { ...security, 'Content-Security-Policy': security['Content-Security-Policy'].replace("connect-src 'self'", "connect-src 'self' wss://apibackup.vdo.ninja https://turnservers.vdo.ninja") };
         if(response.statusCode===200 && /^\/mozcorp\/frame\/[a-z][a-z0-9-]{0,49}$/.test(req.url.split('?')[0])) {

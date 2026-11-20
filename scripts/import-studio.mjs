@@ -58,7 +58,9 @@ export async function importStudio(source, { checkOnly = false } = {}) {
   const temporary = await mkdtemp(path.join(os.tmpdir(),'keeper-studio-import-'));
   try {
     execFileSync(process.execPath,[path.join(source,'build.cjs'),temporary],{stdio:'pipe'});
-    const built = await read(path.join(temporary,'Dot-Wave-Studio-'+pkg.version+'.html'));
+    const builtBytes = await readFile(path.join(temporary,'Dot-Wave-Studio-'+pkg.version+'.html'));
+    const sourceHtmlSha256 = createHash('sha256').update(builtBytes).digest('hex');
+    const built = normalize(builtBytes.toString('utf8'));
     const styles = [...built.matchAll(/<style>([\s\S]*?)<\/style>/g)];
     const scripts = [...built.matchAll(/<script>([\s\S]*?)<\/script>/g)];
     if (styles.length !== 1 || scripts.length !== 1) throw Error('Review the standalone Studio bundle boundaries.');
@@ -82,11 +84,15 @@ export async function importStudio(source, { checkOnly = false } = {}) {
     notices += '\nKeeper distribution: the upstream sample credits are reproduced below.\n';
     for(const name of ['LICENSE.md','README.txt','sample-source-info.txt','SAMPLE-PROVENANCE.json'])notices += '\nSample-credits/'+name+'\n'+await read(path.join(source,'sample-credits',name));
     const payloads = {'studio.html':html,'studio-app.js':main,'studio-worker.js':workerSource,'studio.css':styles[0][1]+'\n'+await read(path.join(integration,'telephone.css')),'studio-classic.html':await read(path.join(source,'Dot-Wave-Classic.html')),'studio-notices.txt':notices};
+    try {
+      payloads['studio-doodle-jazz-source.js']=await read(path.join(source,'dsp/doodle-jazz.js'));
+      payloads['studio-notices.txt']+='\nKeeper source location: public/studio-doodle-jazz-source.js reproduces the preferred composer module without code changes. The complete Studio module sources and build scripts are available at https://github.com/moswald14/dot-wave-studio .\n';
+    } catch(error) { if(error.code!=='ENOENT')throw error; }
     for(const [name,data] of Object.entries(payloads)){
       if(checkOnly){if(await readFile(path.join(destination,name),'utf8')!==data)throw Error('Studio import differs: '+name);}
       else await writeFile(path.join(destination,name),data);
     }
-    console.log(JSON.stringify({version:pkg.version,assets:Object.entries(payloads).map(([name,data])=>({name,bytes:Buffer.byteLength(data),sha256:createHash('sha256').update(data).digest('hex')}))},null,2));
+    console.log(JSON.stringify({version:pkg.version,sourceHtmlSha256,assets:Object.entries(payloads).map(([name,data])=>({name,bytes:Buffer.byteLength(data),sha256:createHash('sha256').update(data).digest('hex')}))},null,2));
   } finally {
     if(path.dirname(path.resolve(temporary))!==path.resolve(os.tmpdir()) || !path.basename(temporary).startsWith('keeper-studio-import-'))throw Error('Unexpected temporary Studio build path.');
     await rm(temporary,{recursive:true,force:true});

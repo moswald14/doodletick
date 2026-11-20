@@ -1,0 +1,20 @@
+{
+  "sourceRelease": "0.19.1b",
+  "sourceCommit": "0da62ba048fdb777c14c95e009fc56f27e45522d",
+  "verifiedManifestAndConfig": true,
+  "nativeSourceRelease": "0.19b",
+  "nativeSourceCommit": "24193bda8fa75aecbface80bf2a6c63ab994918e",
+  "images": {
+    "aarch64": {
+      "image": "ghcr.io/moswald14/doodletick-aarch64",
+      "digest": "sha256:03b3faa272e4dc80cf80a6b6276e76a284c46a2d4d76a1a7b1f4031f90b533a7",
+      "architecture": "arm64"
+    },
+    "amd64": {
+      "image": "ghcr.io/moswald14/doodletick-amd64",
+      "digest": "sha256:c62f703d5fb062527b9d926b7c56775a943abf957099df3a1693ab67955cf843",
+      "architecture": "amd64"
+    }
+  },
+  "verification": "Both registry manifests were hashed against Docker-Content-Digest and their config labels matched sourceCommit and sourceRelease. The full native build recipe remains in Dockerfile.native."
+}

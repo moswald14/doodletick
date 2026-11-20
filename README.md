@@ -1,4 +1,6 @@
-# Doodle Tick · 0.19.1b
+# Doodle Tick · 0.19.2b
+
+**0.19.2b adds Studio 2.9 music generators.** Turn Doodle Jazz into editable notes, randomize a beat or melody, shape a wave from a day of market prices, and use an AI sketch handoff. Existing songs and Telephone soundtracks remain editable.
 
 **0.19.1b updates the embedded Dot Wave Studio to 2.8.** Capture a hum, shape a patch, write notes and vocals, arrange, and export. Telephone soundtracks and existing Keeper data stay compatible.
 

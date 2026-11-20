@@ -130,6 +130,7 @@ public/studio-worker.js
 public/studio.css
 public/studio-classic.html
 public/studio-notices.txt
+public/studio-doodle-jazz-source.js
 private-rooms.mjs
 private-room-bundle.mjs
 public/mozcorp-ui.mjs

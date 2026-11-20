@@ -122,7 +122,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
       if (await handleDotlands(req,res,url)) return;
       if (await handleDvc(req, res, url)) return;
       if (await vpn.handleLocal(req, res, url)) return;
-      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.19.1b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt(), nativeCoin: { available: !dvcUnavailable, error: dvcUnavailable ? 'DVC_STORAGE' : null } });
+      if (req.method === 'GET' && url.pathname === '/api/status') return send(200, { version: '0.19.2b', mode: 'local-witness', publicKey: identity.publicKey, fingerprint: identity.fingerprint, receipts: count, tick: tickAt(), nativeCoin: { available: !dvcUnavailable, error: dvcUnavailable ? 'DVC_STORAGE' : null } });
       if (req.method === 'GET' && url.pathname === '/api/time') {
         const receivedAt = Date.now(), nonce = url.searchParams.get('nonce');
         if (!validTimeNonce(nonce) || url.searchParams.getAll('nonce').length !== 1) return send(400, { error: 'A fresh clock challenge is required.' });
@@ -144,6 +144,7 @@ export async function createKeeperServer({ dataDir = path.join(root, '.doodletic
         const job = queue.then(issue); queue = job.catch(() => {});
         return send(200, await job);
       }
+      if (url.pathname === '/studio.html') res.setHeader('Content-Security-Policy', res.getHeader('Content-Security-Policy').replace("connect-src 'self'", "connect-src 'self' https://api.exchange.coinbase.com https://api.coingecko.com"));
       if (url.pathname === '/telephone.html') res.setHeader('Content-Security-Policy', res.getHeader('Content-Security-Policy').replace("connect-src 'self'", "connect-src 'self' https://api.gdeltproject.org"));
       if (url.pathname === '/jazz.html') res.setHeader('Content-Security-Policy', res.getHeader('Content-Security-Policy').replace("connect-src 'self'", "connect-src 'self' wss://apibackup.vdo.ninja https://turnservers.vdo.ninja"));
       if (url.pathname === '/telephone-rhyme.html') res.setHeader('Content-Security-Policy', res.getHeader('Content-Security-Policy').replace("frame-ancestors 'none'", "frame-ancestors 'self'"));

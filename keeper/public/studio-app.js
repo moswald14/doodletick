@@ -2441,6 +2441,1116 @@ window.DotAudio = DotAudio;
   };
 })(typeof globalThis!=='undefined'?globalThis:this);
 
+// SPDX-License-Identifier: GPL-3.0-only
+// Doodle Jazz by moswald14. Adapted for Dot Wave Studio on 2026-11-20.
+// Source: https://github.com/moswald14/doodle-jazz/tree/c1238d9f010c42507ce2efb591dd6d36b725c277
+// The procedural composer and validators are retained. The live synthesizer,
+// payment flow, storage, and site UI are separate from this note generator.
+(function (root) {
+  'use strict';
+  // Original trio arrangements informed by genre features, not recorded songs.
+  // Clave: Berklee PULSE, Create Your Own Afro-Latin Groove.
+  // Cool/modal: Herbie Hancock Institute, Jazz in America lesson 6.
+  // Jazz funk: Trinity Rock & Pop, Improvising in a Fusion Style.
+  const genres = {
+    swing: { name: 'Velvet swing', label: 'Swing', description: 'Walking bass, a swinging ride and a 32-bar song form.', tempo: 112, swing: 0.64, tonic: 10, bars: 32, mode: 'major', straight: false },
+    blues: { name: 'Blue hour', label: 'Blues', description: 'A relaxed twelve-bar blues with dominant-color turnarounds.', tempo: 82, swing: 0.61, tonic: 5, bars: 12, mode: 'major', straight: false },
+    bossa: { name: 'Bossa garden', label: 'Bossa', description: 'Minor-key Brazilian-inspired two-feel and interlocking straight rhythms.', tempo: 128, swing: 0.5, tonic: 2, bars: 16, mode: 'minor', straight: true },
+    bebop: { name: 'Bebop', label: 'Bebop', description: 'Quick ii–V turns, secondary dominants and chromatic neighbors.', tempo: 168, swing: 0.58, tonic: 0, bars: 32, mode: 'major', straight: false },
+    cool: { name: 'Cool jazz', label: 'Cool', description: 'Soft brushes, spacious comping and a restrained melodic conversation.', tempo: 96, swing: 0.58, tonic: 3, bars: 16, mode: 'major', straight: false },
+    modal: { name: 'Modal jazz', label: 'Modal', description: 'Long Dorian vamps, open space and a grounded two-feel bass.', tempo: 108, swing: 0.56, tonic: 2, bars: 16, mode: 'minor', straight: false },
+    latin: { name: 'Afro-Cuban jazz', label: 'Latin', description: 'A two-bar 2–3 son clave, anticipated bass and montuno-style comping.', tempo: 144, swing: 0.5, tonic: 0, bars: 16, mode: 'minor', straight: true },
+    funk: { name: 'Jazz funk', label: 'Jazz funk', description: 'Short minor/dominant vamps, sixteenth syncopation and a firm backbeat.', tempo: 104, swing: 0.5, tonic: 4, bars: 16, mode: 'minor', straight: true }
+  };
+  const DJ_GENRES = Object.freeze(Object.fromEntries(Object.entries(genres).map(([id, genre]) => [id, Object.freeze({ ...genre })])));
+  const DJ_GENRE_IDS = Object.freeze(Object.keys(DJ_GENRES));
+
+  const one = (root, quality) => [{ root, quality, start: 0, beats: 4 }];
+  const two = (a, aq, b, bq) => [{ root: a, quality: aq, start: 0, beats: 2 }, { root: b, quality: bq, start: 2, beats: 2 }];
+
+  /** Return a fresh relative chart for one of the additional arrangements. */
+  function djGenreChart(style) {
+    if (style === 'bebop') {
+      const a = [two(0, '6/9', 9, '7'), two(2, 'm9', 7, '13'), two(4, 'm9', 9, '7♭9'), two(2, 'm9', 7, '13'),
+        two(0, 'maj9', 5, '9'), two(4, 'm9', 9, '7'), two(2, 'm9', 7, '7♭9'), one(0, '6/9')];
+      const bridge = [one(4, '7'), one(9, '13'), one(2, '7'), one(7, '13'),
+        two(4, 'm9', 9, '7'), two(2, 'm9', 7, '13'), two(0, '6/9', 9, '7'), two(2, 'm9', 7, '7♭9')];
+      return [...a, ...a, ...bridge, ...a].map(bar => bar.map(chord => ({ ...chord })));
+    }
+    if (style === 'cool') return [
+      one(0, 'maj9'), one(0, '6/9'), one(2, 'm9'), one(7, '13'), one(4, 'm9'), one(9, '7'), one(2, 'm9'), one(7, '13'),
+      one(8, 'maj9'), one(8, 'maj9'), one(5, 'm9'), one(10, '13'), one(3, 'maj9'), one(6, '13'), two(2, 'm9', 7, '13'), one(0, '6/9')
+    ];
+    if (style === 'modal') return Array.from({ length: 16 }, (_, i) => one(i >= 8 && i < 12 ? 1 : 0, 'm9'));
+    if (style === 'latin') return [
+      one(0, 'm9'), one(0, 'm6'), one(5, 'm9'), one(7, '7♭9'), one(0, 'm9'), one(10, '13'), one(3, 'maj9'), one(8, 'maj9'),
+      one(5, 'm9'), one(10, '13'), one(3, 'maj9'), one(8, '7'), one(2, 'ø7'), one(7, '7♭9'), two(0, 'm6', 7, '7♭9'), one(0, 'm9')
+    ];
+    if (style === 'funk') return [
+      ...Array.from({ length: 4 }, () => one(0, 'm9')), one(5, '13'), one(5, '13'), one(0, 'm9'), one(0, 'm9'),
+      one(10, '13'), one(10, '13'), one(5, '13'), one(5, '13'), one(0, 'm9'), one(0, 'm9'), one(7, '7♭9'), one(0, 'm9')
+    ];
+    return null;
+  }
+
+  const JAZZ_METERS = Object.freeze([2, 3, 4, 5, 6, 7]);
+  const JAZZ_PHRASE_BARS = Object.freeze(['genre', 4, 8, 16, 32]);
+  const JAZZ_BEAT_PATTERNS = Object.freeze({
+    genre: 'Follow the genre', swing: 'Swing ride', cool: 'Quiet brushes', bossa: 'Bossa', latin: 'Latin clave', funk: 'Funk backbeat'
+  });
+  const JAZZ_ARRANGEMENT_DEFAULTS = Object.freeze({
+    beatsPerBar: 4, phraseBars: 'genre', beatPattern: 'genre', beatOnly: false, keyRoot: 'auto', favorLikes: true
+  });
+  const validJazzRequestId = value => typeof value === 'string' && /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(value);
+  const invalid = message => Object.assign(new Error(message), { status: 400 });
+  function validateJazzArrangement(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw invalid('Choose valid Jazz arrangement settings.');
+    const out = { ...JAZZ_ARRANGEMENT_DEFAULTS };
+    for (const key of Object.keys(out)) if (Object.hasOwn(value, key)) out[key] = value[key];
+    if (!JAZZ_METERS.includes(out.beatsPerBar) || !JAZZ_PHRASE_BARS.includes(out.phraseBars)
+      || typeof out.beatPattern !== 'string' || !Object.hasOwn(JAZZ_BEAT_PATTERNS, out.beatPattern)
+      || typeof out.beatOnly !== 'boolean' || typeof out.favorLikes !== 'boolean'
+      || !(out.keyRoot === 'auto' || Number.isInteger(out.keyRoot) && out.keyRoot >= 0 && out.keyRoot <= 11)) throw invalid('The Jazz arrangement settings are outside their range.');
+    return out;
+  }
+
+  const JAZZ_CHORD_QUALITIES = Object.freeze(['maj9', 'm9', '13', '7', '7♭9', 'ø7', '6/9', 'm6', '9']);
+  const JAZZ_DRUMS = Object.freeze(['kick', 'hat', 'brush', 'stick', 'ride']);
+  const object = value => value && typeof value === 'object' && !Array.isArray(value);
+  function integer(value, min, max) { if (!Number.isSafeInteger(value) || value < min || value > max) throw new Error('Invalid Jazz number.'); return value; }
+  function number(value, min, max) { if (!Number.isFinite(value) || value < min || value > max) throw new Error('Invalid Jazz number.'); return value; }
+  function text(value, max) {
+    if (typeof value !== 'string' || !value.trim() || value.length > max || /[\x00-\x1f\x7f<>]/.test(value)) throw new Error('Invalid Jazz text.');
+    return value.trim();
+  }
+  function validateJazzProgression(input) {
+    if (!Array.isArray(input) || input.length < 1 || input.length > 8) throw new Error('Invalid Jazz progression.');
+    return input.map(chord => {
+      if (!object(chord) || !JAZZ_CHORD_QUALITIES.includes(chord.quality)) throw new Error('Invalid Jazz chord.');
+      return { root: integer(chord.root, 0, 11), quality: chord.quality };
+    });
+  }
+  function validateJazzResult(input) {
+    if (!object(input) || !Array.isArray(input.pattern) || input.pattern.length < 2 || input.pattern.length > 24) throw new Error('The new beat was not valid.');
+    const used = new Set();
+    const pattern = input.pattern.map(hit => {
+      if (!object(hit) || !JAZZ_DRUMS.includes(hit.instrument)) throw new Error('The new beat used an unknown instrument.');
+      const step = integer(hit.step, 0, 15), key = hit.instrument + ':' + step;
+      if (used.has(key)) throw new Error('The new beat repeated a hit.'); used.add(key);
+      return { instrument: hit.instrument, step, velocity: number(hit.velocity, 0.08, 0.65) };
+    }).sort((a, b) => a.step - b.step || a.instrument.localeCompare(b.instrument));
+    return { title: text(input.title, 80), description: text(input.description, 180), pattern };
+  }
+
+  const DJ_NOTES = ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'G♭', 'G', 'A♭', 'A', 'B♭', 'B'];
+  const DJ_CHORDS = {
+    maj9: [0, 4, 7, 11, 14], m9: [0, 3, 7, 10, 14], '13': [0, 4, 7, 10, 14, 21],
+    '7': [0, 4, 7, 10], '7♭9': [0, 4, 7, 10, 13], 'ø7': [0, 3, 6, 10],
+    '6/9': [0, 4, 7, 9, 14], m6: [0, 3, 7, 9], '9': [0, 4, 7, 10, 14]
+  };
+  const DJ_STYLES = DJ_GENRES;
+  const djClamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const DJ_MOTIFS = [[0, 2, 4, 2], [0, 3, 5, 3], [0, -2, -3, 0], [0, 2, 0, -2], [0, -1, 2, 0]];
+  const DJ_CALL_RHYTHMS = [[0, 0.5, 1.5, 2], [0, 1, 1.5, 2.5], [0.5, 1, 2, 2.5]];
+  const DJ_GENRE_RHYTHMS = {
+    bebop: [[0, 0.5, 1.5, 2.5], [0.5, 1, 1.5, 2.5], [0, 0.5, 1, 2.5]],
+    cool: [[0, 1.5, 2.5], [0.5, 1.5, 2.75], [0, 1, 2.5]],
+    modal: [[0, 1.5, 3], [0.5, 1.5, 2.75], [0, 1, 2.5]],
+    latin: [[0, 0.75, 1.5, 2.75], [0.5, 1, 2.5, 3.5], [0, 1.5, 2, 3.25]],
+    funk: [[0, 0.75, 1.75, 2.5], [0.25, 1, 2.5, 3.25], [0, 1.25, 2, 3.5]]
+  };
+
+  // Thirds and sevenths (sixths on sixth chords) carry the harmony. Enumerate
+  // nearby rootless shapes and keep common tones instead of jumping to fixed
+  // registers. One color tone leaves room for the bass and the melody.
+  function djVoiceLead(root, quality, previous = []) {
+    const intervals = DJ_CHORDS[quality];
+    if (!intervals) throw new Error('Unknown jazz chord quality.');
+    const pitchClass = n => (n % 12 + 12) % 12;
+    const candidates = interval => Array.from({ length: 25 }, (_, i) => i + 52)
+      .filter(note => pitchClass(note) === pitchClass(root + interval));
+    const colors = quality === '13' ? [14, 21] : [intervals[4] ?? intervals[2]];
+    const target = previous.length === 3 ? previous : [55, 60, 65];
+    let best = null, bestCost = Infinity;
+    for (const third of candidates(intervals[1])) for (const seventh of candidates(intervals[3])) {
+      for (const color of colors) for (const extension of candidates(color)) {
+        const notes = [third, seventh, extension].sort((a, b) => a - b);
+        if (notes[1] - notes[0] < 2 || notes[2] - notes[1] < 2 || notes[2] - notes[0] > 17) continue;
+        const motion = notes.reduce((sum, note, i) => sum + Math.abs(note - target[i]), 0);
+        const cost = motion + Math.abs(notes[1] - 61) * 0.08 + (notes[2] - notes[0]) * 0.025;
+        if (cost < bestCost) { best = notes; bestCost = cost; }
+      }
+    }
+    if (!best) throw new Error('No playable jazz voicing.');
+    return best;
+  }
+
+  class DJRandom {
+    constructor(seed) { this.state = (seed >>> 0) || 1; }
+    next() {
+      let v = this.state;
+      v ^= v << 13; v ^= v >>> 17; v ^= v << 5;
+      this.state = v >>> 0;
+      return this.state / 4294967296;
+    }
+    pick(a) { return a[Math.floor(this.next() * a.length)]; }
+  }
+
+  function djValidateFavoriteProgressions(input) {
+    if (!Array.isArray(input) || input.length > 32) throw new Error('Invalid favorite Jazz progressions.');
+    return input.map(entry => {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry) || !Object.hasOwn(DJ_STYLES, entry.style)
+        || !Number.isInteger(entry.tonic) || entry.tonic < 0 || entry.tonic > 11) throw new Error('Invalid favorite Jazz progression.');
+      const weight = Object.hasOwn(entry, 'weight') ? entry.weight : 1;
+      if (!Number.isInteger(weight) || weight < 1 || weight > 100) throw new Error('Invalid favorite Jazz weight.');
+      return { style: entry.style, tonic: entry.tonic, chords: validateJazzProgression(entry.chords), weight,
+        ...(entry.part ? { part: validateJazzResult(entry.part) } : {}),
+        ...(validJazzRequestId(entry.grooveId) ? { grooveId: entry.grooveId } : {}) };
+    });
+  }
+
+  class DJComposer {
+    constructor(config = {}) {
+      this.rng = new DJRandom(config.seed || 7);
+      this.config = { style: 'swing', tempo: 112, swing: 0.64, ...config, ...validateJazzArrangement(config),
+        favoriteProgressions: Object.hasOwn(config, 'favoriteProgressions') ? djValidateFavoriteProgressions(config.favoriteProgressions) : [] };
+      this.pending = null;
+      this.barIndex = 0; this.chordIndex = 0;
+      this.bar = 0; this.chorus = 0; this.set = 1; this.lastMelody = 72; this.lastBass = 41;
+      this.tonic = this.config.keyRoot === 'auto' ? DJ_STYLES[this.config.style].tonic : this.config.keyRoot;
+      this.motif = [...DJ_MOTIFS[0]];
+      this.phrase = null; this.lastVoicing = [];
+      this.favorite = null;
+      this.recallNext = true;
+      this.requestedProgression = null;
+    }
+    configure(change) {
+      const arrangement = validateJazzArrangement({ ...this.config, ...this.pending, ...change });
+      this.pending = { ...this.pending, ...change, ...arrangement,
+        ...(Object.hasOwn(change, 'favoriteProgressions') ? { favoriteProgressions: djValidateFavoriteProgressions(change.favoriteProgressions) } : {}) };
+    }
+    applyPending() {
+      if (!this.pending) return;
+      const change = this.pending; this.pending = null;
+      const reset = (change.style && change.style !== this.config.style) || change.newSet
+        || ['beatsPerBar', 'phraseBars', 'keyRoot'].some(key => Object.hasOwn(change, key) && change[key] !== this.config[key]);
+      if (change.seed) { this.rng = new DJRandom(change.seed); this.config.seed = change.seed; }
+      if (change.style && DJ_STYLES[change.style]) this.config.style = change.style;
+      if (Number.isFinite(change.tempo)) this.config.tempo = djClamp(change.tempo, 55, 180);
+      if (Number.isFinite(change.swing)) this.config.swing = djClamp(change.swing, 0.5, 0.72);
+      Object.assign(this.config, validateJazzArrangement({ ...this.config, ...change }));
+      if (Object.hasOwn(change, 'favoriteProgressions')) {
+        this.config.favoriteProgressions = change.favoriteProgressions;
+        this.recallNext = true;
+      }
+      if (reset) {
+        this.bar = 0; this.chorus = 0; this.set++;
+        this.recallNext = true;
+        this.tonic = (DJ_STYLES[this.config.style].tonic + this.rng.pick([0, 0, 2, 5, 7])) % 12;
+        if (this.config.keyRoot !== 'auto') this.tonic = this.config.keyRoot;
+        this.motif = [...this.rng.pick(DJ_MOTIFS)];
+        this.phrase = null; this.lastVoicing = []; this.favorite = null;
+        this.requestedProgression = change.playProgression || null;
+      }
+    }
+    genreChart() {
+      const extra = djGenreChart(this.config.style);
+      if (extra) return extra;
+      const one = (root, quality) => [{ root, quality, start: 0, beats: 4 }];
+      const two = (a, aq, b, bq) => [{ root: a, quality: aq, start: 0, beats: 2 }, { root: b, quality: bq, start: 2, beats: 2 }];
+      if (this.config.style === 'blues') return [
+        one(0, '9'), one(5, '9'), one(0, '9'), one(0, '13'), one(5, '9'), one(5, '9'),
+        one(0, '9'), one(9, '7'), one(2, 'm9'), one(7, '13'), two(0, '9', 9, '7'), two(2, 'm9', 7, '13')
+      ];
+      if (this.config.style === 'bossa') return [
+        one(0, 'm9'), one(0, 'm6'), one(2, 'ø7'), one(7, '7♭9'), one(0, 'm9'), one(0, 'm9'), one(5, 'm9'), one(10, '13'),
+        one(3, 'maj9'), one(8, 'maj9'), one(2, 'ø7'), one(7, '7♭9'), one(0, 'm9'), one(8, '7'), two(2, 'ø7', 7, '7♭9'), two(0, 'm6', 7, '7♭9')
+      ];
+      const a = [one(0, 'maj9'), one(9, '7'), one(2, 'm9'), one(7, '13'), two(4, 'm9', 9, '7'),
+        two(2, 'm9', 7, '13'), two(0, '6/9', 9, '7'), two(2, 'm9', 7, '13')];
+      const bridge = [one(4, '7'), one(4, '13'), one(9, '7'), one(9, '13'), one(2, '7'), one(2, '13'), one(7, '7'), one(7, '13')];
+      return [...a, ...a, ...bridge, ...a];
+    }
+    chooseProgression() {
+      this.favorite = null;
+      const choices = this.config.favorLikes ? this.config.favoriteProgressions.filter(entry => entry.style === this.config.style) : [];
+      const recall = this.recallNext;
+      this.recallNext = false;
+      // The legacy random stream is untouched when no matching feedback exists.
+      if (this.requestedProgression) {
+        this.favorite = this.requestedProgression;
+        this.requestedProgression = null;
+      } else if (!choices.length || (!recall && this.rng.next() >= 0.65)) return;
+      else if (recall) this.favorite = choices[0];
+      else {
+        let position = this.rng.next() * choices.reduce((sum, entry) => sum + entry.weight, 0);
+        this.favorite = choices.find(entry => (position -= entry.weight) < 0) || choices.at(-1);
+      }
+      this.tonic = this.config.keyRoot === 'auto' ? this.favorite.tonic : this.config.keyRoot;
+      this.motif = [...this.rng.pick(DJ_MOTIFS)]; this.phrase = null;
+    }
+    chart() {
+      const source = this.favorite ? this.favorite.chords.map(chord => [{ root: (chord.root - this.favorite.tonic + 12) % 12,
+        quality: chord.quality, start: 0, beats: 4 }]) : this.genreChart();
+      const length = this.config.phraseBars === 'genre' ? DJ_STYLES[this.config.style].bars : this.config.phraseBars;
+      return source.length === length ? source : Array.from({ length }, (_, index) => source[index % source.length]);
+    }
+    absoluteChord(c) { return { ...c, root: (c.root + this.tonic) % 12 }; }
+    nearestPitch(pc, previous, low, high) {
+      let best = low, distance = Infinity;
+      for (let n = low; n <= high; n++) if ((n % 12 + 12) % 12 === (pc % 12 + 12) % 12 && Math.abs(n - previous) < distance) {
+        best = n; distance = Math.abs(n - previous);
+      }
+      return best;
+    }
+    nextBar() {
+      this.applyPending();
+      if (this.bar === 0) this.chooseProgression();
+      const meter = this.config.beatsPerBar;
+      const source = this.chart(), chart = meter === 4 ? source : source.map(bar => bar.map((chord, index) => ({ ...chord,
+        start: index ? Math.ceil(meter / 2) : 0, beats: bar.length === 1 ? meter : index ? Math.floor(meter / 2) : Math.ceil(meter / 2) })));
+      const chords = chart[this.bar].map(c => this.absoluteChord(c));
+      const nextChord = this.absoluteChord(chart[(this.bar + 1) % chart.length][0]);
+      const phase = ['The melody', 'Piano wandering', 'A little breathing room', 'All together'][this.chorus % 4];
+      const style = this.config.style, genre = DJ_STYLES[style];
+      const events = [], rng = this.rng, bossa = style === 'bossa';
+      const callRhythms = DJ_GENRE_RHYTHMS[style] || DJ_CALL_RHYTHMS;
+      const seconds = 60 / this.config.tempo, swing = this.config.swing;
+      const expand = rhythm => {
+        if (meter === 4) return rhythm;
+        const out = [];
+        for (let offset = 0; offset < meter; offset += 4) for (const beat of rhythm) if (offset + beat < meter) out.push(offset + beat);
+        return out;
+      };
+      const phraseBar = this.bar % 4, phraseRole = ['call', 'repeat', 'answer', 'cadence'][phraseBar];
+      if (phraseBar === 0 || !this.phrase) {
+        const rhythm = rng.pick(callRhythms);
+        this.phrase = { rhythm: [...rhythm], callNotes: [], anchor: djClamp(this.lastMelody + rng.pick([-2, 0, 2]), 65, 75),
+          delay: Math.min(0.018, seconds * (0.018 + rng.next() * 0.012)), level: 0.92 + rng.next() * 0.08 };
+        if (style === 'cool') this.phrase.anchor = djClamp(this.phrase.anchor, 67, 72);
+      }
+      const drumStyle = this.config.beatPattern === 'genre' ? style : this.config.beatPattern;
+      const drumSwing = this.config.beatPattern === 'genre' ? swing : DJ_STYLES[drumStyle].swing;
+      const when = (beat, feel = swing) => {
+        const whole = Math.floor(beat), frac = beat - whole;
+        return (whole + (frac <= 0.5 ? frac * 2 * feel : feel + (frac - 0.5) * 2 * (1 - feel))) * seconds;
+      };
+      const add = (instrument, note, beat, beats, velocity, role = instrument, roll = 0) => {
+        // The rhythm section anchors the pulse. Swing/blues melody downbeats sit
+        // a little behind it, consistently through a phrase; offbeats line up.
+        // Bossa keeps its straight grid. These are compositional choices, not a
+        // claim that one timing offset reproduces every musician's swing.
+        for (const onset of role === 'drums' ? expand([beat]) : [beat]) {
+          if (onset >= meter) continue;
+          const delay = !genre.straight && role === 'melody' && Number.isInteger(onset) ? this.phrase.delay : 0;
+          const time = when(onset, role === 'drums' ? drumSwing : swing) + delay + roll;
+          const duration = meter === 4 ? Math.max(0.05, beats * seconds) : Math.min(Math.max(0.05, beats * seconds), meter * seconds - time);
+          if (duration > 0) events.push({ instrument, role, note, beat: onset, time, duration, velocity });
+        }
+      };
+      const at = beat => chords.findLast(c => c.start <= beat) || chords[0];
+      // Sparse accompaniment answers in the lead's rests. The bossa pattern
+      // retains its own interlocking rhythm rather than borrowing swing comping.
+      let compRhythm = bossa ? [0, 0.75, 1.5, 2.5, 3.25] : [[0.5, 3], [1, 3.5], [0, 2.75], [2, 3]][phraseBar];
+      if (style === 'bebop') compRhythm = [[0.5, 1.5, 2.5, 3.5], [0, 1.5, 3], [0.5, 2, 3.5], [1, 2.5, 3.5]][phraseBar];
+      else if (style === 'cool') compRhythm = [[0.5], [2.5], [0, 3], [2.5]][phraseBar];
+      else if (style === 'modal') compRhythm = [0, 2.5];
+      else if (style === 'latin') compRhythm = this.bar % 2 ? [0.5, 1, 1.5, 2.5, 3, 3.5] : [0, 0.5, 1.5, 2, 2.5, 3.5];
+      else if (style === 'funk') compRhythm = [0.25, 0.75, 1.75, 2.5, 3.25];
+      compRhythm = expand(compRhythm);
+      for (const c of chords) {
+        const rhythm = compRhythm.filter(b => b >= c.start && b < c.start + c.beats);
+        if (!rhythm.length) continue;
+        const voicing = djVoiceLead(c.root, c.quality, this.lastVoicing);
+        this.lastVoicing = voicing;
+        for (const beat of rhythm) {
+          let level = (beat >= 3 ? 0.21 : 0.16) * (this.chorus % 4 === 2 ? 0.8 : 1);
+          if (style === 'cool') level *= 0.7;
+          else if (style === 'modal') level *= 0.78;
+          const duration = style === 'cool' ? 1.3 : style === 'modal' ? 1.4 : style === 'funk' ? 0.28 : style === 'latin' ? 0.4 : bossa ? 0.56 : 0.72;
+          voicing.forEach((note, i) => add('piano', note, beat, duration, level * [0.88, 1, 0.8][i], 'piano', i * 0.003));
+        }
+      }
+      // A walking line approaches each following harmony; bossa uses a two-feel.
+      const bassPattern = style === 'cool' || style === 'modal' ? [0, 2] : style === 'latin' ? [0, 1.5, 2.5, 3.5] :
+        style === 'funk' ? [0, 0.75, 1.5, 2.75, 3.5] : bossa ? [0, 1.5, 2, 3.5] : [0, 1, 2, 3];
+      const bassBeats = expand(bassPattern);
+      bassBeats.forEach((beat, i) => {
+        const step = i % bassPattern.length;
+        const c = at(beat), intervals = DJ_CHORDS[c.quality];
+        let pc = c.root;
+        if (style === 'modal') pc += i ? 7 : 0;
+        else if (style === 'cool') pc += i ? intervals[2] : 0;
+        else if (style === 'latin') pc = i === 3 ? nextChord.root : c.root + (i % 2 ? intervals[2] : 0);
+        else if (style === 'funk') pc += [0, 0, intervals[2], intervals[3], 12][step];
+        else if (bossa) pc += i % 2 ? intervals[2] : 0;
+        else if (meter === 4 ? i === 3 : i === bassBeats.length - 1) pc = nextChord.root + rng.pick([-1, 1]);
+        else if (step === 1) pc += rng.pick([intervals[1], intervals[2]]);
+        else if (step === 2) pc += rng.pick([0, intervals[2], intervals[3]]);
+        let note = this.nearestPitch(pc, i === 0 ? 38 : this.lastBass, 33, 52);
+        if (i === 0 && note > 45) note -= 12;
+        this.lastBass = note;
+        const length = style === 'cool' || style === 'modal' ? 1.7 : style === 'funk' ? 0.45 : bossa ? 1.12 : 0.9;
+        add('bass', note, beat, length, [0.76, 0.58, 0.68, 0.56, 0.64][i % 5]);
+      });
+      // Four related bars: call, repeat its rhythm with a new ending, answer in
+      // another direction/register, then a guide-tone cadence and real silence.
+      // The motif remains recognizable during the solo and sparse choruses too.
+      let leadBeats = [...this.phrase.rhythm];
+      if (phraseRole === 'answer') leadBeats = [...callRhythms[(callRhythms.findIndex(r => r.every((b, i) => b === leadBeats[i])) + 1) % callRhythms.length]];
+      if (phraseRole === 'cadence') leadBeats = leadBeats.filter(b => b <= 1.5).slice(0, 2);
+      else if (this.chorus % 4 === 2) leadBeats = leadBeats.slice(0, 3);
+      if (meter !== 4) leadBeats = [...new Set(leadBeats.map(beat => Math.round(beat * meter) / 4).filter(beat => beat < meter))];
+      leadBeats.forEach((beat, i) => {
+        const c = at(beat), intervals = DJ_CHORDS[c.quality], last = i === leadBeats.length - 1;
+        const answer = phraseRole === 'answer';
+        const contour = (answer ? -1 : 1) * this.motif[i % this.motif.length];
+        const target = djClamp(this.phrase.anchor + (answer ? 3 : 0) + contour, 60, 82);
+        const tones = last && (phraseRole === 'repeat' || phraseRole === 'cadence') ? [intervals[1], intervals[3]] :
+          style === 'modal' ? [0, 2, 3, 5, 7, 9, 10] : style === 'funk' ? [0, 3, 5, 7, 10] : intervals;
+        let choices = tones.map(t => this.nearestPitch(c.root + t, target, 60, 84));
+        if (phraseRole === 'repeat' && last) {
+          const endings = choices.filter(note => note !== this.phrase.callNotes[i]);
+          if (endings.length) choices = endings;
+        }
+        let note = choices.sort((a, b) => Math.abs(a - target) - Math.abs(b - target) || a - b)[0];
+        if (style === 'bebop' && !last && i % 2 === 1) {
+          note = Math.min(84, this.nearestPitch(c.root + intervals[1], target, 60, 83) + 1);
+        }
+        if (phraseRole === 'call') this.phrase.callNotes[i] = note;
+        this.lastMelody = note;
+        let energy = [0.94, 1, 0.72, 0.9][this.chorus % 4];
+        if (style === 'cool') energy *= 0.72;
+        else if (style === 'modal') energy *= 0.85;
+        const accent = [1, 0.72, 0.9, 0.64][i];
+        const length = phraseRole === 'cadence' && last ? 0.65 : style === 'cool' ? 0.68 : style === 'modal' ? 0.95 :
+          style === 'funk' ? 0.25 : Number.isInteger(beat) ? 0.46 : 0.32;
+        add('piano', note, beat, length, 0.52 * energy * accent * this.phrase.level * (phraseRole === 'cadence' ? 0.82 : 1), 'melody');
+      });
+      if (drumStyle === 'cool') {
+        [0, 1, 2, 3].forEach((beat, i) => add('brush', 0, beat, 0.3, i % 2 ? 0.3 : 0.2, 'drums'));
+        [1, 3].forEach(beat => add('hat', 0, beat, 0.2, 0.25, 'drums'));
+        [0, 2].forEach(beat => add('ride', 0, beat, 0.6, 0.18, 'drums'));
+      } else if (drumStyle === 'modal') {
+        [0, 1, 2, 2.5, 3].forEach(beat => add('ride', 0, beat, 0.6, beat === 2.5 ? 0.2 : 0.36, 'drums'));
+        [1, 3].forEach(beat => add('hat', 0, beat, 0.2, 0.32, 'drums'));
+        add('brush', 0, 3, 0.3, 0.2, 'drums');
+      } else if (drumStyle === 'latin') {
+        // Son clave has two attacks in one bar and three in the other. Keep its
+        // direction stable while bass and comping interlock around it.
+        (this.bar % 2 ? [0, 1.5, 3] : [1, 2]).forEach(beat => add('stick', 0, beat, 0.2, 0.42, 'drums'));
+        [0, 0.5, 1.5, 2, 2.5, 3.5].forEach(beat => add('ride', 0, beat, 0.5, 0.24, 'drums'));
+        [0, 1, 2, 3].forEach(beat => add('hat', 0, beat, 0.2, 0.32, 'drums'));
+      } else if (drumStyle === 'funk') {
+        for (let step = 0; step < 16; step++) add('hat', 0, step / 4, 0.2, step % 4 === 0 ? 0.42 : step % 2 === 0 ? 0.3 : 0.18, 'drums');
+        [1, 3].forEach(beat => add('stick', 0, beat, 0.2, 0.62, 'drums'));
+        [1.75, 3.25].forEach(beat => add('brush', 0, beat, 0.3, 0.16, 'drums'));
+      } else if (drumStyle === 'bossa') {
+        [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5].forEach((beat, i) => add('hat', 0, beat, 0.2, i % 2 ? 0.34 : 0.48, 'drums'));
+        [0, 1.5, 2.5, 3].forEach(beat => add('stick', 0, beat, 0.2, 0.36, 'drums'));
+      } else {
+        [0, 1, 1.5, 2, 3, 3.5].forEach((beat, i) => add('ride', 0, beat, 0.6, [0.4, 0.65, 0.28, 0.4, 0.65, 0.28][i], 'drums'));
+        [1, 3].forEach(beat => { add('hat', 0, beat, 0.2, 0.46, 'drums'); add('brush', 0, beat, 0.3, 0.37, 'drums'); });
+        if (this.bar % 4 === 3) add('brush', 0, 3.5, 0.3, 0.42, 'drums');
+        if (drumStyle === 'bebop') add('brush', 0, 2.5, 0.3, 0.36, 'drums');
+      }
+      (drumStyle === 'funk' ? [0, 0.75, 2, 2.75] : drumStyle === 'cool' ? [0] : [0, 2])
+        .forEach(beat => add('kick', 0, beat, 0.2, drumStyle === 'cool' ? 0.18 : 0.28, 'drums'));
+      events.sort((a, b) => a.time - b.time);
+      const info = { seed: this.config.seed || 7, style: this.config.style, tempo: this.config.tempo, swing: this.config.swing,
+        beatsPerBar: meter, phraseBars: this.config.phraseBars, beatPattern: this.config.beatPattern,
+        beatOnly: this.config.beatOnly, keyRoot: this.config.keyRoot, favorLikes: this.config.favorLikes, tonic: this.tonic,
+        fromFavorite: this.favorite !== null,
+        phase: phase + ' · ' + phraseRole, phraseRole,
+        key: DJ_NOTES[this.tonic] + (style === 'modal' ? ' Dorian' : genre.mode === 'minor' ? ' minor' : ' major'), bar: this.bar + 1, bars: chart.length,
+        chorus: this.chorus + 1, set: this.set,
+        barIndex: this.barIndex++,
+        chords: chords.map(c => ({ beat: c.start, text: DJ_NOTES[c.root] + c.quality,
+          root: c.root, quality: c.quality, index: this.chordIndex++ })) };
+      this.bar++;
+      if (this.bar === chart.length) {
+        this.bar = 0; this.chorus++;
+        if (this.chorus % 4 === 0) {
+          this.tonic = (this.tonic + rng.pick([0, 5, 7])) % 12;
+          if (this.config.keyRoot !== 'auto') this.tonic = this.config.keyRoot;
+          this.set++;
+          this.motif = [...rng.pick(DJ_MOTIFS)];
+        }
+      }
+      return { events: this.config.beatOnly ? events.filter(event => event.role === 'drums') : events, info, duration: seconds * meter };
+    }
+  }
+  const api = Object.freeze({ DJComposer, DJ_STYLES, DJRandom });
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.DoodleJazzComposer = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+(function (root) {
+  'use strict';
+  const node = typeof module !== 'undefined' && module.exports;
+  const { DJComposer, DJ_STYLES, DJRandom } = node ? require('./dsp/doodle-jazz.js') : root.DoodleJazzComposer;
+  const genres = Object.freeze(Object.entries(DJ_STYLES).map(([id, genre]) =>
+    Object.freeze({ id, name: genre.name, tempo: genre.tempo, tonic: genre.tonic, mode: genre.mode })));
+  const pitchedParts = ['melody', 'chords', 'bass'];
+  const tracksByRole = { melody: 'melody', piano: 'chords', bass: 'bass', drums: 'rhythm' };
+  const jazzInstruments = { melody: 'real-piano', chords: 'real-piano', bass: 'real-bass-electric', rhythm: 'drums' };
+  const jazzLevels = { melody: .82, chords: .6, bass: .49, rhythm: .44 };
+  const drumNotes = { kick: 36, hat: 42, brush: 38, stick: 37, ride: 51 };
+  const major = [0, 2, 4, 5, 7, 9, 11];
+  const minor = [0, 2, 3, 5, 7, 8, 10];
+  const round = value => Math.round(value * 1e6) / 1e6;
+  const randomSeed = () => Math.floor(Math.random() * 0xffffffff) + 1;
+
+  function jazz({ genre = 'swing', bars = 4, root: key = 'auto', bpm, seed = randomSeed() } = {}) {
+    if (!Object.hasOwn(DJ_STYLES, genre)) throw Error('Choose a Doodle Jazz genre.');
+    const style = DJ_STYLES[genre];
+    const tempo = bpm ?? style.tempo;
+    if (![4, 8, 16].includes(bars)) throw Error('Choose 4, 8, or 16 Jazz measures.');
+    if (!Number.isFinite(tempo) || tempo < 40 || tempo > 240) throw Error('Choose 40 to 240 BPM.');
+    if (key !== 'auto' && (!Number.isInteger(key) || key < 0 || key > 11)) throw Error('Choose a Jazz key from 0 to 11, or auto.');
+    if (!Number.isInteger(seed) || seed < 1 || seed > 0xffffffff) throw Error('Choose a positive 32-bit Jazz seed.');
+    const composer = new DJComposer({ style: genre, tempo, swing: style.swing,
+      seed, beatsPerBar: 4, phraseBars: bars, keyRoot: key, favorLikes: false });
+    const notes = { melody: [], chords: [], bass: [], rhythm: [] };
+    const measures = [];
+    const secondsPerBeat = 60 / tempo;
+    for (let bar = 0; bar < bars; bar++) {
+      const { events, info } = composer.nextBar();
+      measures.push(info.chords.map(chord => chord.text));
+      for (const event of events) {
+        const start = round(bar * 4 + event.time / secondsPerBeat);
+        const duration = Math.min(round(event.duration / secondsPerBeat), (bar + 1) * 4 - start);
+        notes[tracksByRole[event.role]].push({
+          start, duration, midi: event.role === 'drums' ? drumNotes[event.instrument] : event.note,
+          velocity: round(event.velocity)
+        });
+      }
+    }
+    for (const part of Object.values(notes)) part.sort((a, b) => a.start - b.start || a.midi - b.midi);
+    return { name: style.name, genre, bars, bpm: tempo, root: composer.tonic, mode: style.mode, seed, measures, notes };
+  }
+
+  function randomMelody({ root: key, mode, grid, part = 'melody', seed = randomSeed() }) {
+    const rng = new DJRandom(seed);
+    const scale = mode === 'minor' ? minor : major;
+    const octave = part === 'bass' ? 36 : part === 'chords' ? 48 : 60;
+    const shift = rng.pick([0, 2, 4]);
+    const degrees = [shift, shift + rng.pick([1, 2]), shift + rng.pick([2, 3]), 4];
+    const rhythm = rng.pick([[0, .75, 1.5, 2.5], [0, .5, 1.5, 3], [.5, 1, 2, 3]]);
+    const notes = [];
+    for (let bar = 0; bar < 2; bar++) {
+      const starts = rhythm.map(beat => Math.round(beat / grid) * grid);
+      starts.forEach((beat, i) => {
+        if (beat >= 4 || (i && beat === starts[i - 1])) return;
+        const ending = bar === 1 && i === starts.length - 1;
+        const degree = ending ? 0 : bar === 0 ? degrees[i] : degrees[[1, 2, 0, 3][i]];
+        const next = starts.find(value => value > beat) ?? 4;
+        const duration = Math.min(next - beat, (ending ? 2 : i % 2 ? 1 : 2) * grid);
+        notes.push({ start: bar * 4 + beat, duration, midi: octave + key + scale[degree % 7] + 12 * Math.floor(degree / 7),
+          velocity: i % 2 === 0 ? .72 : .55 });
+      });
+    }
+    return { name: 'Random melody', bars: 2, notes };
+  }
+
+  function randomBeat(Drum, pattern, measure, seed = randomSeed()) {
+    const next = Drum.validatePattern(pattern);
+    if (!Number.isInteger(measure) || measure < 0 || measure >= next.bars) throw Error('Choose a beat measure.');
+    const rng = new DJRandom(seed);
+    const length = Drum.stepsPerBar(next.meter);
+    const start = measure * length;
+    const pulse = next.meter.denominator === 8 ? 2 : 4;
+    const [kick, snare, hat, perc] = next.tracks;
+    for (const track of next.tracks) {
+      track.steps.fill(0, start, start + length);
+      track.modifiers?.fill('', start, start + length);
+    }
+    kick.steps[start] = 1;
+    kick.steps[start + rng.pick([pulse, pulse * 2 - 1, pulse * 2])] = 1;
+    snare.steps[start + pulse] = 1;
+    if (pulse * 3 < length) snare.steps[start + pulse * 3] = 1;
+    for (let i = 0; i < length; i += 2) {
+      if (i === 0 || i % (pulse * 2) === 0 || rng.next() < .76) hat.steps[start + i] = i % pulse === 0 ? 1 : .5;
+    }
+    const pickup = start + length - rng.pick([1, 2, 3]);
+    (rng.next() < .5 ? kick : perc).steps[pickup] = .5;
+    if (rng.next() < .4) snare.steps[start + length - 1] = .5;
+    return next;
+  }
+
+  function addNotes(C, project, bars, parts, cursor = 0, useJazzSounds = false) {
+    C.assert(Number.isInteger(bars) && bars > 0 && bars <= C.M.MAX_BARS, 'Use up to sixteen measures.');
+    const length = bars * 4;
+    const melody = structuredClone(project.melody);
+    const tracks = melody.tracks.filter(track => Object.hasOwn(parts, track.id));
+    C.assert(tracks.length && tracks.every(track => parts[track.id]?.length), 'Choose a part with notes.');
+    const first = Math.max(0, Math.floor(cursor / 4)) * 4;
+    let start = first;
+    for (; start + length <= C.M.MAX_BARS * 4; start += 4) {
+      const end = start + length;
+      const occupied = tracks.some(track => track.notes.some(note => note.start < end && note.start + note.duration > start + 1e-9));
+      if (!occupied) break;
+    }
+    C.assert(start + length <= C.M.MAX_BARS * 4, 'There is no room from this measure. Choose an earlier empty span or a shorter idea.');
+    const defaults = C.M.defaultProject().tracks;
+    const inserted = {};
+    for (const track of tracks) {
+      const original = defaults.find(item => item.id === track.id);
+      if (useJazzSounds && !track.notes.length && track.instrument === original.instrument) {
+        track.instrument = jazzInstruments[track.id];
+        if (track.volume === original.volume) track.volume = jazzLevels[track.id];
+      }
+      const added = parts[track.id].map(note => ({ ...note, start: note.start + start }));
+      inserted[track.id] = added;
+      track.notes.push(...added);
+    }
+    melody.bars = Math.max(melody.bars, (start + length) / 4);
+    return { melody: C.M.validate(melody, C.signals(project.library, project.voiceBank)), inserted, start };
+  }
+
+  function parseAI(value) {
+    if (typeof value !== 'string' || !value.trim() || value.length > 48_000) throw Error('Paste an AI sketch of up to 48,000 characters.');
+    const text = value.trim().replace(/^```(?:json)?\s*([\s\S]*?)\s*```$/i, '$1');
+    let idea;
+    try { idea = JSON.parse(text); } catch { throw Error('Paste the JSON block from the AI reply.'); }
+    if (idea?.kind !== 'dot-studio-idea' || idea.version !== 1) throw Error('Use the Dot Wave Studio AI sketch format from the prompt.');
+    const { name, bars, notes } = idea;
+    if (typeof name !== 'string' || !name.trim() || name.trim().length > 48 || /[\x00-\x1f]/.test(name)
+      || !Number.isInteger(bars) || bars < 1 || bars > 8 || !Array.isArray(notes) || notes.length < 1 || notes.length > 128) {
+      throw Error('A sketch needs a short name, 1–8 measures, and 1–128 notes.');
+    }
+    const seen = new Set();
+    const cleaned = notes.map(note => {
+      const { start, duration, midi, velocity } = note || {};
+      if (!Number.isFinite(start) || start < 0 || !Number.isFinite(duration) || duration < 1 / 960
+        || start + duration > bars * 4 + 1e-9 || !Number.isInteger(midi) || midi < 0 || midi > 127
+        || !Number.isFinite(velocity) || velocity <= 0 || velocity > 1) throw Error('A sketch note is outside its time, MIDI pitch, or velocity range.');
+      const key = start + ':' + midi;
+      if (seen.has(key)) throw Error('Two notes have the same pitch and time.');
+      seen.add(key);
+      return { start, duration: Math.min(duration, bars * 4 - start), midi, velocity };
+    });
+    return { name: name.trim(), bars, notes: cleaned.sort((a, b) => a.start - b.start || a.midi - b.midi) };
+  }
+
+  function aiPrompt({ brief, bpm, key, part }) {
+    return [
+      'Write an original editable ' + part.toLowerCase() + ' phrase for Dot Wave Studio in 4/4.',
+      'Use ' + bpm + ' BPM and the key of ' + key + '.',
+      'My musical idea: ' + brief.trim(),
+      'Return only valid JSON with kind "dot-studio-idea", version 1, a name up to 48 characters, bars (1–8), and notes (1–128).',
+      'Each note has start (zero-based quarter-note beats), duration (positive beats), midi (integer, C4 is 60), and velocity (greater than 0 and at most 1).',
+      'Keep notes within bars × 4 beats. Never repeat a MIDI pitch at the same onset. Use phrasing, rests and dynamics.',
+      'Shape of the JSON: {"kind":"dot-studio-idea","version":1,"name":"Evening sketch","bars":2,"notes":[{"start":0,"duration":0.75,"midi":60,"velocity":0.7}]}'
+    ].join('\n');
+  }
+
+  const api = { genres, pitchedParts, jazz, randomMelody, randomBeat, addNotes, parseAI, aiPrompt };
+  if (node) module.exports = api;
+  else root.StudioIdeas = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+(function (root) {
+  'use strict';
+  const HOUR = 3_600_000;
+  const DAY = HOUR * 24;
+  const BUCKET = 900_000;
+  const MAX_POINTS = 8_000;
+  const COINBASE = 'https://api.exchange.coinbase.com';
+  const COINGECKO = 'https://api.coingecko.com/api/v3';
+
+  function coinbaseRequest(value, now = Date.now()) {
+    const text = String(value ?? '').trim().toUpperCase();
+    const pair = text.includes('-') ? text : text + '-USD';
+    if (!/^[A-Z0-9]{1,16}-[A-Z0-9]{2,16}$/.test(pair)) throw Error('Enter a market such as BTC-USD or ETH-USD.');
+    const through = Math.floor(now / BUCKET) * BUCKET;
+    const from = through - DAY;
+    const query = new URLSearchParams({
+      granularity: '900', start: new Date(from).toISOString(), end: new Date(through).toISOString()
+    });
+    return { pair, from, through, url: COINBASE + '/products/' + pair + '/candles?' + query };
+  }
+
+  function coinbaseSeries(rows, { from, through, pair }) {
+    if (!Array.isArray(rows) || rows.length > 300) throw Error('Coinbase did not return a usable chart.');
+    const points = [];
+    for (const row of rows) {
+      if (!Array.isArray(row) || !Number.isFinite(row[0])) continue;
+      const time = row[0] * 1000;
+      if (time < from || time >= through || time % BUCKET !== 0) continue;
+      if (time === from) points.push([time, row[3]]);
+      points.push([time + BUCKET, row[4]]);
+    }
+    if (points.length < 2 || !points.some(row => row[0] === through)) throw Error('This market has no complete recent chart. Try CoinGecko or a price CSV.');
+    return series(points, pair, 'Coinbase Exchange', HOUR);
+  }
+
+  function coinGeckoSearch(query) {
+    const term = String(query ?? '').trim();
+    if (!term || term.length > 60) throw Error('Enter a coin name or symbol.');
+    return COINGECKO + '/search?' + new URLSearchParams({ query: term });
+  }
+
+  function coinGeckoMatches(payload) {
+    if (!Array.isArray(payload?.coins)) throw Error('CoinGecko did not return search results.');
+    return payload.coins.filter(coin => typeof coin?.id === 'string' && /^[a-z0-9-]{1,125}$/.test(coin.id)
+      && typeof coin.name === 'string' && typeof coin.symbol === 'string')
+      .slice(0, 12).map(coin => ({ id: coin.id, name: coin.name.slice(0, 64), symbol: coin.symbol.slice(0, 16).toUpperCase() }));
+  }
+
+  function coinGeckoChart(id) {
+    if (typeof id !== 'string' || !/^[a-z0-9-]{1,125}$/.test(id)) throw Error('Choose a coin from the search results.');
+    return COINGECKO + '/coins/' + id + '/market_chart?vs_currency=usd&days=1';
+  }
+
+  function timestamp(value) {
+    if (/^\d{10}(\.\d+)?$/.test(value)) return Number(value) * 1000;
+    if (/^\d{13}$/.test(value)) return Number(value);
+    if (/^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:\d{2})$/i.test(value)) return Date.parse(value);
+    return NaN;
+  }
+
+  function csv(value, label = 'Price CSV') {
+    if (typeof value !== 'string' || value.length > 1_000_000) throw Error('Choose a price CSV under 1 MB.');
+    const rows = value.trim().split(/\r?\n/);
+    if (rows.length > MAX_POINTS + 1) throw Error('Use up to 8,000 price rows.');
+    const fields = row => row.split(',').map(field => field.trim().replace(/^"([^"]*)"$/, '$1'));
+    const headings = fields(rows[0]).map(field => field.toLowerCase());
+    const timeIndex = headings.findIndex(field => ['time', 'timestamp', 'date', 'datetime'].includes(field));
+    const priceIndex = headings.findIndex(field => ['price', 'close'].includes(field));
+    if (timeIndex < 0 || priceIndex < 0) throw Error('Use a CSV with time and price columns. Timestamps must include a timezone or use Unix time.');
+    const points = rows.slice(1).filter(row => row.trim()).map(row => {
+      const columns = fields(row);
+      return [timestamp(columns[timeIndex] ?? ''), columns[priceIndex] ? Number(columns[priceIndex]) : NaN];
+    });
+    return series(points, label || 'Price CSV', 'Price CSV', 3 * HOUR);
+  }
+
+  function series(input, label, source, maxGap = 3 * HOUR) {
+    if (!Array.isArray(input) || input.length < 8 || input.length > MAX_POINTS) throw Error('The chart needs at least eight price points over a day.');
+    const byTime = new Map();
+    for (const point of input) {
+      const [time, price] = Array.isArray(point) ? point : [];
+      if (!Number.isFinite(time) || time <= 0 || time > 253402300799999 || !Number.isFinite(price) || price <= 0 || price > 1e24) {
+        throw Error('The chart contains an invalid timestamp or price.');
+      }
+      if (byTime.has(time) && byTime.get(time) !== price) throw Error('Two prices use the same timestamp.');
+      byTime.set(time, price);
+    }
+    const sorted = [...byTime].sort((a, b) => a[0] - b[0]);
+    const through = sorted.at(-1)[0];
+    const points = sorted.filter(point => point[0] >= through - DAY);
+    const from = points[0][0];
+    if (points.length < 8 || through - from < 23 * HOUR) throw Error('This chart covers less than a day. Use a full 24-hour series.');
+    if (points.some((point, i) => i && point[0] - points[i - 1][0] > maxGap)) {
+      throw Error('The chart has a long gap. Try another market or a more complete CSV.');
+    }
+    const prices = points.map(point => point[1]);
+    const low = Math.min(...prices);
+    const high = Math.max(...prices);
+    if (low === high) throw Error('The price is flat across this window. Try another chart with some movement.');
+    const height = price => .92 * (2 * (price - low) / (high - low) - 1);
+    const trace = points.map(([time, price]) => [(time - from) / (through - from), height(price)]);
+    const wave = [];
+    let right = 1;
+    // Leave four dots for a rounded return from the latest price to the oldest.
+    // The editor draws point zero again at the end of the repeating cycle.
+    for (let i = 0; i < 28; i++) {
+      const phase = i / 27;
+      while (trace[right][0] < phase) right++;
+      const [leftPhase, leftHeight] = trace[right - 1];
+      const [rightPhase, rightHeight] = trace[right];
+      const mix = (phase - leftPhase) / (rightPhase - leftPhase);
+      wave.push(leftHeight + (rightHeight - leftHeight) * mix);
+    }
+    for (let i = 1; i <= 4; i++) {
+      const mix = .5 - .5 * Math.cos(Math.PI * i / 5);
+      wave.push(wave[27] + (wave[0] - wave[27]) * mix);
+    }
+    return { label: String(label).slice(0, 48), source, from, through, pointCount: points.length, trace, wave };
+  }
+
+  function patch(C, original, chart, side) {
+    C.assert(side === 'a' || side === 'b', 'Choose wave A or B.');
+    C.assert(chart?.wave?.length === C.S.STEPS, 'Load a price chart first.');
+    const next = structuredClone(original);
+    const voice = next.project[side];
+    voice.points = [...chart.wave];
+    voice.shape = 'custom';
+    voice.pins = [];
+    return C.S.validatePatch(next);
+  }
+
+  const api = { coinbaseRequest, coinbaseSeries, coinGeckoSearch, coinGeckoMatches, coinGeckoChart, csv, series, patch };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.MarketWave = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+(function (root) {
+  'use strict';
+  root.IdeasPanel = function ({ C, ui, getProject, replaceMelody, commit, showModal, notify, esc }) {
+    const Ideas = root.StudioIdeas;
+    const $ = id => document.getElementById(id);
+    let jazzIdea = null;
+    let reviewedAI = null;
+    let jazzGenre = 'swing';
+    let jazzBars = 4;
+    const partId = () => Ideas.pitchedParts.includes(ui.part) ? ui.part : 'melody';
+    const partName = () => getProject().melody.tracks.find(track => track.id === partId()).name;
+    const sessionKey = () => C.Song.noteName(60 + getProject().melody.root).replace(/\d+$/, '');
+
+    function add(idea, parts, focusPart, jazzSounds = false) {
+      const result = Ideas.addNotes(C, getProject(), idea.bars, parts, ui.noteCursor, jazzSounds);
+      const selected = result.inserted[focusPart];
+      const count = Object.values(result.inserted).reduce((sum, notes) => sum + notes.length, 0);
+      const message = idea.name + ' added at measure ' + (1 + result.start / 4) + ' · ' + count + ' editable notes.';
+      if (!commit(() => {
+        replaceMelody(result.melody);
+        ui.part = focusPart;
+        ui.selected = selected.map(C.noteKey);
+        ui.noteCursor = result.start;
+        ui.noteBase = C.clamp(Math.floor(Math.min(...selected.map(note => note.midi)) / 12) * 12, 12, 96);
+        ui.patternNames[focusPart] = idea.name;
+      }, message)) return;
+      if ($('modal').open) $('modal').close();
+      document.querySelector('.note.selected')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+
+    function randomMelody() {
+      const { root, mode } = getProject().melody;
+      const target = partId();
+      const idea = Ideas.randomMelody({ root, mode, grid: ui.grid, part: target });
+      add(idea, { [target]: idea.notes }, target);
+    }
+
+    function randomBeat() {
+      const project = getProject();
+      const pattern = Ideas.randomBeat(C.D, project.beat.pattern, ui.beatBar);
+      commit(() => { project.beat.pattern = pattern; }, 'Random beat in measure ' + (ui.beatBar + 1) + '. Undo brings back the previous groove.');
+    }
+
+    function rollJazz() {
+      const { root, bpm } = getProject().melody;
+      jazzGenre = $('jazz-idea-genre').value;
+      jazzBars = +$('jazz-idea-length').value;
+      jazzIdea = Ideas.jazz({ genre: jazzGenre, bars: jazzBars, root, bpm });
+      const chordLine = jazzIdea.measures.map(bar => bar.join(' / ')).join(' | ');
+      $('jazz-idea-chords').textContent = chordLine;
+      $('jazz-idea-status').textContent = jazzIdea.name + ' · ' + sessionKey() + ' · ' + bpm + ' BPM · ' + jazzBars + ' measures';
+    }
+
+    function jazzDialog() {
+      showModal('Doodle Jazz', `
+        <p>Generate a phrase with the Doodle Jazz band, then edit its notes in Melody. It uses this session’s starting note and tempo.</p>
+        <div class="idea-fields">
+          <label class="field">Jazz style<select id="jazz-idea-genre">${Ideas.genres.map(genre =>
+            `<option value="${genre.id}" ${genre.id === jazzGenre ? 'selected' : ''}>${esc(genre.name)}</option>`).join('')}</select></label>
+          <label class="field">Phrase length<select id="jazz-idea-length">${[4, 8, 16].map(bars =>
+            `<option value="${bars}" ${bars === jazzBars ? 'selected' : ''}>${bars} measures</option>`).join('')}</select></label>
+        </div>
+        <p id="jazz-idea-status" role="status"></p>
+        <p id="jazz-idea-chords" class="jazz-chord-line" aria-label="Chord progression"></p>
+        <p class="subtle">Add the lead to ${esc(partName())}, or add all four parts. Both start at the next open span from the melody cursor.</p>`,
+        `<button data-idea-action="jazz-reroll">New phrase</button>
+        <button data-idea-action="jazz-lead">Add lead</button>
+        <button class="primary" data-idea-action="jazz-band" ${ui.editTarget?.type === 'phrase' || ui.editTarget?.type === 'notes' ? 'disabled' : ''}>Add band</button>`);
+      rollJazz();
+    }
+
+    function aiDialog() {
+      reviewedAI = null;
+      showModal('AI sketch', `
+        <p>Describe a phrase. Copy the prompt into ChatGPT or another AI, then paste its JSON reply. The prompt includes these words, your key and tempo.</p>
+        <label class="field">Musical idea<textarea id="ai-idea-brief" rows="2" maxlength="400"
+          placeholder="A soft phrase that feels like rain against glass"></textarea></label>
+        <div class="control-row idea-chat-actions"><button data-idea-action="ai-copy">Copy AI prompt</button>
+          <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Open ChatGPT ↗</a></div>
+        <label class="field" id="ai-prompt-field" hidden>Prompt<textarea id="ai-idea-prompt" rows="5" readonly></textarea></label>
+        <label class="field">AI reply (JSON)<textarea id="ai-idea-reply" rows="5" maxlength="48000"
+          placeholder="Paste the JSON reply here"></textarea></label>
+        <p id="ai-idea-status" role="status">Review the reply before adding notes to ${esc(partName())}.</p>`,
+        '<button data-idea-action="ai-review">Review notes</button><button class="primary" id="ai-add" data-idea-action="ai-add" disabled>Add notes</button>');
+    }
+
+    async function copyPrompt() {
+      const brief = $('ai-idea-brief').value.trim();
+      C.assert(brief, 'Describe the phrase you want first.');
+      const { bpm, mode } = getProject().melody;
+      const field = $('ai-idea-prompt');
+      const status = $('ai-idea-status');
+      $('ai-prompt-field').hidden = false;
+      field.value = Ideas.aiPrompt({ brief, bpm, key: sessionKey() + ' ' + mode, part: partName() });
+      try {
+        await navigator.clipboard.writeText(field.value);
+        status.textContent = 'Prompt copied. Paste it into the AI chat.';
+      } catch {
+        field.focus();
+        field.select();
+        status.textContent = 'Press Ctrl+C or use Copy, then paste the prompt into the AI chat.';
+      }
+    }
+
+    function reviewAI() {
+      const reply = $('ai-idea-reply').value;
+      const idea = Ideas.parseAI(reply);
+      reviewedAI = { reply, idea };
+      $('ai-add').disabled = false;
+      $('ai-idea-status').textContent = idea.name + ' · ' + idea.bars + ' measures · ' + idea.notes.length +
+        ' notes ready for ' + partName() + '.';
+    }
+
+    document.addEventListener('change', event => {
+      if (['jazz-idea-genre', 'jazz-idea-length'].includes(event.target.id)) rollJazz();
+    });
+    document.addEventListener('input', event => {
+      if (event.target.id === 'ai-idea-reply') {
+        reviewedAI = null;
+        $('ai-add').disabled = true;
+        $('ai-idea-status').textContent = 'Review the updated reply.';
+      }
+    });
+    document.addEventListener('click', async event => {
+      const button = event.target.closest('[data-idea-action]');
+      if (!button || button.disabled) return;
+      try {
+        switch (button.dataset.ideaAction) {
+          case 'jazz-reroll': rollJazz(); break;
+          case 'jazz-lead': add(jazzIdea, { [partId()]: jazzIdea.notes.melody }, partId()); break;
+          case 'jazz-band': add(jazzIdea, jazzIdea.notes, 'melody', true); break;
+          case 'ai-copy': await copyPrompt(); break;
+          case 'ai-review': reviewAI(); break;
+          case 'ai-add': {
+            C.assert(reviewedAI?.reply === $('ai-idea-reply').value, 'Review the sketch first.');
+            add(reviewedAI.idea, { [partId()]: reviewedAI.idea.notes }, partId());
+            break;
+          }
+        }
+      } catch (error) {
+        const status = $('ai-idea-status') || $('jazz-idea-status');
+        if (status) status.textContent = error.message;
+        notify(error.message, true);
+      }
+    });
+    return { randomMelody, randomBeat, jazzDialog, aiDialog };
+  };
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+(function (root) {
+  'use strict';
+  root.MarketPanel = function ({ C, audio, ui, getProject, commit, render, chooseFile, esc }) {
+    const Market = root.MarketWave;
+    const $ = id => document.getElementById(id);
+    const state = { source: 'exchange', pair: 'BTC-USD', search: 'bitcoin', results: [], chart: null, status: '' };
+    let active = null;
+    const dates = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    const formatDate = value => dates.format(value);
+
+    function cancel() {
+      if (!active) return;
+      active.abort();
+      active = null;
+      state.status = 'Price request cancelled.';
+    }
+
+    async function json(url, signal) {
+      const response = await fetch(url, { signal, credentials: 'omit', referrerPolicy: 'no-referrer', redirect: 'error' });
+      if (response.status === 429) throw Error('The price feed is busy. Try again in a minute or open a price CSV.');
+      if (response.status === 404 || response.status === 400) throw Error('This market is unavailable. Try CoinGecko search or a price CSV.');
+      if (!response.ok) throw Error('The price feed could not load. Try another source or a price CSV.');
+      if (Number(response.headers.get('Content-Length')) > 2_000_000) throw Error('That price response is too large.');
+      return response.json();
+    }
+
+    async function request(message, load, save) {
+      cancel();
+      const controller = new AbortController();
+      active = controller;
+      state.status = message;
+      render();
+      const timeout = setTimeout(() => controller.abort(), 12_000);
+      try {
+        const result = await load(controller.signal);
+        if (active !== controller) return;
+        save(result);
+      } catch (error) {
+        if (active !== controller) return;
+        state.status = error.name === 'AbortError'
+          ? 'The price feed timed out. Try another source or a price CSV.'
+          : error instanceof TypeError
+            ? 'The price feed is unreachable here. Try another source or open a price CSV.'
+            : error.message;
+      } finally {
+        clearTimeout(timeout);
+        if (active === controller) {
+          active = null;
+          render();
+        }
+      }
+    }
+
+    function keepChart(chart) {
+      state.chart = chart;
+      state.status = '';
+      if (audio.mini?.id === 'coin-wave' || audio.miniPending === 'coin-wave') audio.stopMiniPreview();
+    }
+
+    function loadExchange() {
+      const query = Market.coinbaseRequest(state.pair);
+      return request('Loading ' + query.pair + '…',
+        async signal => Market.coinbaseSeries(await json(query.url, signal), query), keepChart);
+    }
+
+    function findCoins() {
+      const url = Market.coinGeckoSearch(state.search);
+      state.results = [];
+      return request('Searching CoinGecko…', async signal => Market.coinGeckoMatches(await json(url, signal)), matches => {
+        state.results = matches;
+        state.status = matches.length ? 'Choose a coin to load its chart.' : 'No coins found. Try a different name.';
+      });
+    }
+
+    function loadCoin(id) {
+      const coin = state.results.find(item => item.id === id);
+      C.assert(coin, 'Choose a coin from the results.');
+      return request('Loading ' + coin.name + '…', async signal => {
+        const data = await json(Market.coinGeckoChart(id), signal);
+        return Market.series(data.prices, coin.name + ' / USD', 'CoinGecko');
+      }, keepChart);
+    }
+
+    function readCSV(text, filename) {
+      const name = filename.replace(/\.csv$/i, '').trim() || 'Price CSV';
+      keepChart(Market.csv(text, name));
+      render();
+    }
+
+    function moveToWave(side) {
+      const project = getProject();
+      const patch = Market.patch(C, project.patch, state.chart, side);
+      const label = state.chart.label.replace(/[\x00-\x1f]/g, '').slice(0, 25);
+      const day = new Date(state.chart.through).toISOString().slice(0, 10);
+      commit(() => {
+        project.patch = patch;
+        ui.soundName = label + ' 24h ' + day;
+        ui.soundMode = 'wave';
+        ui.shaper.side = side;
+      }, 'Price outline added to wave ' + side.toUpperCase() + '. Shape it or keep the patch tone.');
+    }
+
+    function view() {
+      const disabled = active ? 'disabled' : '';
+      const inputs = {
+        exchange: `<label class="field">Market<input id="market-pair" data-market-field="pair" value="${esc(state.pair)}" maxlength="34"
+          placeholder="BTC-USD" autocomplete="off" ${disabled}></label>
+          <button class="primary" data-market-action="exchange" ${disabled}>Load 24h chart</button>`,
+        gecko: `<label class="field">Coin name or symbol<input id="market-search" data-market-field="search" value="${esc(state.search)}" maxlength="60"
+          placeholder="Bitcoin" autocomplete="off" ${disabled}></label>
+          <button class="primary" data-market-action="search" ${disabled}>Search coins</button>`,
+        csv: '<button class="primary" data-market-action="csv">Open price CSV</button>'
+      };
+      const chart = state.chart;
+      const mode = [['exchange', 'Coinbase Exchange'], ['gecko', 'CoinGecko search'], ['csv', 'Price CSV']];
+      return `<section class="panel market-room">
+        <div class="panel-head"><h2>Coin wave</h2></div>
+        <div class="panel-body">
+          <div class="market-inputs"><label class="field">Price source<select id="market-source">${mode.map(([id, label]) =>
+            `<option value="${id}" ${id === state.source ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
+            ${inputs[state.source]}${active ? '<button data-market-action="cancel">Cancel</button>' : ''}</div>
+          ${state.source === 'csv' ? '<p class="subtle">Use time and price columns spanning a full day. Use ISO timestamps with a timezone or Unix time in seconds or milliseconds.</p>' : ''}
+          <p id="market-status" role="status">${esc(state.status)}</p>
+          ${state.source === 'gecko' && state.results.length ? `<div class="market-coins">${state.results.map(coin =>
+            `<button data-market-action="coin" data-id="${esc(coin.id)}" ${disabled}>${esc(coin.symbol)} · ${esc(coin.name)}</button>`).join('')}</div>` : ''}
+          ${chart ? `<div class="market-result"><div class="market-summary"><strong>${esc(chart.label)}</strong>
+            <span>${esc(chart.source)} · ${chart.pointCount} prices · ${esc(formatDate(chart.from))} → ${esc(formatDate(chart.through))}</span></div>
+            <div class="market-charts"><div><span>Price · oldest to newest</span><canvas id="market-price" aria-label="Coin price trace"></canvas></div>
+              <div><span>32-dot loop · rounded return</span><canvas id="market-wave" aria-label="Repeating waveform from the price chart"></canvas></div></div>
+            <div class="control-row market-actions">
+              <button class="mini-play" data-market-action="preview" data-id="coin-wave" data-name="Coin wave"
+                aria-label="Play Coin wave for 3 seconds" aria-pressed="false"><span class="mini-icon">▶</span><span class="mini-time">3s</span><span class="mini-pitch">Coin wave</span></button>
+              <button class="secondary" data-market-action="wave" data-side="a">Use as wave A</button>
+              <button class="secondary" data-market-action="wave" data-side="b">Use as wave B</button>
+            </div></div>` : '<p class="subtle">Turn a day of price movement into a repeating outline you can play and shape.</p>'}
+        </div></section>`;
+    }
+
+    function trace(canvas, points, color, returnStart) {
+      if (!canvas) return;
+      const ratio = Math.min(root.devicePixelRatio || 1, 2);
+      const width = Math.max(1, canvas.clientWidth);
+      const height = Math.max(1, canvas.clientHeight);
+      canvas.width = width * ratio;
+      canvas.height = height * ratio;
+      const context = canvas.getContext('2d');
+      const x = phase => 6 + phase * (width - 12);
+      const y = value => height * (.5 - value * .42);
+      context.scale(ratio, ratio);
+      context.strokeStyle = '#415452';
+      context.beginPath();
+      context.moveTo(x(0), y(0));
+      context.lineTo(x(1), y(0));
+      context.stroke();
+      if (returnStart !== undefined) {
+        context.fillStyle = '#29433a';
+        context.fillRect(x(returnStart), 0, x(1) - x(returnStart), height);
+      }
+      context.strokeStyle = color;
+      context.lineWidth = 2;
+      context.beginPath();
+      points.forEach(([phase, value], i) => i ? context.lineTo(x(phase), y(value)) : context.moveTo(x(phase), y(value)));
+      context.stroke();
+    }
+
+    function paint() {
+      if (!state.chart) return;
+      trace($('market-price'), state.chart.trace, '#9ad9f6');
+      const points = [...state.chart.wave, state.chart.wave[0]].map((height, i) => [i / 32, height]);
+      trace($('market-wave'), points, '#b8f58b', 27 / 32);
+    }
+
+    function setField(event) {
+      const key = event.target.dataset.marketField;
+      if (key) state[key] = event.target.value;
+    }
+    document.addEventListener('input', setField);
+    document.addEventListener('change', event => {
+      if (event.target.id !== 'market-source') return;
+      cancel();
+      state.source = event.target.value;
+      state.status = '';
+      render();
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' || active) return;
+      if (event.target.id === 'market-pair') document.querySelector('[data-market-action=exchange]')?.click();
+      if (event.target.id === 'market-search') document.querySelector('[data-market-action=search]')?.click();
+    });
+    document.addEventListener('click', async event => {
+      const button = event.target.closest('[data-market-action]');
+      if (!button || button.disabled) return;
+      try {
+        switch (button.dataset.marketAction) {
+          case 'exchange': await loadExchange(); break;
+          case 'search': await findCoins(); break;
+          case 'coin': await loadCoin(button.dataset.id); break;
+          case 'csv': chooseFile('market-csv'); break;
+          case 'cancel': cancel(); render(); break;
+          case 'wave': moveToWave(button.dataset.side); break;
+          case 'preview': {
+            const side = ui.shaper.side;
+            const patch = Market.patch(C, getProject().patch, state.chart, side);
+            await audio.previewSound({ id: 'coin-wave' }, { patch, target: side }); break;
+          }
+        }
+      } catch (error) {
+        state.status = error.message;
+        if ($('market-status')) $('market-status').textContent = state.status;
+      }
+    });
+    root.addEventListener('pagehide', cancel);
+    return { view, paint, readCSV, cancel };
+  };
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
 (function () {
   'use strict';
   const C = DotWave, $ = id => document.getElementById(id);
@@ -2467,6 +3577,8 @@ window.DotAudio = DotAudio;
   woof=WoofPanel({C,audio,ui,getProject:()=>p,commit,changed,render,setStep,chooseFile,download,notify,announce,keep:keepPatchTone});
   vocals=VocalsPanel({C,audio,ui,getProject:()=>p,commit,render,setStep,notify,announce});
   capture=CapturePanel({C,audio,ui,getProject:()=>p,replaceProject:value=>{p=value;},commit,render,setStep,chooseFile,download,notify,addAudio,prepare:()=>{woof.stop();cancelVoiceCapture();audio.stop();}});
+  const ideas=IdeasPanel({C,ui,getProject:()=>p,replaceMelody:melody=>{p.melody=melody;},commit,showModal,notify,esc});
+  const market=MarketPanel({C,audio,ui,getProject:()=>p,commit,render,chooseFile,esc});
   function keepPatchTone(go=false){const title=$('sound-name')?.value||ui.soundName;let kept;commit(()=>{kept=C.savePatchTone(p,title,woof.state.rootMode);ui.sound=kept.id;p.melody.tracks.find(t=>t.id===ui.part).instrument=kept.id;},'Patch tone kept with its two editable voices. Ready for your melody.');if(go&&kept)setStep('melody');}
   function notify(text, error = false) {
     $('status').textContent = text; $('status').classList.toggle('busy', error);
@@ -2515,7 +3627,7 @@ window.DotAudio = DotAudio;
     return project;
   }
   function setStep(step) {
-    if (!steps.includes(step)) return;if(step!=='sound'){capture?.cancel();cancelVoiceCapture();woof?.stop();} ui.step = step; ui.selected = [];
+    if (!steps.includes(step)) return;if(step!=='sound'){market.cancel();capture?.cancel();cancelVoiceCapture();woof?.stop();} ui.step = step; ui.selected = [];
     document.documentElement.style.setProperty('--accent', colors[step]);
     if (location.hash !== '#' + step) window.history.replaceState(null, '', '#' + step);
     render();
@@ -2577,7 +3689,7 @@ window.DotAudio = DotAudio;
   function patternShelf() {
     return `<section class="panel shelf"><div class="shelf-head"><h2>YOUR PATTERN BOX <span class="mini-badge">${p.patterns.length+p.beatShelf.length}</span></h2><div><button class="quiet" data-action="import-pattern">Import</button><button class="quiet" data-action="export-pattern">Export selected</button><button class="quiet danger" data-action="remove-pattern">Remove</button></div></div><div class="shelf-tiles">${p.patterns.map(item => `<button draggable="true" class="pattern-tile ${ui.pattern===item.id?'selected':''}" data-action="pick-pattern" data-id="${esc(item.id)}" data-kind="pattern"><span class="pattern-icon">▂ ▆ ▃ ▅</span><strong>${esc(item.name)}</strong><small>${item.duration/4} measures · ${item.notes.length} notes</small></button>`).join('')}${p.beatShelf.map(item => `<button draggable="true" class="pattern-tile beat" data-action="pick-pattern" data-id="${esc(item.id)}" data-kind="beat"><span class="pattern-icon">▪ · ▪ · ▪ ▪ · ▪</span><strong>${esc(item.name)}</strong><small>${item.pattern.bars} measures · BEAT</small></button>`).join('')}${!p.patterns.length&&!p.beatShelf.length?'<p class="empty-shelf">Keep a beat or melody, then drag it into your song.</p>':''}</div></section>`;
   }
-  function soundModeTabs(){return `<div class="sound-mode-tabs" aria-label="Choose a sound source">${[['capture','Capture / hum'],['wave','Patch tones'],['woof','🐾 WOOFpad'],['vocals','Vocals'],['real','Recorded instruments'],['voice','Capture your voice']].map(([mode,label])=>`<button data-action="sound-mode" data-mode="${mode}" aria-pressed="${ui.soundMode===mode}" class="${ui.soundMode===mode?'active':''}">${label}</button>`).join('')}</div>`;}
+  function soundModeTabs(){return `<div class="sound-mode-tabs" aria-label="Choose a sound source">${[['capture','Capture / hum'],['wave','Patch tones'],['market','Coin wave'],['woof','🐾 WOOFpad'],['vocals','Vocals'],['real','Recorded instruments'],['voice','Capture your voice']].map(([mode,label])=>`<button data-action="sound-mode" data-mode="${mode}" aria-pressed="${ui.soundMode===mode}" class="${ui.soundMode===mode?'active':''}">${label}</button>`).join('')}</div>`;}
   function instrumentPreviewButton(id,name){return `<button class="mini-play" data-action="preview-instrument" data-id="instrument-${esc(id)}" data-instrument="${esc(id)}" data-name="${esc(name)}" aria-label="Play ${esc(name)} for 3 seconds" aria-pressed="false"><span class="mini-icon">▶</span><span class="mini-time">3s</span><span class="mini-pitch">Recorded</span></button>`;}
   function recordedInstrumentsView(){return heading(1,'Play something real.','Recorded attacks, resonances, and decays. Ready offline, ready for your notes.')+soundModeTabs()+`<section class="panel"><div class="panel-head"><h2>THE INSTRUMENT ROOM</h2><span class="chip">10 instruments · 39 recordings</span></div><div class="instrument-room">${C.Sample.catalog().map(item=>`<article class="instrument-card"><div class="instrument-glyph" aria-hidden="true">${({0:'♬',24:'♯',33:'♭',40:'∿',42:'∿',73:'♩',56:'♪',66:'♫',46:'♮',13:'▥'})[item.program]||'♬'}</div><h3>${esc(item.name)}</h3><p>${item.sampleCount} recorded pitches · ${item.sustain?'held notes':'natural decay'}</p>${instrumentPreviewButton(item.id,item.name)}<button class="secondary" data-action="use-instrument" data-instrument="${item.id}">Use in melody →</button></article>`).join('')}</div><div class="sample-credit">Recordings from <a href="https://github.com/nbrosowsky/tonejs-instruments" target="_blank" rel="noopener">tonejs-instruments</a> · CC BY 3.0. Credits and source details are included in the download.</div></section>`+next('melody','Paint a melody','Pick a recorded instrument, then play or draw your notes.');}
   function voiceCaptureView(){
@@ -2631,6 +3743,7 @@ window.DotAudio = DotAudio;
     return `<aside class="precision-inspector">${tabs}<div class="precision-inspector-body">${body}</div></aside>`;
   }
   function soundView() {
+    if(ui.soundMode==='market')return heading(1,'Play a price chart.','Turn the last day of a coin’s chart into an editable wave.')+soundModeTabs()+market.view();
     if(ui.soundMode==='capture')return heading(1,'A little sound can go anywhere.','Capture → shape a patch → beat → melody & vocals → arrange → export.')+soundModeTabs()+capture.view();
     if(ui.soundMode==='vocals')return heading(1,'Give the song a voice.','Words, held vowels, and little harmonies. Your notes can sing.')+soundModeTabs()+vocals.view();
     if(ui.soundMode==='real')return recordedInstrumentsView();if(ui.soundMode==='voice')return voiceCaptureView();if(ui.soundMode==='woof')return heading(1,'Wander into a good tone.','Two waves, a little mischief, and a patch worth keeping.')+soundModeTabs()+woof.view()+soundShelf();
@@ -2650,7 +3763,7 @@ window.DotAudio = DotAudio;
     const pattern = p.beat.pattern, count=C.D.stepsPerBar(pattern.meter), selected=pattern.tracks[ui.drum];
     const ruler = `<div class="beat-ruler" style="--steps:${count}"><span></span>${Array.from({length:count},(_,i)=>`<span>${i%4===0?i/4+1:'·'}</span>`).join('')}</div>`;
     const rows = pattern.tracks.map((track,row)=>`<div class="beat-row ${track.mute?'visually-muted':''}" style="--steps:${count}"><div class="drum-name ${row===ui.drum?'selected':''}"><button data-action="drum-select" data-row="${row}">${esc(track.name)}</button><button class="mute" data-action="drum-mute" data-row="${row}" aria-label="${track.mute?'Unmute':'Mute'} ${esc(track.name)}">${track.mute?'M':'·'}</button></div>${track.steps.slice(ui.beatBar*count,(ui.beatBar+1)*count).map((velocity,i)=>`<button class="step-pad ${velocity===1?'on':velocity===.5?'soft':''}" data-action="hit" data-row="${row}" data-step="${ui.beatBar*count+i}" data-local-step="${i}" aria-label="${esc(track.name)} step ${i+1}, ${velocity===1?'strong':velocity===.5?'soft':'off'}" aria-pressed="${velocity>0}">${velocity?'<span></span>':''}</button>`).join('')}</div>`).join('');
-    const beatPanel = panel('<span class="dot" style="background:var(--orange)"></span> Find your pocket', `<div class="panel-body control-row" style="justify-content:space-between"><div class="segments">${Array.from({length:pattern.bars},(_,i)=>`<button class="${ui.beatBar===i?'active':''}" data-action="beat-bar" data-bar="${i}">M${i+1}</button>`).join('')}</div><label>Measures <select data-change="beat-bars" aria-label="Beat measures">${selectOptions([1,2,3,4,6,8],pattern.bars)}</select></label></div><div class="beat-grid">${ruler}${rows}</div><div class="beat-footer"><span>CLICK a hit · SHIFT + CLICK for a soft hit</span><span>${pattern.meter.numerator}/${pattern.meter.denominator} · ${count} STEPS / MEASURE</span></div><div class="panel-body"><div class="section-title" style="margin-top:0">START WITH A GROOVE</div><div class="control-row"><button data-action="beat-preset" data-preset="pocket">Pocket</button><button data-action="beat-preset" data-preset="four">Four on the floor</button><button data-action="beat-preset" data-preset="half">Half time</button><button data-action="repeat-beat">Copy measure → next</button><button data-action="clear-beat" class="quiet danger">Clear measure</button></div><div style="margin-top:20px">${range('swing','A little swing',Math.round(pattern.swing*100),0,45,1,'%')}</div></div>`, `<span class="chip" style="color:var(--orange);border-color:#755640;background:#362a24">beatMAP / reimagined</span>`);
+    const beatPanel = panel('<span class="dot" style="background:var(--orange)"></span> Find your pocket', `<div class="panel-body control-row" style="justify-content:space-between"><div class="segments">${Array.from({length:pattern.bars},(_,i)=>`<button class="${ui.beatBar===i?'active':''}" data-action="beat-bar" data-bar="${i}">M${i+1}</button>`).join('')}</div><label>Measures <select data-change="beat-bars" aria-label="Beat measures">${selectOptions([1,2,3,4,6,8],pattern.bars)}</select></label></div><div class="beat-grid">${ruler}${rows}</div><div class="beat-footer"><span>CLICK a hit · SHIFT + CLICK for a soft hit</span><span>${pattern.meter.numerator}/${pattern.meter.denominator} · ${count} STEPS / MEASURE</span></div><div class="panel-body"><div class="section-title" style="margin-top:0">START WITH A GROOVE</div><div class="control-row"><button data-action="beat-preset" data-preset="pocket">Pocket</button><button data-action="beat-preset" data-preset="four">Four on the floor</button><button data-action="beat-preset" data-preset="half">Half time</button><button data-action="random-beat" title="Generate a groove in this measure">Random beat</button><button data-action="repeat-beat">Copy measure → next</button><button data-action="clear-beat" class="quiet danger">Clear measure</button></div><div style="margin-top:20px">${range('swing','A little swing',Math.round(pattern.swing*100),0,45,1,'%')}</div></div>`, `<span class="chip" style="color:var(--orange);border-color:#755640;background:#362a24">beatMAP / reimagined</span>`);
     const inspector=panel(esc(selected.name)+' / sound', `<div class="panel-body"><div class="caption">SHAPE THIS DRUM</div><label class="field">Wave<select data-change="drum-wave">${selectOptions(p.library.map(w=>[w.id,w.name]),selected.waveId)}</select></label>${range('drum-pitch','Pitch',selected.pitch,30,2000,1,' Hz')}${range('drum-decay','Decay',Math.round(selected.decay*1000),30,1500,1,' ms')}${range('drum-noise','Texture / noise',Math.round(selected.noise*100),0,100,1,'%')}${range('drum-level','Drum level',Math.round(selected.level*100),0,100,1,'%')}<hr><label class="field">Beat name<input id="beat-name" maxlength="48" value="${esc(p.beat.name)}"></label><button class="secondary button-full" data-action="save-beat">＋ Keep beat in box</button><button class="primary button-full" style="margin-top:8px" data-action="beat-to-song">Add beat to song →</button>${ui.editTarget?.type==='beat'?'<button class="secondary button-full" style="margin-top:8px" data-action="apply-beat">Update this song beat →</button>':''}<p class="subtle" style="margin-top:10px">Each placement keeps its own beat. Your other clips stay as you made them.</p></div>`,'','inspector');
     return heading(2,'Give it a heartbeat.','Tap a few steps. Leave a little space. The groove is yours.')+`<div class="stage-content"><div>${beatPanel}${patternShelf()}</div>${inspector}</div>`+next('melody','Paint a melody','<b>Keep a beat going.</b> Audition your notes over it at the shared tempo.');
   }
@@ -2666,7 +3779,7 @@ window.DotAudio = DotAudio;
   }
   function melodyView() {
     const track=p.melody.tracks.find(t=>t.id===ui.part);
-    const editor=panel('<span class="dot" style="background:var(--purple)"></span> A place for your notes', `<div class="part-tabs">${p.melody.tracks.map(t=>`<button class="${t.id===ui.part?'active':''}" data-action="part" data-part="${t.id}">${esc(t.name)}<small>${t.notes.length}</small></button>`).join('')}</div><div class="editor-toolbar">${[['draw','✎ Paint'],['select','▧ Select'],['erase','⌫ Erase']].map(([mode,label])=>`<button data-action="note-mode" data-mode="${mode}" class="${ui.noteMode===mode?'active':''}">${label}</button>`).join('')}<span class="toolbar-divider"></span><label>Grid<select data-change="grid">${selectOptions([[1,'¼'],[.5,'⅛'],[.25,'1/16'],[.125,'1/32']],ui.grid)}</select></label><label>Length<select data-change="note-length">${selectOptions([[.25,'1/16'],[.5,'⅛'],[1,'¼'],[2,'½'],[4,'Whole']],ui.length)}</select></label><button data-action="octave" data-delta="-12">Oct −</button><button data-action="octave" data-delta="12">Oct ＋</button><button data-action="zoom-notes" aria-label="Zoom note grid">${ui.zoom===1?'Zoom ＋':'Zoom −'}</button></div>${pianoPaper(track)}<div class="piano-key-row">${Array.from({length:13},(_,i)=>`<button data-action="key" data-midi="${60+i}" class="${[1,3,6,8,10].includes(i%12)?'black':''}" aria-label="Hear ${C.Song.noteName(60+i)}">${i%12===0?C.Song.noteName(60+i):[1,3,6,8,10].includes(i%12)?'':roots[i%12]}</button>`).join('')}</div><div class="panel-body control-row"><button data-action="select-notes">Select part</button><button data-action="duplicate-notes">Duplicate →</button><button data-action="transpose" data-delta="12">＋ Octave</button><button data-action="transpose" data-delta="-12">− Octave</button><button data-action="delete-notes" class="quiet danger">Delete selected</button><button data-action="clear-part" class="quiet">Clear part</button></div>`, '<span class="chip" style="color:var(--purple);border-color:#605076;background:#30273d">melodyLAB / reimagined</span>');
+    const editor=panel('<span class="dot" style="background:var(--purple)"></span> A place for your notes', `<div class="part-tabs">${p.melody.tracks.map(t=>`<button class="${t.id===ui.part?'active':''}" data-action="part" data-part="${t.id}">${esc(t.name)}<small>${t.notes.length}</small></button>`).join('')}</div><div class="editor-toolbar">${[['draw','✎ Paint'],['select','▧ Select'],['erase','⌫ Erase']].map(([mode,label])=>`<button data-action="note-mode" data-mode="${mode}" class="${ui.noteMode===mode?'active':''}">${label}</button>`).join('')}<span class="toolbar-divider"></span><label>Grid<select data-change="grid">${selectOptions([[1,'¼'],[.5,'⅛'],[.25,'1/16'],[.125,'1/32']],ui.grid)}</select></label><label>Length<select data-change="note-length">${selectOptions([[.25,'1/16'],[.5,'⅛'],[1,'¼'],[2,'½'],[4,'Whole']],ui.length)}</select></label><button data-action="octave" data-delta="-12">Oct −</button><button data-action="octave" data-delta="12">Oct ＋</button><button data-action="zoom-notes" aria-label="Zoom note grid">${ui.zoom===1?'Zoom ＋':'Zoom −'}</button></div><div class="idea-launchers" aria-label="Generate notes"><button class="secondary" data-action="doodle-jazz">Doodle Jazz</button><button data-action="random-melody">Random melody</button><button data-action="ai-sketch">AI sketch</button></div>${pianoPaper(track)}<div class="piano-key-row">${Array.from({length:13},(_,i)=>`<button data-action="key" data-midi="${60+i}" class="${[1,3,6,8,10].includes(i%12)?'black':''}" aria-label="Hear ${C.Song.noteName(60+i)}">${i%12===0?C.Song.noteName(60+i):[1,3,6,8,10].includes(i%12)?'':roots[i%12]}</button>`).join('')}</div><div class="panel-body control-row"><button data-action="select-notes">Select part</button><button data-action="duplicate-notes">Duplicate →</button><button data-action="transpose" data-delta="12">＋ Octave</button><button data-action="transpose" data-delta="-12">− Octave</button><button data-action="delete-notes" class="quiet danger">Delete selected</button><button data-action="clear-part" class="quiet">Clear part</button></div>`, '<span class="chip" style="color:var(--purple);border-color:#605076;background:#30273d">melodyLAB / reimagined</span>');
     const inspector=panel('Notes & possibilities', `<div class="panel-body"><div class="caption">THIS PART</div><label class="field">Sound<select data-change="part-sound">${soundOptions(track.instrument,ui.part==='rhythm')}</select></label>${range('part-level','Part level',Math.round(track.volume*100),0,100,1,'%')}<label class="field-inline"><input type="checkbox" data-change="part-mute" ${track.mute?'checked':''}> Mute this part</label><div class="split" style="margin-top:12px"><label class="field">Key<select data-change="root">${selectOptions(roots.map((n,i)=>[i,n]),p.melody.root)}</select></label><label class="field">Scale<select data-change="mode">${selectOptions([['major','Major'],['minor','Minor']],p.melody.mode)}</select></label></div><label class="field">Measures<select data-change="melody-bars">${selectOptions([1,2,4,8,12,16],p.melody.bars)}</select></label><hr><div class="caption">CHORD POCKET</div><div class="chord-buttons">${chordChoices().map(c=>`<button data-action="stamp-chord" data-degree="${c.degree}" title="Stamp ${c.label} at the note cursor">${esc(c.label)}</button>`).join('')}</div><p class="subtle">Click an M label to place the cursor. A chord stamps editable notes there.</p><hr><label class="field">Pattern name<input id="pattern-name" maxlength="48" value="${esc(ui.patternNames[ui.part]||track.name+' idea')}"></label><button class="secondary button-full" data-action="save-pattern">＋ Keep selected / part</button><button class="primary button-full" style="margin-top:8px" data-action="melody-to-song">Add parts to song →</button>${ui.editTarget?'<button class="primary button-full" style="margin-top:8px" data-action="apply-clip">Update this song clip →</button><p class="subtle">Editing one placement. Your other copies keep their notes.</p>':''}</div>`,'','inspector');
     return heading(3,'Paint what you hear.','A note. A phrase. A happy little accident. There’s no wrong place to start.')+`<div class="stage-content"><div>${vocals.melody(track)}${editor}${patternShelf()}</div>${inspector}</div>`+next('arrange','Arrange your song','<b>Your notes stay editable.</b> Keep a phrase, place it, and make it grow.');
   }
@@ -2805,7 +3918,7 @@ window.DotAudio = DotAudio;
     const nextScroll = $('piano-scroll') || $('timeline-scroll') || $('shape-plot-scroll'), savedScroll = scrollMemory.get(ui.step);
     if (nextScroll && savedScroll) { nextScroll.scrollLeft = savedScroll[0]; nextScroll.scrollTop = savedScroll[1]; }
     if(ui.step==='arrange')fitTimeline();
-    if(ui.step==='sound'&&ui.soundMode==='wave')paintWaves();if(ui.step==='sound'&&ui.soundMode==='voice')paintVoiceTake(); if(ui.step==='export'&&lastExportAudio) paintExport(lastExportAudio);if(ui.step==='sound'&&ui.soundMode==='capture')capture.paint();renderMiniPlayers();
+    if(ui.step==='sound'&&ui.soundMode==='wave')paintWaves();if(ui.step==='sound'&&ui.soundMode==='voice')paintVoiceTake(); if(ui.step==='export'&&lastExportAudio) paintExport(lastExportAudio);if(ui.step==='sound'&&ui.soundMode==='capture')capture.paint();if(ui.step==='sound'&&ui.soundMode==='market')market.paint();renderMiniPlayers();
   }
   function drawCanvas(canvas, table, color, dots=false, side=null) {
     if(!canvas) return;
@@ -2916,7 +4029,7 @@ window.DotAudio = DotAudio;
     'telephone-make':()=>telephoneProject(true), 'telephone-load':()=>telephoneProject(false), 'telephone-save':()=>saveTelephoneSoundtrack(),
     step:b=>setStep(b.dataset.step), play:()=>togglePlay(), stop:()=>{capture.cancel();woof.stop();audio.stop();cancelVoiceCapture();cancelRecording();render();announce('All sound stopped. Your work is here.');},
     'song-play':()=>{woof.stop();return audio.playing&&audio.scope==='song'?audio.stop():audio.play(p,'song',ui.cursor,{soloIds:ui.solo});},
-    'sound-mode':b=>{capture.cancel();woof.stop();cancelVoiceCapture();ui.soundMode=b.dataset.mode;render();},
+    'sound-mode':b=>{market.cancel();capture.cancel();woof.stop();cancelVoiceCapture();ui.soundMode=b.dataset.mode;render();},
     'preview-instrument':b=>previewInstrument(b),
     'use-instrument':b=>{commit(()=>p.melody.tracks.find(t=>t.id===ui.part).instrument=b.dataset.instrument,'Recorded instrument assigned to this melody part.');setStep('melody');},
     'voice-phone':b=>{cancelVoiceCapture();ui.phone=b.dataset.code;ui.voiceNotice='';render();},
@@ -2970,6 +4083,10 @@ window.DotAudio = DotAudio;
     'remove-pattern':()=>commit(()=>{C.assert(ui.pattern,'Choose a saved pattern first.');p.patterns=p.patterns.filter(x=>x.id!==ui.pattern);p.beatShelf=p.beatShelf.filter(x=>x.id!==ui.pattern);ui.pattern=null;},'Pattern removed from the box. Placed clips kept their own music.'),
     'drum-select':b=>{ui.drum=+b.dataset.row;render();},'drum-mute':b=>commit(()=>{const t=p.beat.pattern.tracks[+b.dataset.row];t.mute=!t.mute;},'Drum mute changed.'),
     hit:(b,e)=>{const row=+b.dataset.row,step=+b.dataset.step;commit(()=>{const t=p.beat.pattern.tracks[row];t.steps[step]=e.shiftKey?(t.steps[step]===.5?0:.5):(t.steps[step]?0:1);ui.drum=row;},'Beat updated.');},
+    'random-beat':()=>ideas.randomBeat(),
+    'random-melody':()=>ideas.randomMelody(),
+    'doodle-jazz':()=>ideas.jazzDialog(),
+    'ai-sketch':()=>ideas.aiDialog(),
     'beat-bar':b=>{ui.beatBar=+b.dataset.bar;render();},
     'clear-beat':()=>commit(()=>{const count=C.D.stepsPerBar(p.beat.pattern.meter);p.beat.pattern.tracks.forEach(t=>t.steps.fill(0,ui.beatBar*count,(ui.beatBar+1)*count));},'This measure cleared.'),
     'repeat-beat':()=>commit(()=>{const count=C.D.stepsPerBar(p.beat.pattern.meter);if(ui.beatBar+1>=p.beat.pattern.bars){C.assert(p.beat.pattern.bars<8,'The beat already has eight measures.');p.beat.pattern=C.D.resizePattern(p.beat.pattern,{bars:p.beat.pattern.bars+1});}for(const t of p.beat.pattern.tracks)t.steps.splice((ui.beatBar+1)*count,count,...t.steps.slice(ui.beatBar*count,(ui.beatBar+1)*count));ui.beatBar++;},'Measure copied to the next one.'),
@@ -3081,7 +4198,7 @@ window.DotAudio = DotAudio;
       ui.clip={...ui.editTarget};
     },'This song placement now has your edited notes. Other copies kept their notes.');
   }
-  function chooseFile(mode) { fileMode=mode;$('file-input').accept=mode==='midi'?'.mid,.midi':['audio','voice-take','capture'].includes(mode)?'.wav':'.json';$('file-input').value='';$('file-input').click(); }
+  function chooseFile(mode) { fileMode=mode;$('file-input').accept=mode==='midi'?'.mid,.midi':mode==='market-csv'?'.csv,text/csv':['audio','voice-take','capture'].includes(mode)?'.wav':'.json';$('file-input').value='';$('file-input').click(); }
   function filename() { return p.song.name.replace(/[^a-zA-Z0-9_-]+/g,'-').replace(/^-|-$/g,'').slice(0,45)||'Dot-Wave'; }
   function download(data,type,suffix) {
     const blob=new Blob([data],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');
@@ -3089,8 +4206,10 @@ window.DotAudio = DotAudio;
   }
   function saveProject() { download(C.serialize(p),'application/json','studio.json');savedVersion=revision;$('save-state').textContent='Project sent to Downloads';saveDraft();clearTimeout(toastTimer);$('toast').classList.remove('visible');announce('Project saved. Keep the downloaded file to edit again.'); }
   async function readFile(file,mode) {
+    if(mode==='market-csv')C.assert(file.size<=1000000,'Choose a price CSV under 1 MB.');
     C.assert(file.size<45*1024*1024,'Choose a file under 45 MB.');const ticket=++fileTicket;
     const buffer=await file.arrayBuffer();if(ticket!==fileTicket)return;
+    if(mode==='market-csv'){market.readCSV(new TextDecoder().decode(buffer),file.name);return;}
     if(mode==='capture'){const decoded=C.IO.decodeWav(buffer);await capture.accept(decoded,file.name);return;}
     if(mode==='patch-tone'){woof.read(JSON.parse(new TextDecoder().decode(buffer)));return;}
     if(mode==='voice-take'){const code=ui.phone,decoded=C.IO.decodeWav(buffer);ui.voicePending[code]=C.Voice.analyse(decoded.samples,decoded.rate,code);ui.voiceNotice='Imported '+code+'. Listen before keeping it.';render();return;}
@@ -3340,7 +4459,7 @@ window.DotAudio = DotAudio;
   document.addEventListener('visibilitychange',()=>{if(document.hidden){woof.stop();audio.stop();cancelRecording();}});
   window.addEventListener('beforeunload',event=>{if(!matchStudio&&revision&&savedVersion!==revision){event.preventDefault();event.returnValue='';}});
   window.addEventListener('pagehide',()=>{woof.stop();audio.stop();cancelRecording();});
-  let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(ui.step==='sound')paintWaves();if(ui.step==='export'&&lastExportAudio)paintExport(lastExportAudio);if(ui.step==='arrange')fitTimeline();capture.paint();},150);});
+  let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(ui.step==='sound')paintWaves();if(ui.step==='export'&&lastExportAudio)paintExport(lastExportAudio);if(ui.step==='arrange')fitTimeline();capture.paint();market.paint();},150);});
   window.addEventListener('hashchange',()=>{const step=location.hash.slice(1);if(steps.includes(step))setStep(step);});
   document.addEventListener('toggle',event=>{const key=event.target.dataset?.shapeDetails;if(key)ui.shaper[key]=event.target.open;},true);
   let lastStep=-1,lastMiniPaint=0;
@@ -3361,5 +4480,5 @@ window.DotAudio = DotAudio;
   window.addEventListener('pagehide',()=>{cancelVoiceCapture();cancelRecording();});
   if (!matchStudio) { refreshTelephone(); if(window.DoodleBridge) DoodleBridge.watch(()=>refreshTelephone()); }
   // Read-only snapshot helpers for a review or a future studio integration.
-  window.DotWaveStudio=Object.freeze({version:'2.8.0',snapshot:()=>C.serialize(p),refreshTelephone,get state(){return {step:ui.step,playing:audio.playing,pending:audio.pending,scope:audio.scope,revision,selected:[...ui.selected],telephoneId:telephone.selected?.id||null};}});
+  window.DotWaveStudio=Object.freeze({version:'2.9.0',snapshot:()=>C.serialize(p),refreshTelephone,get state(){return {step:ui.step,playing:audio.playing,pending:audio.pending,scope:audio.scope,revision,selected:[...ui.selected],telephoneId:telephone.selected?.id||null};}});
 })();
