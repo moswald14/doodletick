@@ -1,4 +1,6 @@
-# Doodle Tick · 0.19b
+# Doodle Tick · 0.19.1b
+
+**0.19.1b updates the embedded Dot Wave Studio to 2.8.** Capture a hum, shape a patch, write notes and vocals, arrange, and export. Telephone soundtracks and existing Keeper data stay compatible.
 
 **0.19b brings [Bullshit Telephone dating](keeper/MOZCORP.md) into Home Assistant.** Open **Telephone Dating** in Doodle Tick Keeper and use your existing dating sign-in key. Your profile, matches and messages use the same live service.
 

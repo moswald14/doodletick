@@ -9,7 +9,7 @@ import vm from 'node:vm';
 const source = (await readFile(new URL('../public/studio-app.js', import.meta.url), 'utf8')).replaceAll('\r\n', '\n');
 const end = source.indexOf('\nclass DotAudio {');
 assert.ok(end > 0, 'Locate the end of the embedded browser module prefix');
-const scope = { URL, TextEncoder, TextDecoder, atob, btoa,
+const scope = { URL, URLSearchParams, TextEncoder, TextDecoder, atob, btoa, location:{search:''},
   document: { currentScript: { src: 'https://keeper.example.invalid/studio-app.js' } } };
 scope.window = scope;
 vm.runInNewContext(source.slice(0, end), scope, { filename: 'studio-browser-modules-fixture.js' });

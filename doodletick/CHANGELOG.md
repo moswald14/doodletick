@@ -1,3 +1,9 @@
+# 0.19.1b — Dot Wave Studio 2.8
+
+- Update the existing embedded Studio with reviewed Hum to Melody and waveform capture, WOOFpad two-voice patches, recorded instruments and editable singing.
+- Keep Telephone World source text and soundtrack editing, original bundled sounds, browser drafts, and the existing application identity.
+- Preserve all Keeper storage, peer, payment, signing and native Core formats. The Home Assistant image reuses the pinned, checked 0.19b native runtime and overlays the matching application source.
+
 # 0.19b — Telephone dating
 
 - Open **Telephone Dating** within Doodle Tick Keeper over HTTPS.

@@ -16,7 +16,7 @@ source_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
 (cd -- "$source_dir" && sha256sum --check --strict SHA256SUMS >/dev/null) || die 'The package checksum check failed. Nothing was installed.'
 
 install_root=/opt/doodletick-keeper
-release_id=0.19b-pi.1
+release_id=0.19.1b-pi.1
 release_dir=$install_root/releases/$release_id
 node_version=v24.22.3
 node_archive=node-$node_version-linux-arm64.tar.xz

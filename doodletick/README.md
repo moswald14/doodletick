@@ -49,3 +49,10 @@ Legacy browser peer sync used creator-vault connection codes, spirograph compari
 The Weather & music panel, original founder records, arcade and file sharing remain available. Optional public DGT gardens use their own wallet transactions and network fees; they do not convert into DVC. There is no exchange listing, redemption or promised coin value.
 
 Read [validation](../keeper/VALIDATION.md) for completed checks and live-device limits. Source is GPL-3.0-only under the repository's LICENSE.
+
+
+## Studio 2.8 application update (0.19.1b)
+
+The default image overlays the application on the exact checked 0.19b runtime digests for aarch64 and amd64. It preserves native Core binaries, their corresponding source and validation records, Node, audio tools and installed Jazz dependencies. Application files and version labels come from this release; Keeper storage and keys remain in `/data`. Both architecture images still run the existing container, isolated audio and media checks before immutable image publication.
+
+`Dockerfile.native` retains the full native build recipe with the current application label. Use `docker build --file doodletick/Dockerfile.native --build-arg BUILD_ARCH=<architecture> doodletick` when rebuilding the native runtime from its pinned source is desired. This web-editor update changes no native chain or consensus input.
