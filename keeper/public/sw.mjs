@@ -1,4 +1,4 @@
-const CACHE = 'doodletick-shell-v0.19.2b';
+const CACHE = 'doodletick-shell-v0.19.3b';
 const ASSETS = ['/clock-wheel.mjs', '/', '/index.html', '/app.mjs', '/core.mjs', '/style.css', '/logo.svg', '/files.css', '/files-ui.mjs', '/licenses.mjs', '/archive.mjs', '/file-store.mjs', '/peers.mjs', '/manifest.webmanifest', '/theme.mjs', '/theme.css'];
 ASSETS.push('/dotlands-ui.mjs', '/dotlands-protocol.mjs', '/dotlands-bridge.js', '/dotlands-engine.js', '/dotlands-app.js', '/dotlands.html', '/dotlands.css');
 ASSETS.push('/spirograph.mjs', '/spirograph-auth.mjs', '/vpn-description.mjs', '/vpn-transport.mjs', '/vpn-ui.mjs', '/arcade.css', '/arcade-ui.mjs', '/arcade-canvas.mjs', '/arcade-room.mjs', '/arcade-store.mjs', '/arcade-link.mjs', '/game-engine.mjs', '/workshop.mjs');

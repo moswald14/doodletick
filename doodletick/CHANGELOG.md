@@ -1,3 +1,9 @@
+# 0.19.3b — Dot Studio Gallery
+
+- Add Studio 2.10 to Keeper with an Export share file and a link to the public Dot Studio Gallery and Top 10.
+- Render the short listening preview locally. Open the gallery to review and publish a share file.
+- Keep existing Studio and Telephone projects editable. Reuse the recorded 0.19.1b runtime images for this application update.
+
 # 0.19.2b — Studio 2.9 generators
 
 - Add Doodle Jazz to editable Melody notes, Random beat and melody, a 24-hour Coin Wave, and an AI sketch handoff. Preserve existing Studio and Telephone projects without changing saved formats.

@@ -1,6 +1,6 @@
 {
   "name": "doodletick-keeper",
-  "version": "0.19.2-beta.0",
+  "version": "0.19.3-beta.0",
   "private": true,
   "license": "GPL-3.0-only",
   "type": "module",
@@ -12,5 +12,5 @@
   "engines": {
     "node": ">=24"
   },
-  "release": "0.19.2b"
+  "release": "0.19.3b"
 }

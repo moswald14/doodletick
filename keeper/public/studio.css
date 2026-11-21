@@ -77,6 +77,31 @@
 .market-actions>.mini-play{margin:0}
 @media(max-width:580px){.market-charts{grid-template-columns:1fr}.market-inputs{align-items:stretch}.market-inputs>.field{flex:1 1 126px}.market-inputs>button{min-height:36px}}
 
+.share-gallery-link {
+  display: inline-flex;
+  align-items: center;
+  color: var(--green);
+  font-size: 12px;
+  line-height: 1.5;
+  text-underline-offset: 3px;
+}
+.share-gallery-link:hover {
+  color: #e0ffcb;
+}
+.share-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 7px 4px;
+}
+.share-nav span {
+  color: var(--muted);
+  font: 10px Consolas, monospace;
+}
+.modal-actions .share-gallery-link {
+  margin-right: auto;
+}
+
 /* Telephone World / shared creative projects */
 .telephone-layout{display:grid;grid-template-columns:minmax(210px,290px) minmax(0,1fr);gap:22px;margin-top:28px}.telephone-shelf{padding-bottom:18px;align-self:start}.telephone-shelf>.telephone-link,.telephone-shelf>.telephone-caption,.telephone-shelf>[role]{margin:14px 18px;display:block}.telephone-keeper{display:block;margin:0 18px;font-size:11px;color:var(--muted)}.telephone-tiles{display:grid;gap:8px;padding:0 12px}.telephone-tile{display:grid;text-align:left;white-space:normal;gap:4px;width:100%;padding:12px}.telephone-tile.selected{border-color:var(--pink);background:#392938}.telephone-tile strong{font-size:12px;overflow-wrap:anywhere}.telephone-tile small{font-size:10px}.telephone-project h2{font-size:25px;margin:10px 0}.telephone-caption{color:var(--muted);font-size:11px;line-height:1.7}.telephone-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:22px 0}.telephone-actions button,.telephone-link{font-size:11px}.telephone-link{color:var(--pink);text-decoration:none;border-bottom:1px solid #6c4661;padding:8px 0;display:inline-block}.telephone-texts{display:grid;gap:22px}.telephone-texts h3{color:var(--pink);font:10px Consolas,monospace;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}.telephone-texts pre{white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.8 'Segoe UI',Arial,sans-serif;color:#ccd2dc;margin:0;max-height:310px;overflow:auto;background:#11151c;padding:16px;border-radius:5px}.telephone-empty{color:var(--muted);font-size:14px;line-height:1.9;padding:25px 0}
 @media(max-width:800px){.telephone-layout{grid-template-columns:1fr}.telephone-tiles{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}.telephone-project h2{font-size:22px}.telephone-actions button{white-space:normal}.telephone-texts pre{font-size:12px}.telephone-layout .panel-body{min-width:0}}

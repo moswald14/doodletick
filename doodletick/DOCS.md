@@ -2,11 +2,15 @@
 
 This app keeps a local room directory, signed witness, shared mushroom garden and Doodleverse Core node online. It serves the creator vault, file library, arcade, color clock, native wallet and GPU miner through Home Assistant's authenticated Web UI. Your computer performs GPU mining; the Home Assistant node validates blocks and payments.
 
+## Share a Studio creation
+
+Open **Studio → Export → Make share file** in Keeper. Choose what to share and download a file with a short listening preview. Open the [Dot Studio Gallery](https://dot-studio-gallery.hatchable.site/) to review and publish your file or hear the Top 10. The public gallery has its own link. Keeper prepares your file locally.
+
 ## Install and connect
 
 Add `https://github.com/moswald14/doodletick` through **Settings → Apps → Install app → Repositories**, then install **Doodle Tick Keeper**. Home Assistant OS must use 64-bit ARM or AMD64. For a new installation, start it and open **Web UI**. The first source build includes Core, needs internet access and can take time. If replacing a local app, complete [the offline migration](MIGRATION.md) before the repository app's first start.
 
-For an existing repository installation, make a backup and choose **Update** on that same app. If it is not offered, check for updates in the app store and confirm the repository is `moswald14/doodletick`, rather than Local apps. After restart, verify the original Keeper identity and the **DOODLE TICK 0.13b** label. Then enable **Start on boot**, **Watchdog** and **Auto update**. Do not uninstall as an update procedure.
+For an existing repository installation, make a backup and choose **Update** on that same app. If it is not offered, check for updates in the app store and confirm the repository is `moswald14/doodletick`, rather than Local apps. After restart, verify the original Keeper identity and the **DOODLE TICK 0.19.3b** label. Then enable **Start on boot**, **Watchdog** and **Auto update**. Do not uninstall as an update procedure.
 
 ## Mine and send native DVC
 

@@ -3551,6 +3551,159 @@ window.DotAudio = DotAudio;
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
 
+(function (root) {
+  'use strict';
+  const node = typeof module !== 'undefined' && module.exports;
+  const rate = 16000;
+  const seconds = 12;
+  const projectLimit = 480000;
+  const scopes = Object.freeze({ song: 'Whole song', melody: 'Melody', beat: 'Beat', sound: 'Patch tone' });
+
+  function scopedCopy(C, project, scope, title) {
+    const copy = C.blank();
+    if (scope === 'song') {
+      if (project.song.audio.length) throw Error('This song uses recorded audio. Share its rendered preview.');
+      copy.song = structuredClone(project.song);
+      copy.sections = structuredClone(project.sections);
+      const placedBeats = new Set(copy.song.clips.map(clip => clip.beatId));
+      copy.song.beats = copy.song.beats.filter(beat => placedBeats.has(beat.id));
+    }
+    if (scope === 'melody') copy.melody = structuredClone(project.melody);
+    if (scope === 'beat') copy.beat = structuredClone(project.beat);
+    if (scope === 'sound') copy.patch = structuredClone(project.patch);
+    C.syncTempo(copy, project.song.bpm);
+    copy.song.name = title;
+
+    const tracks = [...copy.melody.tracks, ...copy.song.tracks];
+    const drums = [copy.beat, ...copy.song.beats].flatMap(beat => C.D.allTracks(beat.pattern));
+    const sounds = new Set([...tracks.map(track => track.instrument), ...drums.map(track => track.waveId)]);
+    const recorded = [...sounds].some(id => id.startsWith('voice-')) ||
+      (sounds.has('vocal-recorded') && Object.keys(project.voiceBank.takes).length > 0);
+    if (recorded) throw Error('This composition uses your voice kit. Share its rendered preview.');
+
+    const included = project.library.filter(wave => sounds.has(wave.id));
+    const includedIds = new Set(included.map(wave => wave.id));
+    copy.library = [...copy.library.filter(wave => sounds.has(wave.id) && !includedIds.has(wave.id)), ...included];
+    const checked = C.open(JSON.parse(C.serialize(copy)));
+    if (new TextEncoder().encode(JSON.stringify(checked)).length > projectLimit) {
+      throw Error('This editable copy exceeds 480 KB. Share its rendered preview.');
+    }
+    return checked;
+  }
+
+  function toBase64(buffer) {
+    if (node) return Buffer.from(buffer).toString('base64');
+    const bytes = new Uint8Array(buffer);
+    let text = '';
+    for (let i = 0; i < bytes.length; i += 16384) {
+      text += String.fromCharCode(...bytes.subarray(i, i + 16384));
+    }
+    return btoa(text);
+  }
+
+  function wavePreview(C, audio) {
+    if (audio.rate !== rate || audio.left.length !== audio.right.length || !audio.left.length) {
+      throw Error('The creation could not render at the preview sample rate.');
+    }
+    const frames = audio.left.length;
+    const sample = i => (audio.left[i] + audio.right[i]) * .5;
+    let peak = 0;
+    for (let i = 0; i < frames; i++) peak = Math.max(peak, Math.abs(sample(i)));
+    if (!Number.isFinite(peak) || peak < 1 / 32767) throw Error('There is no audible music in this selection.');
+    const threshold = Math.max(1 / 32767, peak * .025);
+    let first = 0;
+    while (Math.abs(sample(first)) < threshold) first++;
+    const start = Math.max(0, first - Math.round(rate * .05));
+    const length = Math.min(rate * seconds, frames - start);
+    const mono = new Float32Array(length);
+    for (let i = 0; i < length; i++) {
+      const gain = Math.min(1, i / (rate * .008), (length - 1 - i) / (rate * .035));
+      mono[i] = sample(start + i) * gain;
+    }
+    return C.IO.encodeWav(mono, rate);
+  }
+
+  async function make(C, project, { scope, title, includeProject }, render) {
+    if (!Object.hasOwn(scopes, scope)) throw Error('Choose what to share.');
+    const cleanTitle = typeof title === 'string' ? title.trim() : '';
+    if (!cleanTitle || cleanTitle.length > 64 || /[\u0000-\u001f\u007f]/.test(cleanTitle)) {
+      throw Error('Give the creation a title of 1–64 characters.');
+    }
+    const editable = includeProject ? scopedCopy(C, project, scope, cleanTitle) : null;
+    const audio = await render(project, scope, { rate, loopTails: false });
+    return {
+      kind: 'dot-studio-creation', version: 1, title: cleanTitle, scope,
+      preview: toBase64(wavePreview(C, audio)),
+      ...(editable ? { project: editable } : {})
+    };
+  }
+
+  const api = { make, scopedCopy, scopes, rate, seconds, projectLimit };
+  if (node) module.exports = api;
+  else root.StudioShare = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+(function (root) {
+  'use strict';
+  const gallery = 'https://dot-studio-gallery.hatchable.site/';
+  root.SharePanel = function ({ C, audio, getProject, showModal, esc, notify, download, allowed = () => true }) {
+    const $ = id => document.getElementById(id);
+    const { scopes, make } = root.StudioShare;
+    let revision = 0;
+
+    function shareDialog(selected) {
+      if (!allowed()) return;
+      revision++;
+      const title = getProject().song.name;
+      showModal('Share a creation', `
+        <p>Make a share file, then upload it to the Dot Studio Gallery. You’ll be able to listen and review it there before publishing.</p>
+        <label class="field">Title<input id="share-title" maxlength="64" value="${esc(title)}"></label>
+        <label class="field">Share<select id="share-scope">${Object.entries(scopes).map(([key, label]) =>
+          `<option value="${key}" ${key === selected ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
+        <label class="marker-control"><input type="checkbox" id="share-project"> Include an editable copy</label>
+        <p class="subtle">Every share file includes up to 12 seconds of rendered audio. An editable copy includes the selected music and its sounds. Recorded takes and voice-kit sounds can be shared as rendered audio.</p>
+        <p id="share-status" role="status"></p>`,
+        `<a class="share-gallery-link" href="${gallery}?post=1" target="_blank" rel="noopener noreferrer">Open Gallery to post ↗</a>
+        <button class="primary" data-share-action="save">Create share file</button>`);
+    }
+
+    document.addEventListener('click', async event => {
+      const button = event.target.closest('[data-share-action="save"]');
+      if (!button || button.disabled || !allowed()) return;
+      const mine = ++revision;
+      const status = $('share-status');
+      button.disabled = true;
+      status.textContent = 'Rendering the preview…';
+      try {
+        const value = await make(C, structuredClone(getProject()), {
+          title: $('share-title').value, scope: $('share-scope').value, includeProject: $('share-project').checked
+        }, audio.render.bind(audio));
+        if (mine !== revision || !status.isConnected || !$('modal').open) return;
+        download(JSON.stringify(value), 'application/json', 'dot-creation.json', value.title);
+        status.textContent = 'Share file downloaded. Choose it in the Gallery to preview and publish.';
+        notify('Share file sent to Downloads.');
+      } catch (error) {
+        if (mine === revision && status.isConnected) status.textContent = error.message;
+      } finally {
+        if (mine === revision && button.isConnected) button.disabled = false;
+      }
+    });
+
+    function card() {
+      if (!allowed()) return '';
+      return `<article class="export-card featured"><h3>Share a creation</h3>
+        <p>Post music to the public gallery or send a copy to someone. Hear what the community is making in the Top 10.</p>
+        <div class="control-row"><button data-action="share-creation">Make share file</button>
+        <a class="share-gallery-link" href="${gallery}" target="_blank" rel="noopener noreferrer">Gallery &amp; Top 10 ↗</a></div>
+      </article>`;
+    }
+    function navigation() {
+      return allowed() ? `<a class="share-gallery-link share-nav" href="${gallery}" target="_blank" rel="noopener noreferrer">Studio Gallery <span>Top 10</span></a>` : '';
+    }
+    return { shareDialog, card, navigation };
+  };
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
 (function () {
   'use strict';
   const C = DotWave, $ = id => document.getElementById(id);
@@ -3579,6 +3732,7 @@ window.DotAudio = DotAudio;
   capture=CapturePanel({C,audio,ui,getProject:()=>p,replaceProject:value=>{p=value;},commit,render,setStep,chooseFile,download,notify,addAudio,prepare:()=>{woof.stop();cancelVoiceCapture();audio.stop();}});
   const ideas=IdeasPanel({C,ui,getProject:()=>p,replaceMelody:melody=>{p.melody=melody;},commit,showModal,notify,esc});
   const market=MarketPanel({C,audio,ui,getProject:()=>p,commit,render,chooseFile,esc});
+  const share=SharePanel({C,audio,getProject:()=>p,showModal,esc,notify,download,allowed:()=>!matchStudio});
   function keepPatchTone(go=false){const title=$('sound-name')?.value||ui.soundName;let kept;commit(()=>{kept=C.savePatchTone(p,title,woof.state.rootMode);ui.sound=kept.id;p.melody.tracks.find(t=>t.id===ui.part).instrument=kept.id;},'Patch tone kept with its two editable voices. Ready for your melody.');if(go&&kept)setStep('melody');}
   function notify(text, error = false) {
     $('status').textContent = text; $('status').classList.toggle('busy', error);
@@ -3646,7 +3800,7 @@ window.DotAudio = DotAudio;
     const details = {telephone:'Stories & shared songs',sound: `${p.library.length} sounds`, beat:`${p.beat.pattern.bars} measure${p.beat.pattern.bars === 1 ? '' : 's'} · ${Math.round(p.beat.pattern.swing * 100)}% swing`,
       melody:`${p.melody.tracks.reduce((s,t) => s+t.notes.length,0)} notes · ${p.melody.bars} measures`, arrange:`${p.song.bars} measures · ${p.song.tracks.length} tracks`, export:'WAV · MIDI · project'};
     $('workflow').innerHTML = '<span class="nav-title">MAKE SOMETHING YOURS</span>' + steps.map((step, i) => `<button data-action="step" data-step="${step}" class="${ui.step === step ? 'active' : ''}" ${ui.step === step ? 'aria-current="step"' : ''}><span class="step-number">0${i+1}</span><span><span class="step-label">${titles[step]}</span><span class="step-detail">${esc(details[step])}</span></span></button>${i<4?'<span class="trail">·</span>':''}`).join('') +
-      '<div class="nav-bottom"><button data-action="starter"><span class="nav-star">✦</span> Try a starter</button><button data-action="classic"><span>▦</span> More studio tools</button><button data-action="help"><span>?</span> A little guidance</button><p>Small ideas become<br>whole songs.<br>One step at a time.</p></div>';
+      '<div class="nav-bottom"><button data-action="starter"><span class="nav-star">✦</span> Try a starter</button><button data-action="classic"><span>▦</span> More studio tools</button><button data-action="help"><span>?</span> A little guidance</button>'+share.navigation()+'<p>Small ideas become<br>whole songs.<br>One step at a time.</p></div>';
   }
   function sessionPath(){if(ui.step==='telephone')return '';
     const tones=p.library.filter(w=>w.patchTone).length,notes=p.melody.tracks.reduce((n,t)=>n+t.notes.length,0),placed=p.song.tracks.reduce((n,t)=>n+(t.phrases?.length||0)+(t.notes.length?1:0),0)+p.song.clips.length+p.song.audio.length,hits=p.beat.pattern.tracks.reduce((n,t)=>n+t.steps.filter(v=>v>0).length,0);
@@ -3852,7 +4006,7 @@ window.DotAudio = DotAudio;
     const count=p.song.tracks.reduce((sum,t)=>sum+t.notes.length+(t.phrases||[]).reduce((n,c)=>n+c.notes.length*c.repeats,0),0), seconds=p.song.bars*C.Song.beatsPerBar(p.song.meter)*60/p.song.bpm;
     const options=[['wav','WAV','Hear it anywhere.','Stereo audio with your sounds and effects. 16-bit PCM, ready to share.'],['midi','MIDI','Make it a starting point.','Editable notes and drums for another music app. Sounds stay in the project.'],['project','PROJECT','Keep making it yours.','Every sound, pattern, recording, and editable clip in one studio file.'],['pack','HANDOFF ZIP','Take the whole little world.','Your WAV, MIDI, editable project, and a short guide in one download.'],['stems','STEMS ZIP','Mix it your way.','Individual song tracks, drums, and recordings. All start at the same time.'],['classic','CLASSIC PROJECT','Keep the connection.','Open your work in the original studio and use the specialized tools.']];
     const cards=options.map(([type,format,title,description])=>`<article class="export-card ${type==='pack'?'featured':''}"><span class="format">${format}</span><h3>${title}</h3><p>${description}</p><button ${ui.busy?'disabled':''} data-action="export" data-format="${type}">${ui.busy?'Preparing…':'Download '+(type==='project'?'project':type==='classic'?'classic file':format)}</button></article>`).join('');
-    return heading(5,'You made a thing. Keep it.','Save the idea. Share the sound. Come back and make something else tomorrow.')+`<div class="stage-content"><div><div class="panel panel-body"><div class="control-row" style="justify-content:space-between"><h2>${esc(p.song.name)}</h2><span class="chip">${ui.exportScope.toUpperCase()}</span></div><div class="stats-row"><div class="stat"><strong>${p.song.bars}</strong><small>MEASURES</small></div><div class="stat"><strong>${p.song.bpm}</strong><small>BPM</small></div><div class="stat"><strong>${Math.floor(seconds/60)}:${String(Math.round(seconds%60)).padStart(2,'0')}</strong><small>SONG LENGTH</small></div><div class="stat"><strong>${count}</strong><small>NOTES</small></div></div><div class="review-wave"><canvas id="export-wave" aria-label="Audio export waveform"></canvas><span id="render-label">A SOUND YOU CAN TAKE WITH YOU</span></div><button data-action="review-export" class="quiet">↻ Preview export waveform</button></div><div class="export-options" style="margin-top:16px">${cards}</div></div>${panel('The finishing touches',`<div class="panel-body"><div class="caption">EXPORT WHAT YOU NEED</div><label class="field">From<select data-change="export-scope">${selectOptions([['song','The whole song'],['melody','Melody draft'],['beat','Beat draft'],['sound','Current sound']],ui.exportScope)}</select></label><label class="field">Sample rate<select data-change="export-rate">${selectOptions([[44100,'44.1 kHz'],[48000,'48 kHz']],ui.exportRate)}</select></label><hr><div class="caption">WHAT GOES WITH IT</div><p class="subtle">WAV keeps the actual sounds, effects, clip levels, and stereo balance.</p><p class="subtle" style="margin-top:12px">Master volume and listening EQ belong to your speakers. They don’t change your exported music.</p><p class="subtle" style="margin-top:12px">Peaks are reduced only when needed to fit the file. Quiet music stays quiet.</p><hr><button class="secondary button-full" data-action="save">Save project first</button></div>`,'','inspector')}</div>`+next('sound','Back to making','<b>The studio is always here.</b> Keep a file so the idea is, too.');
+    return heading(5,'You made a thing. Keep it.','Save the idea. Share the sound. Come back and make something else tomorrow.')+`<div class="stage-content"><div><div class="panel panel-body"><div class="control-row" style="justify-content:space-between"><h2>${esc(p.song.name)}</h2><span class="chip">${ui.exportScope.toUpperCase()}</span></div><div class="stats-row"><div class="stat"><strong>${p.song.bars}</strong><small>MEASURES</small></div><div class="stat"><strong>${p.song.bpm}</strong><small>BPM</small></div><div class="stat"><strong>${Math.floor(seconds/60)}:${String(Math.round(seconds%60)).padStart(2,'0')}</strong><small>SONG LENGTH</small></div><div class="stat"><strong>${count}</strong><small>NOTES</small></div></div><div class="review-wave"><canvas id="export-wave" aria-label="Audio export waveform"></canvas><span id="render-label">A SOUND YOU CAN TAKE WITH YOU</span></div><button data-action="review-export" class="quiet">↻ Preview export waveform</button></div><div class="export-options" style="margin-top:16px">${share.card()}${cards}</div></div>${panel('The finishing touches',`<div class="panel-body"><div class="caption">EXPORT WHAT YOU NEED</div><label class="field">From<select data-change="export-scope">${selectOptions([['song','The whole song'],['melody','Melody draft'],['beat','Beat draft'],['sound','Current sound']],ui.exportScope)}</select></label><label class="field">Sample rate<select data-change="export-rate">${selectOptions([[44100,'44.1 kHz'],[48000,'48 kHz']],ui.exportRate)}</select></label><hr><div class="caption">WHAT GOES WITH IT</div><p class="subtle">WAV keeps the actual sounds, effects, clip levels, and stereo balance.</p><p class="subtle" style="margin-top:12px">Master volume and listening EQ belong to your speakers. They don’t change your exported music.</p><p class="subtle" style="margin-top:12px">Peaks are reduced only when needed to fit the file. Quiet music stays quiet.</p><hr><button class="secondary button-full" data-action="save">Save project first</button></div>`,'','inspector')}</div>`+next('sound','Back to making','<b>The studio is always here.</b> Keep a file so the idea is, too.');
   }
     function telephoneView() {
     const item = telephone.selected, unavailable = !window.DoodleBridge;
@@ -4027,6 +4181,7 @@ window.DotAudio = DotAudio;
   const actions={
     'telephone-refresh':()=>refreshTelephone(), 'telephone-select':b=>refreshTelephone(b.dataset.id),
     'telephone-make':()=>telephoneProject(true), 'telephone-load':()=>telephoneProject(false), 'telephone-save':()=>saveTelephoneSoundtrack(),
+    'share-creation':()=>share.shareDialog(ui.exportScope),
     step:b=>setStep(b.dataset.step), play:()=>togglePlay(), stop:()=>{capture.cancel();woof.stop();audio.stop();cancelVoiceCapture();cancelRecording();render();announce('All sound stopped. Your work is here.');},
     'song-play':()=>{woof.stop();return audio.playing&&audio.scope==='song'?audio.stop():audio.play(p,'song',ui.cursor,{soloIds:ui.solo});},
     'sound-mode':b=>{market.cancel();capture.cancel();woof.stop();cancelVoiceCapture();ui.soundMode=b.dataset.mode;render();},
@@ -4199,10 +4354,10 @@ window.DotAudio = DotAudio;
     },'This song placement now has your edited notes. Other copies kept their notes.');
   }
   function chooseFile(mode) { fileMode=mode;$('file-input').accept=mode==='midi'?'.mid,.midi':mode==='market-csv'?'.csv,text/csv':['audio','voice-take','capture'].includes(mode)?'.wav':'.json';$('file-input').value='';$('file-input').click(); }
-  function filename() { return p.song.name.replace(/[^a-zA-Z0-9_-]+/g,'-').replace(/^-|-$/g,'').slice(0,45)||'Dot-Wave'; }
-  function download(data,type,suffix) {
+  function filename(title=p.song.name) { return title.replace(/[^a-zA-Z0-9_-]+/g,'-').replace(/^-|-$/g,'').slice(0,45)||'Dot-Wave'; }
+  function download(data,type,suffix,title) {
     const blob=new Blob([data],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');
-    const stem=filename(),stamp=new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,17);a.download=stem+'-'+stamp+'-'+suffix;a.href=url;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);return a.download;
+    const stem=filename(title),stamp=new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,17);a.download=stem+'-'+stamp+'-'+suffix;a.href=url;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);return a.download;
   }
   function saveProject() { download(C.serialize(p),'application/json','studio.json');savedVersion=revision;$('save-state').textContent='Project sent to Downloads';saveDraft();clearTimeout(toastTimer);$('toast').classList.remove('visible');announce('Project saved. Keep the downloaded file to edit again.'); }
   async function readFile(file,mode) {
@@ -4215,7 +4370,12 @@ window.DotAudio = DotAudio;
     if(mode==='voice-take'){const code=ui.phone,decoded=C.IO.decodeWav(buffer);ui.voicePending[code]=C.Voice.analyse(decoded.samples,decoded.rate,code);ui.voiceNotice='Imported '+code+'. Listen before keeping it.';render();return;}
     if(mode==='voice-bank'){const bank=C.Voice.validate(JSON.parse(new TextDecoder().decode(buffer)));C.assert(p.melody.tracks.concat(p.song.tracks).filter(t=>t.instrument.startsWith('voice-')).every(t=>bank.takes[t.instrument.slice(6)]),'This bank is missing a speech sound used in your notes. Open it in a fresh project, or record those sounds first.');commit(()=>p.voiceBank=bank,'Voice bank opened with its recorded sounds.');ui.voicePending={};ui.soundMode='voice';setStep('sound');return;}
     if(mode==='project'){
-      capture.cancel();woof.stop();const value=shareSounds(C.open(JSON.parse(new TextDecoder().decode(buffer))));audio.stop();commit(()=>{p=value;ui.solo=[];ui.section=null;ui.selected=[];ui.clip=null;ui.editTarget=null;ui.cursor=0;ui.beatBar=0;ui.recovered=true;},'Project opened with its sounds and editable music. Playback is stopped.');setStep('arrange');return;
+      const data=JSON.parse(new TextDecoder().decode(buffer));
+      const creation=data?.kind==='dot-studio-creation';
+      if(creation){C.assert(data.version===1&&Object.hasOwn(StudioShare.scopes,data.scope),'Choose a Studio share file.');C.assert(data.project,'This share file has a preview. Choose it in the Gallery to listen.');}
+      const value=shareSounds(C.open(creation?data.project:data));
+      capture.cancel();woof.stop();audio.stop();commit(()=>{p=value;ui.solo=[];ui.section=null;ui.selected=[];ui.clip=null;ui.editTarget=null;ui.cursor=0;ui.beatBar=0;ui.recovered=true;},'Project opened with its sounds and editable music. Playback is stopped.');
+      setStep(creation?({song:'arrange',melody:'melody',beat:'beat',sound:'sound'})[data.scope]:'arrange');return;
     }
     if(mode==='midi') { const midi=C.IO.decode(buffer);commit(()=>{
       const tracks=midi.tracks.filter(t=>t.notes.length);C.assert(tracks.length,'This MIDI file has no notes.');C.assert(p.song.tracks.length+tracks.length<=8,'This import would exceed eight note tracks.');
@@ -4480,5 +4640,5 @@ window.DotAudio = DotAudio;
   window.addEventListener('pagehide',()=>{cancelVoiceCapture();cancelRecording();});
   if (!matchStudio) { refreshTelephone(); if(window.DoodleBridge) DoodleBridge.watch(()=>refreshTelephone()); }
   // Read-only snapshot helpers for a review or a future studio integration.
-  window.DotWaveStudio=Object.freeze({version:'2.9.0',snapshot:()=>C.serialize(p),refreshTelephone,get state(){return {step:ui.step,playing:audio.playing,pending:audio.pending,scope:audio.scope,revision,selected:[...ui.selected],telephoneId:telephone.selected?.id||null};}});
+  window.DotWaveStudio=Object.freeze({version:'2.10.0',snapshot:()=>C.serialize(p),refreshTelephone,get state(){return {step:ui.step,playing:audio.playing,pending:audio.pending,scope:audio.scope,revision,selected:[...ui.selected],telephoneId:telephone.selected?.id||null};}});
 })();

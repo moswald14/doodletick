@@ -1,4 +1,6 @@
-# Doodle Tick · 0.19.2b
+# Doodle Tick · 0.19.3b
+
+**0.19.3b brings the Dot Studio Gallery into Keeper.** Open Studio → Export to make a share file with a short listening preview. Open the public gallery to publish it or hear the Top 10. [Studio guide](keeper/STUDIO.md)
 
 **0.19.2b adds Studio 2.9 music generators.** Turn Doodle Jazz into editable notes, randomize a beat or melody, shape a wave from a day of market prices, and use an AI sketch handoff. Existing songs and Telephone soundtracks remain editable.
 

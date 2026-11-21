@@ -18,6 +18,12 @@ function replace(source, before, after, label) {
 export async function adaptStudio(app, version, { sharedRooms = false } = {}) {
   app = normalize(app);
   app = replace(app, "  const steps = ['sound', 'beat', 'melody', 'arrange', 'export'];", '  const matchStudio = '+(sharedRooms?"new URLSearchParams(location.search).get('matchStudio') === '1'":'false')+";\n  const telephone = {items:[],selected:null,loading:false,loaded:false,error:'',ticket:0};\n  const requestedTelephone = matchStudio ? null : new URLSearchParams(location.search).get('project');\n  const steps = ['sound', 'beat', 'melody', 'arrange', 'export', ...(matchStudio ? [] : ['telephone'])];", 'workflow');
+  if (/\bSharePanel\s*\(/.test(app)) {
+    app = replace(app,
+      '  const share=SharePanel({C,audio,getProject:()=>p,showModal,esc,notify,download});',
+      '  const share=SharePanel({C,audio,getProject:()=>p,showModal,esc,notify,download,allowed:()=>!matchStudio});',
+      'shared-room publication controls');
+  }
   app = replace(app, "export:'Export'};", "export:'Export', telephone:'Telephone'};", 'step names');
   app = replace(app, "export:'#b8f58b'};", "export:'#b8f58b',telephone:'#f4a8c7'};", 'step colors');
   app = replace(app, '  try { audio.volume =', '  if (!matchStudio) try { audio.volume =', 'personal master read');
