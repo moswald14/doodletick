@@ -977,7 +977,7 @@
  const Vocal=typeof module!=='undefined'&&module.exports?require('./vocal-dsp.js'):root.VocalDSP;
  if(!S||!D)throw new Error('SongDSP needs StudioDSP and DrumDSP.');
  const C=typeof module!=='undefined'&&module.exports?require('./clip-dsp.js'):root.ClipDSP;
- const MAX_NOTES=10000,MAX_BEATS=320,DRUM_NOTES={kick:36,snare:38,hat:42,perc:75};
+ const MAX_NOTES=10000,MAX_BEATS=320,MAX_AUDIO_SECONDS=120,DRUM_NOTES={kick:36,snare:38,hat:42,perc:75};
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  function number(v,a,b,label){if(typeof v!=='number'||!Number.isFinite(v)||v<a||v>b)throw new Error(`Invalid ${label}.`);return v;}
  function integer(v,a,b,label){number(v,a,b,label);if(!Number.isInteger(v))throw new Error(`Invalid ${label}.`);return v;}
@@ -1030,7 +1030,7 @@
    if(!clip||typeof clip!=='object')throw new Error('Invalid audio clip.');
    const rate=integer(clip.rate,8000,192000,'audio sample rate'),samples=clip.samples;
    if(!(Array.isArray(samples)||ArrayBuffer.isView(samples))||!Number.isInteger(samples.length)||samples.length<1||samples.length>rate*60)throw new Error('Each imported audio clip must be at most 60 seconds.');
-   audioSeconds+=samples.length/rate;if(audioSeconds>60.00001)throw new Error('Imported audio can total at most 60 seconds.');
+   audioSeconds+=samples.length/rate;if(audioSeconds>MAX_AUDIO_SECONDS+0.00001)throw new Error(`Imported audio can total at most ${MAX_AUDIO_SECONDS} seconds.`);
    const copy=new Float32Array(samples.length);for(let i=0;i<samples.length;i++)copy[i]=number(samples[i],-1,1,'audio sample');
    return {id:id(clip.id,'audio ID'),name:text(clip.name,64,'audio clip name'),start:number(clip.start,0,MAX_BEATS,'audio position'),...C.controls(clip),rate,samples:copy};
   });unique(audio,'audio');
@@ -1151,7 +1151,50 @@
   if(drums.length)tracks.push({name:'Drums',channel:9,notes:drums});
   for(const t of tracks)t.notes.sort((a,b)=>a.start-b.start||a.midi-b.midi);return {bpm:song.bpm,meter:{...song.meter},duration:to-from,tracks};
  }
- const api={MAX_NOTES,MAX_BEATS,DRUM_NOTES,defaultSong,validateSong,beatsPerBar,midiFrequency,noteName,drumVoice,renderNote,render,toMidi};
+ function lyricTracks(song){
+  const songEnd=song.bars*beatsPerBar(song.meter),msPerBeat=60000/song.bpm;
+  const vocalTracks=song.tracks.filter(track=>track.instrument.startsWith('vocal-')&&!track.mute&&track.volume>0);
+  const words=new Map(vocalTracks.map(track=>[track.id,[]]));
+  for(const track of expandedTracks({tracks:vocalTracks})){
+   if(track.mute||track.volume===0)continue;
+   const line=words.get(track.parentId||track.id);
+   for(const note of track.notes){
+    const text=note.vocal?.lyric;
+    if(!text||note.velocity===0||note.start>=songEnd)continue;
+    line.push({text,start:Math.round(note.start*msPerBeat),
+      end:Math.round(Math.min(songEnd,note.start+note.duration)*msPerBeat)});
+   }
+  }
+  const end=Math.round(songEnd*msPerBeat);
+  return vocalTracks.map(({id,name})=>({id,name,cues:captionLines(words.get(id),end)}))
+   .filter(track=>track.cues.length);
+ }
+ function captionLines(words,endOfSong){
+  const cues=[];
+  let current,previous;
+  for(const word of words.sort((a,b)=>a.start-b.start||b.end-a.end)){
+   if(word.text==='_'){
+    if(current&&word.start-current.end<450)current.end=Math.max(current.end,word.end);
+    continue;
+   }
+   if(previous?.start===word.start&&previous.text===word.text)continue;
+   const newLine=current&&word.start>current.start&&(word.start-current.end>=450||
+    word.end-current.start>4000||current.text.length+word.text.length+1>42||/[.!?…]$/.test(current.text));
+   if(!current||newLine){current={...word};cues.push(current);}
+   else{current.text+=' '+word.text;current.end=Math.max(current.end,word.end);}
+   previous=word;
+  }
+  return cues.map((cue,index)=>({...cue,end:Math.min(Math.max(cue.end,cue.start+750),cues[index+1]?.start??endOfSong)}))
+   .filter(cue=>cue.end>cue.start);
+ }
+ function formatLyricsSrt(cues){
+  function time(ms){
+   const hours=Math.floor(ms/3600000),minutes=Math.floor(ms/60000)%60,seconds=Math.floor(ms/1000)%60;
+   return [hours,minutes,seconds].map(part=>String(part).padStart(2,'0')).join(':')+','+String(ms%1000).padStart(3,'0');
+  }
+  return cues.map(({start,end,text},index)=>[index+1,time(start)+' --> '+time(end),text,'',''].join('\r\n')).join('');
+ }
+ const api={MAX_NOTES,MAX_BEATS,MAX_AUDIO_SECONDS,DRUM_NOTES,defaultSong,validateSong,beatsPerBar,midiFrequency,noteName,drumVoice,renderNote,render,toMidi,lyricTracks,formatLyricsSrt};
  if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SongDSP=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
 
@@ -1631,9 +1674,9 @@
     assert(song && Array.isArray(song.audio) && song.audio.length <= 8, 'The song audio list is invalid.');
     let duration = 0;
     return {...song, audio: song.audio.map(c => {
-      if (!c.wav) { duration += c.samples?.length / c.rate; assert(duration <= 60.0001, 'Keep imported audio under one minute in total.'); return c; }
+      if (!c.wav) { duration += c.samples?.length / c.rate; assert(duration <= Song.MAX_AUDIO_SECONDS + 0.00001, `Imported audio can total at most ${Song.MAX_AUDIO_SECONDS} seconds.`); return c; }
       const decoded = IO.decodeWav(fromBase64(c.wav)); duration += decoded.duration;
-      assert(duration <= 60.0001, 'Keep imported audio under one minute in total.');
+      assert(duration <= Song.MAX_AUDIO_SECONDS + 0.00001, `Imported audio can total at most ${Song.MAX_AUDIO_SECONDS} seconds.`);
       const {wav, ...rest} = c; return {...rest, rate: decoded.rate, samples: decoded.samples};
     })};
   }
@@ -1773,6 +1816,9 @@
     }
     return s;
   }
+  function lyricTracks(p, scope = 'song') {
+    return scope === 'song' || scope === 'melody' ? Song.lyricTracks(scopeSong(p, scope)) : [];
+  }
   function render(p, scope, rate = 44100, options = {}) {
     if(scope==='capture-preview')return Capture.preview(p.samples,p.rate,rate);
     if (scope === 'preview') return renderSoundPreview(p.wave,{rate});
@@ -1850,7 +1896,7 @@
   }
   const api = {S, D, Song, M, W, IO, FX, Collision, Patch,savePatchTone,loadPatchTone,Shape,Sample,Voice,Vocal,Capture,Arrangement,renderSoundPreview, renderPatchPreview, clone, clamp, id, assert, blank, starter, validate, open, serialize, legacy,
     signals, syncTempo, saveSound, setSoundFromWave, patternFromPart, checkedPattern, extend, addPattern, addBeat,
-    findClip, clipLength, noteKey, transformNotes, scopeSong, render, encodeStereo, encodeSong};
+    findClip, clipLength, noteKey, transformNotes, scopeSong, lyricTracks, render, encodeStereo, encodeSong};
   if (node) module.exports = api; else root.DotWave = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
 

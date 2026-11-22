@@ -1,4 +1,4 @@
-# Doodle Tick Keeper · 0.19.3b
+# Doodle Tick Keeper · 0.19.4b
 
 **0.17b adds a paper wallet maker to the Doodleverse miner.** From Keeper, open **Doodleverse Coin**, then choose **Paper wallet maker**. Open the downloaded file offline to create or recover a paper wallet. [Paper wallet guide](../keeper/paper-wallet/README.md)
 
@@ -51,7 +51,7 @@ The Weather & music panel, original founder records, arcade and file sharing rem
 Read [validation](../keeper/VALIDATION.md) for completed checks and live-device limits. Source is GPL-3.0-only under the repository's LICENSE.
 
 
-## Studio 2.10 gallery update (0.19.3b)
+## Studio 2.10.1 update (0.19.4b)
 
 The default image overlays the application on the exact checked 0.19.1b image digests for aarch64 and amd64, recorded in `runtime-base.json`. Those images carry the unchanged 0.19b native Core runtime, its corresponding source and validation records, Node, audio tools and installed Jazz dependencies. Application files and version labels come from this release; Keeper storage and keys remain in `/data`. Both architecture images still run the existing container, isolated audio and media checks before immutable image publication.
 

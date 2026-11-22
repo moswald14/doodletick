@@ -10,7 +10,7 @@ Open **Studio → Export → Make share file** in Keeper. Choose what to share a
 
 Add `https://github.com/moswald14/doodletick` through **Settings → Apps → Install app → Repositories**, then install **Doodle Tick Keeper**. Home Assistant OS must use 64-bit ARM or AMD64. For a new installation, start it and open **Web UI**. The first source build includes Core, needs internet access and can take time. If replacing a local app, complete [the offline migration](MIGRATION.md) before the repository app's first start.
 
-For an existing repository installation, make a backup and choose **Update** on that same app. If it is not offered, check for updates in the app store and confirm the repository is `moswald14/doodletick`, rather than Local apps. After restart, verify the original Keeper identity and the **DOODLE TICK 0.19.3b** label. Then enable **Start on boot**, **Watchdog** and **Auto update**. Do not uninstall as an update procedure.
+For an existing repository installation, make a backup and choose **Update** on that same app. If it is not offered, check for updates in the app store and confirm the repository is `moswald14/doodletick`, rather than Local apps. After restart, verify the original Keeper identity and the **DOODLE TICK 0.19.4b** label. Then enable **Start on boot**, **Watchdog** and **Auto update**. Do not uninstall as an update procedure.
 
 ## Mine and send native DVC
 

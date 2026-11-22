@@ -1,3 +1,9 @@
+## 0.19.4b — Studio 2.10.1
+
+- Export timed SRT captions from editable sung notes, with a choice of vocal track when available.
+- Keep up to two minutes of recorded or imported audio in a project across eight clips. Individual imports can last up to 60 seconds.
+- Make a local share file or open the public Dot Studio Gallery and Top 10 from Studio. Reuse the recorded 0.19.1b runtime images.
+
 ## 0.19.3b — Dot Studio Gallery
 
 - Add Studio 2.10 to Keeper with an Export share file and a link to the public Dot Studio Gallery and Top 10.

@@ -1,4 +1,6 @@
-# Doodle Tick · 0.19.3b
+# Doodle Tick · 0.19.4b
+
+**0.19.4b updates Keeper to Studio 2.10.1.** Export timed SRT captions from your sung notes and keep up to two minutes of audio in a project. Open the Dot Studio Gallery and Top 10 from Studio. [Studio guide](keeper/STUDIO.md)
 
 **0.19.3b brings the Dot Studio Gallery into Keeper.** Open Studio → Export to make a share file with a short listening preview. Open the public gallery to publish it or hear the Top 10. [Studio guide](keeper/STUDIO.md)
 
